@@ -21,7 +21,20 @@ PKG_DIRS   := ./pkg/common/... \
               ./pkg/pwd/... \
               ./pkg/printenv/... \
               ./pkg/env/... \
-              ./pkg/yes/...
+              ./pkg/yes/... \
+              ./pkg/ls/... \
+              ./pkg/cat/... \
+              ./pkg/mkdir/... \
+              ./pkg/rmdir/... \
+              ./pkg/rm/... \
+              ./pkg/cp/... \
+              ./pkg/mv/... \
+              ./pkg/touch/... \
+              ./pkg/ln/... \
+              ./pkg/stat/... \
+              ./pkg/readlink/... \
+              ./pkg/basename/... \
+              ./pkg/dirname/...
 
 .DEFAULT_GOAL := help
 
@@ -241,6 +254,17 @@ tidy:
 .PHONY: all
 all: vet test build
 	@echo "all: vet + test + build complete"
+
+.PHONY: compliance
+compliance: build
+	@chmod +x test/compliance/*.sh
+	@echo "--- ls compliance ---"
+	bash test/compliance/test_ls.sh
+	@echo "--- cat compliance ---"
+	bash test/compliance/test_cat.sh
+	@echo "--- basename/dirname compliance ---"
+	bash test/compliance/test_basename_dirname.sh
+	@echo "compliance: all suites passed"
 
 .PHONY: ci
 ci: vet test build docker smoke-docker

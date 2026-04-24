@@ -26,11 +26,11 @@ Implement the 13 core filesystem utilities with full POSIX flag compatibility an
 ```
 
 **Tests:**
-- [ ] `-a` includes `.` and `..`; `-A` includes dotfiles but NOT `.`/`..`
-- [ ] `-laR` grouped flags work (tests POSIX flag parser)
-- [ ] Symlinks show target
-- [ ] Exit code 2 on "no such file"
-- [ ] Compare output against `/bin/ls` for same directory
+- [x] `-a` includes `.` and `..`; `-A` includes dotfiles but NOT `.`/`..`
+- [x] `-laR` grouped flags work (tests POSIX flag parser)
+- [x] Symlinks show target
+- [x] Exit code 2 on "no such file"
+- [x] Compare output against `/bin/ls` for same directory
 
 ### 03.2 — `cat` (`pkg/cat/`)
 
@@ -40,66 +40,66 @@ Must handle stdin (`cat -` or `cat` with no args) and pipes.
 
 `--json` for small files: `{"lines":[...], "lineCount": N}`. For large files: NDJSON stream.
 
-- [ ] `echo hello | cat` reads stdin
-- [ ] `cat file1 file2` concatenates
-- [ ] `cat nonexistent` exits 1 with error to stderr
+- [x] `echo hello | cat` reads stdin
+- [x] `cat file1 file2` concatenates
+- [x] `cat nonexistent` exits 1 with error to stderr
 
 ### 03.3 — `mkdir`
 
-- [ ] `-p` creates parents
-- [ ] `-m 0755` sets permissions
-- [ ] `--json` → `{"created": ["/path/a", "/path/b"]}`
-- [ ] Exit 1 if exists (without `-p`)
+- [x] `-p` creates parents
+- [x] `-m 0755` sets permissions
+- [x] `--json` → `{"created": ["/path/a", "/path/b"]}`
+- [x] Exit 1 if exists (without `-p`)
 
 ### 03.4 — `rmdir`
 
-- [ ] Removes empty directories only
-- [ ] `-p` removes parents
-- [ ] Exit 1 if not empty
+- [x] Removes empty directories only
+- [x] `-p` removes parents
+- [x] Exit 1 if not empty
 
 ### 03.5 — `rm`
 
-- [ ] `-r` recursive, `-f` force, `-v` verbose
-- [ ] **Safety: `rm -rf /` REFUSED** without `--no-preserve-root`
-- [ ] `--json` → `{"removed": [...], "errors": [...]}`
+- [x] `-r` recursive, `-f` force, `-v` verbose
+- [x] **Safety: `rm -rf /` REFUSED** without `--no-preserve-root`
+- [x] `--json` → `{"removed": [...], "errors": [...]}`
 
 ### 03.6 — `cp`
 
-- [ ] `-r` recursive, `-p` preserve permissions/timestamps
-- [ ] `-i` interactive (prompt before overwrite)
-- [ ] `--json` → `{"copied": [{"from":"...", "to":"..."}]}`
+- [x] `-r` recursive, `-p` preserve permissions/timestamps
+- [x] `-i` interactive (prompt before overwrite)
+- [x] `--json` → `{"copied": [{"from":"...", "to":"..."}]}`
 
 ### 03.7 — `mv`
 
-- [ ] Rename or move, `-f` force, `-i` interactive
-- [ ] Cross-device move: copy + delete fallback
-- [ ] `--json` → `{"moved": [{"from":"...", "to":"..."}]}`
+- [x] Rename or move, `-f` force, `-i` interactive
+- [x] Cross-device move: copy + delete fallback
+- [x] `--json` → `{"moved": [{"from":"...", "to":"..."}]}`
 
 ### 03.8 — `touch`
 
-- [ ] Creates file or updates mtime
-- [ ] `-t` specific timestamp, `-r ref` reference file's time
+- [x] Creates file or updates mtime
+- [x] `-t` specific timestamp, `-r ref` reference file's time
 
 ### 03.9 — `ln`
 
-- [ ] Hard link by default, `-s` for symbolic
-- [ ] `-f` force (remove existing)
+- [x] Hard link by default, `-s` for symbolic
+- [x] `-f` force (remove existing)
 
 ### 03.10 — `stat`
 
-- [ ] Full file info display
-- [ ] `--json` returns comprehensive struct (mode, size, uid, gid, atime, mtime, ctime, inode, links, blocks)
+- [x] Full file info display
+- [x] `--json` returns comprehensive struct (mode, size, uid, gid, atime, mtime, ctime, inode, links, blocks)
 
 ### 03.11 — `readlink`
 
-- [ ] Prints symlink target
-- [ ] `-f` canonicalize (resolve all symlinks)
+- [x] Prints symlink target
+- [x] `-f` canonicalize (resolve all symlinks)
 
 ### 03.12 — `basename` / `dirname`
 
-- [ ] `basename /path/to/file.txt` → `file.txt`
-- [ ] `basename file.txt .txt` → `file` (suffix removal)
-- [ ] `dirname /path/to/file` → `/path/to`
+- [x] `basename /path/to/file.txt` → `file.txt`
+- [x] `basename file.txt .txt` → `file` (suffix removal)
+- [x] `dirname /path/to/file` → `/path/to`
 
 ---
 
@@ -133,20 +133,20 @@ run_test "ls nonexistent" ls nonexistent
 echo "Results: $PASS passed, $FAIL failed"
 ```
 
-- [ ] Per-utility compliance scripts in `test/compliance/`
-- [ ] Checks both output content AND exit codes
+- [x] Per-utility compliance scripts in `test/compliance/`
+- [x] Checks both output content AND exit codes
 
 ---
 
 ## Milestone 03
 
-- [ ] `korego ls --json /` returns valid JSON array of FileInfo
-- [ ] `korego ls -laR /tmp` output matches `/bin/ls -laR /tmp` format
-- [ ] `korego cat file | korego grep pattern` — pipes work
-- [ ] `korego rm -rf /` is refused
-- [ ] `korego stat --json /etc/passwd` returns full stat struct
-- [ ] All 13 utilities have unit tests with > 85% coverage
-- [ ] Compliance test suite passes > 80% vs system tools
+- [x] `korego ls --json /` returns valid JSON array of FileInfo
+- [x] `korego ls -laR /tmp` output matches `/bin/ls -laR /tmp` format
+- [x] `korego cat file | korego grep pattern` — pipes work
+- [x] `korego rm -rf /` is refused
+- [x] `korego stat --json /etc/passwd` returns full stat struct
+- [x] All 13 utilities have unit tests with > 85% coverage
+- [x] Compliance test suite passes > 80% vs system tools
 
 ## How to Verify
 
