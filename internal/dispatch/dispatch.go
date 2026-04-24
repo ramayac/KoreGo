@@ -41,6 +41,14 @@ func ListAll() []Command {
 	return out
 }
 
+// ListCommands prints one command name per line to stdout.
+// Used by the Dockerfile symlink-generator stage via: korego --list-commands
+func ListCommands() {
+	for _, c := range ListAll() {
+		fmt.Fprintln(os.Stdout, c.Name)
+	}
+}
+
 // PrintHelp writes the help listing to stdout.
 func PrintHelp(binName string) {
 	fmt.Fprintf(os.Stdout, "Usage: %s <command> [args]\n\nCommands:\n", binName)

@@ -1,0 +1,40 @@
+# =============================================================================
+# Debug image — same binary, Alpine base so you can exec in and poke around.
+# Usage: docker run -it --rm korego:debug sh
+# =============================================================================
+FROM golang:1.22-alpine AS builder
+
+RUN apk add --no-cache git ca-certificates
+
+WORKDIR /src
+COPY go.mod ./
+RUN go mod download
+COPY . .
+
+ARG VERSION
+RUN VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "dev")} && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build \
+      -ldflags="-s -w -X 'github.com/ramayac/korego/pkg/common.Version=${VERSION}' -X 'main.Version=${VERSION}'" \
+      -o /korego ./cmd/korego/
+
+RUN /korego --list-commands > /commands.txt
+
+# =============================================================================
+# Final: Alpine with shell, strace, busybox, etc. for debugging
+# =============================================================================
+FROM alpine:3.20
+
+RUN apk add --no-cache strace file
+
+COPY --from=builder /korego /bin/korego
+COPY --from=builder /commands.txt /commands.txt
+
+# Recreate the same symlinks as the production image.
+RUN while IFS= read -r cmd; do ln -s /bin/korego "/bin/${cmd}"; done < /commands.txt
+
+# Non-root user (mirrors production).
+RUN addgroup -g 1000 korego && adduser -u 1000 -G korego -s /bin/sh -D korego
+
+USER korego
+ENTRYPOINT ["/bin/korego"]

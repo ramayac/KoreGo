@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Lint → Test → Docker build → Smoke tests
+  # ---------------------------------------------------------------------------
+  test:
+    name: Lint / Test / Docker smoke
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed for git describe --tags
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: true
+
+      - name: Vet
+        run: make vet
+
+      - name: Unit tests
+        run: make test
+
+      - name: Build binary
+        run: make build
+
+      - name: Verify --list-commands
+        run: ./korego --list-commands
+
+      - name: Build Docker image
+        run: make docker
+
+      - name: Smoke tests (in container)
+        run: make smoke
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Image size gate — must be < 20 MB
+  # ---------------------------------------------------------------------------
+  image-size:
+    name: Image size gate (<20 MB)
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build production Docker image
+        run: make docker
+
+      - name: Check image size
+        run: |
+          VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+          SIZE=$(docker image inspect "korego:${VERSION}" --format '{{.Size}}')
+          MB=$(( SIZE / 1024 / 1024 ))
+          echo "Image size: ${MB} MB (${SIZE} bytes)"
+          if [ "${SIZE}" -gt 20971520 ]; then
+            echo "FAIL: image size ${MB} MB exceeds 20 MB target"
+            exit 1
+          fi
+          echo "PASS: image size ${MB} MB is within the 20 MB target"

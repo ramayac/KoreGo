@@ -68,14 +68,14 @@ ENTRYPOINT ["/bin/korego"]
 ```
 
 **Checklist:**
-- [ ] Multi-stage: builder → symlinker → scratch
-- [ ] Static binary with stripped symbols (`-s -w`)
-- [ ] Version embedded via `-X main.version=...`
-- [ ] All registered commands get `/bin/<name>` symlinks
-- [ ] CA certificates included (for future HTTPS use)
-- [ ] Non-root user created and used
-- [ ] Timezone data included (for `date` utility)
-- [ ] `--list-commands` subcommand added to dispatcher (outputs one command per line)
+- [x] Multi-stage: builder → symlinker → scratch
+- [x] Static binary with stripped symbols (`-s -w`)
+- [x] Version embedded via `-X main.version=...`
+- [x] All registered commands get `/bin/<name>` symlinks
+- [x] CA certificates included (for future HTTPS use)
+- [x] Non-root user created and used
+- [x] Timezone data included (for `date` utility)
+- [x] `--list-commands` subcommand added to dispatcher (outputs one command per line)
 
 ---
 
@@ -91,8 +91,8 @@ COPY --from=builder /korego /bin/korego
 # Alpine provides shell, strace, etc. for debugging
 ```
 
-- [ ] Same binary, but on Alpine base for debugging
-- [ ] Can `docker exec -it` and poke around
+- [x] Same binary, but on Alpine base for debugging
+- [x] Can `docker exec -it` and poke around
 
 ---
 
@@ -132,12 +132,12 @@ smoke: docker
 	@echo "=== ALL SMOKE TESTS PASSED ==="
 ```
 
-- [ ] `make build` — local binary
-- [ ] `make test` — all unit tests
-- [ ] `make lint` — vet + staticcheck
-- [ ] `make docker` — production image
-- [ ] `make docker-debug` — debug image
-- [ ] `make smoke` — build + run basic smoke tests in container
+- [x] `make build` — local binary
+- [x] `make test` — all unit tests
+- [x] `make lint` — vet + staticcheck
+- [x] `make docker` — production image
+- [x] `make docker-debug` — debug image
+- [x] `make smoke` — build + run basic smoke tests in container
 
 ---
 
@@ -174,22 +174,22 @@ jobs:
           fi
 ```
 
-- [ ] Runs on every push and PR
-- [ ] Lint → Test → Docker build → Smoke test
-- [ ] Image size gate: fail if > 20MB
+- [x] Runs on every push and PR
+- [x] Lint → Test → Docker build → Smoke test
+- [x] Image size gate: fail if > 20MB
 
 ---
 
 ## Milestone 02
 
-- [ ] `docker build` produces a working `scratch` image
-- [ ] `docker run korego true` exits 0
-- [ ] `docker run korego false` exits 1
-- [ ] `docker run --entrypoint /bin/echo korego hello` works (symlink)
-- [ ] `docker run korego --help` lists all commands
-- [ ] Image size < 20MB
-- [ ] CI pipeline passes end-to-end
-- [ ] `make smoke` passes all checks
+- [x] `docker build` produces a working `scratch` image
+- [x] `docker run korego true` exits 0
+- [x] `docker run korego false` exits 1
+- [x] `docker run --entrypoint /bin/echo korego hello` works (symlink)
+- [x] `docker run korego --help` lists all commands
+- [x] Image size < 20MB  *(actual: 3.2 MB)*
+- [x] CI pipeline passes end-to-end
+- [x] `make smoke` passes all checks
 
 ## How to Verify
 

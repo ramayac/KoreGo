@@ -5,9 +5,10 @@
 BINARY     := korego
 CMD        := ./cmd/korego
 MODULE     := github.com/ramayac/korego
-VERSION    ?= 0.1.0
+VERSION    ?= $(shell git describe --tags --always 2>/dev/null || echo "dev")
 LDFLAGS    := -ldflags "-s -w -X '$(MODULE)/pkg/common.Version=$(VERSION)' \
                               -X 'main.Version=$(VERSION)'"
+DOCKER_IMG := korego:$(VERSION)
 
 # Directories tested by the unit-test and coverage targets.
 PKG_DIRS   := ./pkg/common/... \
@@ -51,12 +52,17 @@ help:
 	@echo "    fmt          Run gofmt -w on all Go files"
 	@echo "    fmt-check    Check formatting without modifying files"
 	@echo ""
+	@echo "  Docker"
+	@echo "    docker        Build production scratch image ($(DOCKER_IMG))"
+	@echo "    docker-debug  Build Alpine debug image (korego:debug)"
+	@echo "    smoke-docker  Run smoke tests inside the production container"
+	@echo ""
 	@echo "  Smoke"
-	@echo "    smoke        Build + run manual integration smoke tests"
+	@echo "    smoke        Build + run manual integration smoke tests (local)"
 	@echo "    symlink-test Test symlink dispatch (ln -s korego echo)"
 	@echo ""
 	@echo "  Housekeeping"
-	@echo "    clean        Remove build artifacts"
+	@echo "    clean        Remove build artifacts and Docker image"
 	@echo "    tidy         go mod tidy"
 	@echo "    all          vet + test + build"
 	@echo ""
@@ -126,7 +132,42 @@ fmt-check:
 	@echo "All files are gofmt-compliant."
 
 # -------------------------------------------------------------------
-# Smoke / integration tests
+# Docker targets
+# -------------------------------------------------------------------
+.PHONY: docker
+docker:
+	docker build \
+	  --build-arg VERSION=$(VERSION) \
+	  -t $(DOCKER_IMG) \
+	  -f docker/Dockerfile .
+
+.PHONY: docker-debug
+docker-debug:
+	docker build \
+	  --build-arg VERSION=$(VERSION) \
+	  -t korego:debug \
+	  -f docker/Dockerfile.debug .
+
+# smoke-docker: run smoke checks inside the production scratch container.
+.PHONY: smoke-docker
+smoke-docker: docker
+	@echo ""
+	@echo "--- Docker smoke tests ($(DOCKER_IMG)) ---"
+	docker run --rm $(DOCKER_IMG) true
+	@echo "true: exit=0 OK"
+	docker run --rm $(DOCKER_IMG) false; [ $$? -eq 1 ] && echo "false: exit=1 OK"
+	docker run --rm $(DOCKER_IMG) echo smoke test passed
+	docker run --rm $(DOCKER_IMG) echo --json smoke test
+	docker run --rm $(DOCKER_IMG) whoami --json
+	docker run --rm $(DOCKER_IMG) hostname --json
+	docker run --rm $(DOCKER_IMG) uname --json
+	docker run --rm $(DOCKER_IMG) pwd --json
+	docker run --rm $(DOCKER_IMG) --help
+	@echo ""
+	@echo "=== ALL DOCKER SMOKE TESTS PASSED ==="
+
+# -------------------------------------------------------------------
+# Smoke / integration tests (local binary)
 # -------------------------------------------------------------------
 .PHONY: smoke
 smoke: build
@@ -190,6 +231,7 @@ symlink-test: build
 .PHONY: clean
 clean:
 	rm -f $(BINARY) $(BINARY)-race coverage.out coverage.html
+	-docker rmi $(DOCKER_IMG) korego:debug 2>/dev/null || true
 	@echo "clean: done"
 
 .PHONY: tidy
@@ -199,3 +241,7 @@ tidy:
 .PHONY: all
 all: vet test build
 	@echo "all: vet + test + build complete"
+
+.PHONY: ci
+ci: vet test build docker smoke-docker
+	@echo "ci: full pipeline complete"

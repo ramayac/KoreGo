@@ -41,6 +41,9 @@ func main() {
 		case "--version":
 			fmt.Println("korego version", Version)
 			os.Exit(0)
+		case "--list-commands":
+			dispatch.ListCommands()
+			os.Exit(0)
 		}
 		name = os.Args[1]
 		os.Args = os.Args[1:] // shift so cmd sees os.Args[0] = name
