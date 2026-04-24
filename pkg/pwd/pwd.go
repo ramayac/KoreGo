@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ramayac/coregolinux/internal/dispatch"
-	"github.com/ramayac/coregolinux/pkg/common"
+	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/korego/pkg/common"
 )
 
 // PwdResult is the structured result for --json mode.

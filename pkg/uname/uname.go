@@ -7,8 +7,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ramayac/coregolinux/internal/dispatch"
-	"github.com/ramayac/coregolinux/pkg/common"
+	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/korego/pkg/common"
 )
 
 // UnameResult is the structured result for --json mode.

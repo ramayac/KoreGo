@@ -3,7 +3,7 @@
 package truefalse
 
 import (
-	"github.com/ramayac/coregolinux/internal/dispatch"
+	"github.com/ramayac/korego/internal/dispatch"
 )
 
 func runTrue(_ []string) int  { return 0 }

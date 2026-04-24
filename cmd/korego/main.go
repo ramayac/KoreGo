@@ -8,18 +8,18 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ramayac/coregolinux/internal/dispatch"
+	"github.com/ramayac/korego/internal/dispatch"
 
 	// Import all utilities to trigger their init() registrations.
-	_ "github.com/ramayac/coregolinux/pkg/echo"
-	_ "github.com/ramayac/coregolinux/pkg/env"
-	_ "github.com/ramayac/coregolinux/pkg/hostname"
-	_ "github.com/ramayac/coregolinux/pkg/printenv"
-	_ "github.com/ramayac/coregolinux/pkg/pwd"
-	_ "github.com/ramayac/coregolinux/pkg/truefalse"
-	_ "github.com/ramayac/coregolinux/pkg/uname"
-	_ "github.com/ramayac/coregolinux/pkg/whoami"
-	_ "github.com/ramayac/coregolinux/pkg/yes"
+	_ "github.com/ramayac/korego/pkg/echo"
+	_ "github.com/ramayac/korego/pkg/env"
+	_ "github.com/ramayac/korego/pkg/hostname"
+	_ "github.com/ramayac/korego/pkg/printenv"
+	_ "github.com/ramayac/korego/pkg/pwd"
+	_ "github.com/ramayac/korego/pkg/truefalse"
+	_ "github.com/ramayac/korego/pkg/uname"
+	_ "github.com/ramayac/korego/pkg/whoami"
+	_ "github.com/ramayac/korego/pkg/yes"
 )
 
 // Version is set by -ldflags at build time.

@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ramayac/coregolinux/internal/dispatch"
-	"github.com/ramayac/coregolinux/pkg/common"
+	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/korego/pkg/common"
 )
 
 // EnvResult is the structured result for --json mode.

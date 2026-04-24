@@ -4,7 +4,7 @@
 
 BINARY     := korego
 CMD        := ./cmd/korego
-MODULE     := github.com/ramayac/coregolinux
+MODULE     := github.com/ramayac/korego
 VERSION    ?= 0.1.0
 LDFLAGS    := -ldflags "-s -w -X '$(MODULE)/pkg/common.Version=$(VERSION)' \
                               -X 'main.Version=$(VERSION)'"
