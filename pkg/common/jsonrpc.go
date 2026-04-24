@@ -1,4 +1,4 @@
-// Package common provides JSON-RPC 2.0 types for CoreGoLinux utilities.
+// Package common provides JSON-RPC 2.0 types for korego utilities.
 // See https://www.jsonrpc.org/specification
 package common
 
@@ -6,7 +6,7 @@ import "encoding/json"
 
 // RPCRequest represents a JSON-RPC 2.0 request object.
 type RPCRequest struct {
-	JSONRPC string          `json:"jsonrpc"`          // must be "2.0"
+	JSONRPC string          `json:"jsonrpc"` // must be "2.0"
 	Method  string          `json:"method"`
 	Params  json.RawMessage `json:"params,omitempty"`
 	ID      interface{}     `json:"id,omitempty"` // string | int | null
@@ -36,7 +36,7 @@ const (
 	ErrInvalidParams  = -32602 // Invalid method parameters
 	ErrInternal       = -32603 // Internal JSON-RPC error
 
-	// Custom CoreGoLinux error codes (1000–1999 reserved).
+	// Custom korego error codes (1000–1999 reserved).
 	ErrPermission = 1001
 	ErrNotFound   = 1002
 	ErrTimeout    = 1003

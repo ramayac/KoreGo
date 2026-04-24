@@ -1,4 +1,4 @@
-// Package common provides the standard JSON output envelope for CoreGoLinux utilities.
+// Package common provides the standard JSON output envelope for korego utilities.
 package common
 
 import (
@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-// Version is the CoreGoLinux release version, injected at build time with -ldflags.
+// Version is the korego release version, injected at build time with -ldflags.
 var Version = "0.1.0"
 
 // JSONEnvelope is the standard top-level response format for every utility when

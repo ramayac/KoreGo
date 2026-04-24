@@ -13,18 +13,18 @@ func TestRunAllVars(t *testing.T) {
 }
 
 func TestRunSpecificVar(t *testing.T) {
-	os.Setenv("COREGOLINUX_TEST", "hello")
-	defer os.Unsetenv("COREGOLINUX_TEST")
+	os.Setenv("COREGO_TEST", "hello")
+	defer os.Unsetenv("COREGO_TEST")
 
-	result := Run([]string{"COREGOLINUX_TEST"})
-	if result.Vars["COREGOLINUX_TEST"] != "hello" {
-		t.Errorf("got %q, want hello", result.Vars["COREGOLINUX_TEST"])
+	result := Run([]string{"COREGO_TEST"})
+	if result.Vars["COREGO_TEST"] != "hello" {
+		t.Errorf("got %q, want hello", result.Vars["COREGO_TEST"])
 	}
 }
 
 func TestRunMissingVar(t *testing.T) {
-	result := Run([]string{"COREGOLINUX_DEFINITELY_NOT_SET_XYZ"})
-	if _, ok := result.Vars["COREGOLINUX_DEFINITELY_NOT_SET_XYZ"]; ok {
+	result := Run([]string{"COREGO_DEFINITELY_NOT_SET_XYZ"})
+	if _, ok := result.Vars["COREGO_DEFINITELY_NOT_SET_XYZ"]; ok {
 		t.Error("expected missing var to be absent from results")
 	}
 }

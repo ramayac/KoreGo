@@ -1,4 +1,4 @@
-// Package common provides shared utilities for CoreGoLinux utilities.
+// Package common provides shared utilities for korego utilities.
 package common
 
 import (

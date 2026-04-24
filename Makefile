@@ -1,4 +1,4 @@
-# CoreGoLinux Makefile
+# korego Makefile
 # -------------------------------------------------------------------
 # All Go is built with CGO_ENABLED=0 for scratch-container compatibility.
 
@@ -30,7 +30,7 @@ PKG_DIRS   := ./pkg/common/... \
 .PHONY: help
 help:
 	@echo ""
-	@echo "  CoreGoLinux — $(VERSION)"
+	@echo "  korego — $(VERSION)"
 	@echo ""
 	@echo "  Usage: make <target>"
 	@echo ""

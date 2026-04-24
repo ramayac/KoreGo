@@ -6,21 +6,21 @@ import (
 )
 
 func TestRunDefaultsToHostEnv(t *testing.T) {
-	os.Setenv("COREGOLINUX_ENV_TEST", "yes")
-	defer os.Unsetenv("COREGOLINUX_ENV_TEST")
+	os.Setenv("COREGO_ENV_TEST", "yes")
+	defer os.Unsetenv("COREGO_ENV_TEST")
 
 	result := Run(false, nil)
-	if result.Vars["COREGOLINUX_ENV_TEST"] != "yes" {
-		t.Errorf("expected COREGOLINUX_ENV_TEST=yes in env output")
+	if result.Vars["COREGO_ENV_TEST"] != "yes" {
+		t.Errorf("expected COREGO_ENV_TEST=yes in env output")
 	}
 }
 
 func TestRunIgnoreEnvironment(t *testing.T) {
-	os.Setenv("COREGOLINUX_ENV_TEST", "should_not_appear")
-	defer os.Unsetenv("COREGOLINUX_ENV_TEST")
+	os.Setenv("COREGO_ENV_TEST", "should_not_appear")
+	defer os.Unsetenv("COREGO_ENV_TEST")
 
 	result := Run(true, nil)
-	if _, ok := result.Vars["COREGOLINUX_ENV_TEST"]; ok {
+	if _, ok := result.Vars["COREGO_ENV_TEST"]; ok {
 		t.Error("expected host env to be cleared when -i is set")
 	}
 }

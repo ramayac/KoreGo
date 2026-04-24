@@ -1,4 +1,4 @@
-// Package dispatch implements the multicall command registry for CoreGoLinux.
+// Package dispatch implements the multicall command registry for korego.
 package dispatch
 
 import (

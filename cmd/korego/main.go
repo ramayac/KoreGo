@@ -1,4 +1,4 @@
-// korego is the CoreGoLinux multicall binary.
+// korego is the korego multicall binary.
 // It dispatches to registered commands by argv[0] (symlink mode) or argv[1]
 // (subcommand mode).
 package main

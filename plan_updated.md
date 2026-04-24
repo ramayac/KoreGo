@@ -55,7 +55,7 @@ korego binary (single static ELF, ~15MB)
 ### Directory Layout
 
 ```
-CoreGoLinux/
+korego/
 ├── cmd/korego/main.go          # Multicall entry point
 ├── pkg/
 │   ├── common/                 # JSON-RPC types, flag parser, output helpers
