@@ -17,14 +17,14 @@ Build the three shared libraries that every utility depends on. Nothing else can
 **Why first:** Every POSIX utility needs `-laR` style grouped short flags. Go's `flag` package doesn't support this. This must exist before any utility can be implemented.
 
 **Requirements:**
-- [ ] Parse grouped short flags: `-laR` → `-l`, `-a`, `-R`
-- [ ] Parse long flags: `--all`, `--recursive`
-- [ ] Parse `--key=value` and `--key value`
-- [ ] Handle `--` (end of flags, everything after is positional)
-- [ ] Handle `-` (stdin convention)
-- [ ] Unknown flags return error + exit code 2 (POSIX standard)
-- [ ] Flags can appear in any order, mixed with positional args
-- [ ] Support flag repetition counting (`-vvv` → verbosity=3)
+- [x] Parse grouped short flags: `-laR` → `-l`, `-a`, `-R`
+- [x] Parse long flags: `--all`, `--recursive`
+- [x] Parse `--key=value` and `--key value`
+- [x] Handle `--` (end of flags, everything after is positional)
+- [x] Handle `-` (stdin convention)
+- [x] Unknown flags return error + exit code 2 (POSIX standard)
+- [x] Flags can appear in any order, mixed with positional args
+- [x] Support flag repetition counting (`-vvv` → verbosity=3)
 
 **Test cases:**
 ```go
@@ -112,10 +112,10 @@ func Render(cmdName string, data interface{}, jsonMode bool, textFn func()) {
 ```
 
 **Test cases:**
-- [ ] `--json` produces valid JSON that passes `json.Unmarshal`
-- [ ] Envelope always has all 5 keys (command, version, exitCode, data, error)
-- [ ] Error case sets `exitCode != 0`, `data: null`, `error: {...}`
-- [ ] Non-JSON mode calls the text formatter, not JSON
+- [x] `--json` produces valid JSON that passes `json.Unmarshal`
+- [x] Envelope always has all 5 keys (command, version, exitCode, data, error)
+- [x] Error case sets `exitCode != 0`, `data: null`, `error: {...}`
+- [x] Non-JSON mode calls the text formatter, not JSON
 
 **Acceptance:** Schema documented. All utilities will import and use this.
 
@@ -163,11 +163,11 @@ const (
 ```
 
 **Test cases:**
-- [ ] `RPCRequest` serializes/deserializes correctly
-- [ ] `RPCResponse` with `result` has no `error` field
-- [ ] `RPCResponse` with `error` has no `result` field
-- [ ] Batch: `[]RPCRequest` parses correctly
-- [ ] ID can be string, int, or null
+- [x] `RPCRequest` serializes/deserializes correctly
+- [x] `RPCResponse` with `result` has no `error` field
+- [x] `RPCResponse` with `error` has no `result` field
+- [x] Batch: `[]RPCRequest` parses correctly
+- [x] ID can be string, int, or null
 
 **Acceptance:** Full round-trip serialization tests pass.
 
@@ -175,11 +175,11 @@ const (
 
 ## Milestone 00 — Foundation Complete
 
-- [ ] `pkg/common/flags.go` — POSIX flag parser with 100% coverage
-- [ ] `pkg/common/output.go` — JSON envelope with schema documented
-- [ ] `pkg/common/jsonrpc.go` — JSON-RPC 2.0 types with round-trip tests
-- [ ] All three packages have zero external dependencies
-- [ ] `go vet ./pkg/common/...` passes clean
+- [x] `pkg/common/flags.go` — POSIX flag parser with 100% coverage
+- [x] `pkg/common/output.go` — JSON envelope with schema documented
+- [x] `pkg/common/jsonrpc.go` — JSON-RPC 2.0 types with round-trip tests
+- [x] All three packages have zero external dependencies
+- [x] `go vet ./pkg/common/...` passes clean
 
 ## How to Verify
 

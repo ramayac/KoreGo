@@ -34,9 +34,9 @@ func Lookup(name string) (Command, bool) {
 }
 ```
 
-- [ ] Registry is a `map[string]Command`
-- [ ] Each utility calls `dispatch.Register()` in its `init()` function
-- [ ] `Lookup()` returns the command or false
+- [x] Registry is a `map[string]Command`
+- [x] Each utility calls `dispatch.Register()` in its `init()` function
+- [x] `Lookup()` returns the command or false
 
 ---
 
@@ -54,11 +54,11 @@ func Lookup(name string) (Command, bool) {
 6. os.Exit(exitCode)
 ```
 
-- [ ] Symlink dispatch: `/bin/ls` → `/bin/korego` → runs `ls`
-- [ ] Subcommand dispatch: `korego ls -la` → runs `ls`
-- [ ] Unknown command → exit code 127 (POSIX standard)
-- [ ] `korego --help` lists all registered commands
-- [ ] `korego --version` prints version string
+- [x] Symlink dispatch: `/bin/ls` → `/bin/korego` → runs `ls`
+- [x] Subcommand dispatch: `korego ls -la` → runs `ls`
+- [x] Unknown command → exit code 127 (POSIX standard)
+- [x] `korego --help` lists all registered commands
+- [x] `korego --version` prints version string
 
 **Test cases:**
 ```bash
@@ -95,25 +95,25 @@ Each utility follows this pattern:
 | `env` | `EnvResult{Vars map[string]string}` | Full env map | Like printenv but also supports `-i` (ignore environment) |
 
 **Per-utility checklist (repeat for each):**
-- [ ] `pkg/<name>/<name>.go` — library function
-- [ ] `pkg/<name>/<name>_test.go` — unit tests
-- [ ] CLI wrapper registered via `init()`
-- [ ] `--json` flag works via `common.Render()`
-- [ ] Exit codes match POSIX spec
-- [ ] `--help` prints usage
+- [x] `pkg/<name>/<name>.go` — library function
+- [x] `pkg/<name>/<name>_test.go` — unit tests
+- [x] CLI wrapper registered via `init()`
+- [x] `--json` flag works via `common.Render()`
+- [x] Exit codes match POSIX spec
+- [x] `--help` prints usage
 
 ---
 
 ## Milestone 01
 
-- [ ] `korego echo hello` prints `hello`
-- [ ] `korego echo --json hello` prints `{"command":"echo","data":{"text":"hello"},...}`
-- [ ] `korego true` exits 0
-- [ ] `korego false` exits 1
-- [ ] `korego --help` lists all 10 commands
-- [ ] Symlink dispatch works (`ln -s korego echo && ./echo hi`)
-- [ ] Unknown commands exit 127
-- [ ] All Tier 1 utilities have unit tests passing
+- [x] `korego echo hello` prints `hello`
+- [x] `korego echo --json hello` prints `{"command":"echo","data":{"text":"hello"},...}`
+- [x] `korego true` exits 0
+- [x] `korego false` exits 1
+- [x] `korego --help` lists all 10 commands
+- [x] Symlink dispatch works (`ln -s korego echo && ./echo hi`)
+- [x] Unknown commands exit 127
+- [x] All Tier 1 utilities have unit tests passing
 
 ## How to Verify
 
