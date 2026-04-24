@@ -74,12 +74,12 @@ Implement the 10 text processing utilities. These are critical for agentic pipel
 
 ## Milestone 04
 
-- [ ] `echo "hello world" | korego wc --json` → `{"lines":1,"words":2,"bytes":12}`
-- [ ] `korego grep --json -rn "TODO" ./` returns structured matches
-- [ ] `korego sort -rn file.txt` sorts numerically in reverse
-- [ ] `korego sed 's/old/new/g' file.txt` performs substitution
-- [ ] All Tier 3 utilities have >80% test coverage
-- [ ] Pipes work: `korego cat f | korego grep pat | korego wc -l`
+- [x] `echo "hello world" | korego wc --json` → `{"lines":1,"words":2,"bytes":12}`
+- [x] `korego grep --json -rn "TODO" ./` returns structured matches
+- [x] `korego sort -rn file.txt` sorts numerically in reverse
+- [x] `korego sed 's/old/new/g' file.txt` performs substitution
+- [x] All Tier 3 utilities have >80% test coverage
+- [x] Pipes work: `korego cat f | korego grep pat | korego wc -l`
 
 ## How to Verify
 

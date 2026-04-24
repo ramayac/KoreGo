@@ -34,7 +34,17 @@ PKG_DIRS   := ./pkg/common/... \
               ./pkg/stat/... \
               ./pkg/readlink/... \
               ./pkg/basename/... \
-              ./pkg/dirname/...
+              ./pkg/dirname/... \
+              ./pkg/head/... \
+              ./pkg/tail/... \
+              ./pkg/wc/... \
+              ./pkg/tee/... \
+              ./pkg/cut/... \
+              ./pkg/tr/... \
+              ./pkg/sort/... \
+              ./pkg/uniq/... \
+              ./pkg/grep/... \
+              ./pkg/sed/...
 
 .DEFAULT_GOAL := help
 
