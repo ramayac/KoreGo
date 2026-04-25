@@ -19,6 +19,7 @@ import (
 	"github.com/ramayac/korego/internal/dispatch"
 	"github.com/ramayac/korego/internal/shell"
 	"github.com/ramayac/korego/pkg/common"
+	"log/slog"
 )
 
 // Request is a JSON-RPC 2.0 request.
@@ -251,9 +252,23 @@ type KoregoParams struct {
 }
 
 func (s *Server) processRequest(req Request) *Response {
+	start := time.Now()
+	
 	atomic.AddInt64(&s.totalRequests, 1)
 	atomic.AddInt32(&s.activeWorkers, 1)
 	defer atomic.AddInt32(&s.activeWorkers, -1)
+	
+	defer func() {
+		duration := time.Since(start)
+		sessionId := ""
+		if len(req.Params) > 0 {
+			var p KoregoParams
+			if err := json.Unmarshal(req.Params, &p); err == nil {
+				sessionId = p.SessionId
+			}
+		}
+		slog.Info("rpc handled", "method", req.Method, "sessionId", sessionId, "durationMs", float64(duration.Microseconds())/1000.0)
+	}()
 
 	if req.JSONRPC != "2.0" {
 		if req.ID != nil {
@@ -294,6 +309,25 @@ func (s *Server) processRequest(req Request) *Response {
 		}
 		if err := json.Unmarshal(req.Params, &p); err == nil {
 			if s.sm.SetCwd(p.SessionId, p.Path) {
+				return &Response{JSONRPC: "2.0", ID: req.ID, Result: true}
+			}
+		}
+		return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Invalid session"}}
+	}
+
+	if req.Method == "korego.session.list" {
+		if req.ID == nil { return nil }
+		sessions := s.sm.List()
+		return &Response{JSONRPC: "2.0", ID: req.ID, Result: sessions}
+	}
+
+	if req.Method == "korego.session.destroy" {
+		if req.ID == nil { return nil }
+		var p struct {
+			SessionId string `json:"sessionId"`
+		}
+		if err := json.Unmarshal(req.Params, &p); err == nil {
+			if s.sm.Destroy(p.SessionId) {
 				return &Response{JSONRPC: "2.0", ID: req.ID, Result: true}
 			}
 		}
@@ -423,8 +457,14 @@ func (s *Server) processRequest(req Request) *Response {
 
 // RunDaemon sets up signal handling and runs until terminated.
 func RunDaemon(socketPath string, workers int) error {
+	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
+	slog.SetDefault(logger)
+	
+	slog.Info("starting korego daemon", "socket", socketPath, "workers", workers)
+
 	server := NewServer(socketPath, workers)
 	if err := server.Start(); err != nil {
+		slog.Error("failed to start server", "error", err)
 		return err
 	}
 

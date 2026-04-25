@@ -27,10 +27,10 @@ Each agent connection can create a session that remembers state across RPC calls
 // ls runs relative to /tmp because of session cwd
 ```
 
-- [ ] Session stores: `cwd`, `env` vars, command history
-- [ ] Session TTL: auto-expire after 30min idle (configurable)
-- [ ] `korego.session.list` — list active sessions
-- [ ] `korego.session.destroy` — cleanup
+- [x] Session stores: `cwd`, `env` vars, command history
+- [x] Session TTL: auto-expire after 30min idle (configurable)
+- [x] `korego.session.list` — list active sessions
+- [x] `korego.session.destroy` — cleanup
 
 ### 07.2 — Shell Interpreter (`internal/shell/interpreter.go`)
 
@@ -42,10 +42,10 @@ Embed `mvdan.cc/sh/v3` to execute shell scripts via RPC.
 → {"result":{"stdout":"3\n","stderr":"","exitCode":0}}
 ```
 
-- [ ] Builtins: KoreGo utilities are registered as shell builtins (no fork/exec)
-- [ ] Pipes: `ls | grep | wc` uses Go channels, not OS pipes
-- [ ] Environment: inherits from session env vars
-- [ ] Safety: execution timeout (default 30s), memory limit
+- [x] Builtins: KoreGo utilities are registered as shell builtins (no fork/exec)
+- [x] Pipes: `ls | grep | wc` uses Go channels, not OS pipes
+- [x] Environment: inherits from session env vars
+- [x] Safety: execution timeout (default 30s), memory limit
 
 ### 07.3 — Structured Logging
 
@@ -55,9 +55,9 @@ All daemon operations log as structured JSON to stderr/file.
 {"time":"2026-04-24T20:00:00Z","level":"info","method":"korego.ls","sessionId":"abc-123","durationMs":2.1}
 ```
 
-- [ ] Use `log/slog` from stdlib
-- [ ] Log levels: debug, info, warn, error
-- [ ] Fields: timestamp, level, method, session_id, duration_ms, error
+- [x] Use `log/slog` from stdlib
+- [x] Log levels: debug, info, warn, error
+- [x] Fields: timestamp, level, method, session_id, duration_ms, error
 
 ### 07.4 — Tier 5 Utilities
 

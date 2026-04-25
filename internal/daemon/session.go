@@ -81,6 +81,17 @@ func (sm *SessionManager) Destroy(id string) bool {
 	return ok
 }
 
+func (sm *SessionManager) List() []*Session {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	var list []*Session
+	for _, s := range sm.sessions {
+		list = append(list, s)
+	}
+	return list
+}
+
 func (sm *SessionManager) cleanupLoop() {
 	for {
 		time.Sleep(time.Minute)
