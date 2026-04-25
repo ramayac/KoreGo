@@ -98,18 +98,18 @@ korego/
 
 ## Phase Files Index
 
-| File | Title | Weeks |
-|------|-------|-------|
-| [00_foundation_libs.md](00_foundation_libs.md) | Foundation Libraries (flag parser, JSON envelope, JSON-RPC types) | 1 |
-| [01_multicall_tier1.md](01_multicall_tier1.md) | Multicall Dispatcher + Tier 1 Utilities | 1–2 |
-| [02_docker_ci.md](02_docker_ci.md) | Docker Scratch Build + CI Pipeline | 2 |
-| [03_filesystem_utils.md](03_filesystem_utils.md) | Tier 2 — Filesystem Utilities | 3–4 |
-| [04_text_processing.md](04_text_processing.md) | Tier 3 — Text Processing Utilities | 4–5 |
-| [05_daemon_core.md](05_daemon_core.md) | JSON-RPC Daemon — Core Server | 6–7 |
-| [06_system_utils.md](06_system_utils.md) | Tier 4 — System & Process Utilities | 7–8 |
-| [07_agent_features.md](07_agent_features.md) | Agent-Ready Features (sessions, shell, Tier 5) | 9–10 |
-| [08_hardening.md](08_hardening.md) | Production Hardening & Security | 11–12 |
-| [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | 13–14 |
+| File | Title | Status |
+|------|-------|--------|
+| [00_foundation_libs.md](00_foundation_libs.md) | Foundation Libraries (flag parser, JSON envelope, JSON-RPC types) | **COMPLETED** |
+| [01_multicall_tier1.md](01_multicall_tier1.md) | Multicall Dispatcher + Tier 1 Utilities | **COMPLETED** |
+| [02_docker_ci.md](02_docker_ci.md) | Docker Scratch Build + CI Pipeline | **COMPLETED** |
+| [03_filesystem_utils.md](03_filesystem_utils.md) | Tier 2 — Filesystem Utilities | **COMPLETED** |
+| [04_text_processing.md](04_text_processing.md) | Tier 3 — Text Processing Utilities | **COMPLETED** |
+| [05_daemon_core.md](05_daemon_core.md) | JSON-RPC Daemon — Core Server | **COMPLETED** |
+| [06_system_utils.md](06_system_utils.md) | Tier 4 — System & Process Utilities | **COMPLETED** |
+| [07_agent_features.md](07_agent_features.md) | Agent-Ready Features (sessions, shell, Tier 5) | TODO |
+| [08_hardening.md](08_hardening.md) | Production Hardening & Security | TODO |
+| [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | TODO |
 
 ---
 

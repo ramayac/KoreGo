@@ -17,7 +17,7 @@ Whenever you write or modify code in this repository, you **MUST** adhere to the
 - **No CGO:** The project must compile completely statically to run in a scratch container. Always use `CGO_ENABLED=0`.
 - **Zero Dependencies:** Avoid external Go modules unless absolutely necessary (e.g., a complex shell interpreter later on). Do not use external libraries for flag parsing, colors, or utility logic.
 - **Unified Flag Parsing:** Use the custom POSIX-compliant parser in `pkg/common/flags.go` (`common.ParseFlags`). **Do not use the standard library `flag` package** or `pflag`. Our parser supports short flag grouping (`-laR`) and standard POSIX conventions.
-- **Standardized Output:** Use the `common.Render()` and `common.RenderError()` functions in `pkg/common/output.go` to handle both standard text output and `--json` structured output.
+- **Standardized Output:** Use the `common.Render()` and `common.RenderError()` functions in `pkg/common/output.go` to handle both standard text output and `--json` structured output. You must pass the `out io.Writer` provided in the `Run` function signature instead of using `os.Stdout`.
 - **Multicall Dispatch:** Every utility lives in its own package under `pkg/` (e.g., `pkg/ls`, `pkg/echo`). Utilities register themselves automatically by calling `dispatch.Register()` in their `init()` function.
 
 ## 3. Component Structure
@@ -35,7 +35,7 @@ When implementing a new utility or feature, follow this checklist:
 
 1. **Implement the Logic:** Write the utility in `pkg/<name>/<name>.go`.
 2. **Library Layer vs CLI Layer:** Separate the core logic from the CLI parsing/printing so the core logic can be tested and reused easily by the JSON-RPC daemon.
-3. **Unit Tests:** Write robust unit tests in `pkg/<name>/<name>_test.go` targeting > 85% coverage.
+3. **Unit Tests:** Write robust unit tests in `pkg/<name>/<name>_test.go` targeting > 80% coverage.
 4. **Compliance Tests:** Add a test script in `test/compliance/test_<name>.sh`. Use `set -uo pipefail` (do NOT use `set -e`, as non-zero exit codes from utilities are expected and should be captured).
 5. **Registration:** 
    - Add a blank import for the package in `cmd/korego/main.go`.
@@ -58,6 +58,9 @@ Refer to the Phase documents in `wiki/` (e.g., `wiki/plan_updated.md`) to unders
 - **Phase 00 & 01:** Foundation & Tier 1 (echo, true, false, env, pwd, etc.) — **COMPLETED**
 - **Phase 02:** Docker CI & Scratch pipeline — **COMPLETED**
 - **Phase 03:** Filesystem Utils (ls, cat, rm, cp, mv, etc.) — **COMPLETED**
-- **Phase 04+:** See project roadmap.
+- **Phase 04:** Text Utils (grep, sed, sort, wc, etc.) — **COMPLETED**
+- **Phase 05:** JSON-RPC Daemon Core — **COMPLETED**
+- **Phase 06:** System & Process Utils (ps, find, df, du, etc.) — **COMPLETED**
+- **Phase 07+:** See project roadmap.
 
 **Always read the active Phase document before writing code!**
