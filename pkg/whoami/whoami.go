@@ -3,6 +3,7 @@ package whoami
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/user"
 	"strconv"
@@ -33,7 +34,7 @@ func Run() (WhoamiResult, error) {
 	return WhoamiResult{User: u.Username, UID: uid}, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "whoami: %v\n", err)
@@ -44,11 +45,11 @@ func run(args []string) int {
 	result, err := Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "whoami: %v\n", err)
-		common.RenderError("whoami", 1, "EUSER", err.Error(), jsonMode)
+		common.RenderError("whoami", 1, "EUSER", err.Error(), jsonMode, out)
 		return 1
 	}
 
-	common.Render("whoami", result, jsonMode, func() {
+	common.Render("whoami", result, jsonMode, out, func() {
 		fmt.Println(result.User)
 	})
 	return 0

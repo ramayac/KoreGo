@@ -3,6 +3,7 @@ package printenv
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -42,7 +43,7 @@ func Run(names []string) PrintenvResult {
 	return PrintenvResult{Vars: vars}
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "printenv: %v\n", err)
@@ -61,7 +62,7 @@ func run(args []string) int {
 		}
 	}
 
-	common.Render("printenv", result, jsonMode, func() {
+	common.Render("printenv", result, jsonMode, out, func() {
 		for k, v := range result.Vars {
 			fmt.Printf("%s=%s\n", k, v)
 		}

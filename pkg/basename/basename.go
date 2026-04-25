@@ -3,6 +3,7 @@ package basename
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +32,7 @@ func Run(path, suffix string) BasenameResult {
 	return BasenameResult{Result: base}
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "basename: %v\n", err)
@@ -48,7 +49,7 @@ func run(args []string) int {
 		suffix = flags.Positional[1]
 	}
 	result := Run(path, suffix)
-	common.Render("basename", result, jsonMode, func() {
+	common.Render("basename", result, jsonMode, out, func() {
 		fmt.Println(result.Result)
 	})
 	return 0

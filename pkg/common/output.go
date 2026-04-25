@@ -3,7 +3,7 @@ package common
 
 import (
 	"encoding/json"
-	"os"
+	"io"
 )
 
 // Version is the korego release version, injected at build time with -ldflags.
@@ -25,9 +25,9 @@ type ErrorInfo struct {
 	Message string `json:"message"`
 }
 
-// Render writes output to stdout.  If jsonMode is true it marshals a
+// Render writes output to out.  If jsonMode is true it marshals a
 // JSONEnvelope; otherwise it calls textFn for the traditional text output.
-func Render(cmdName string, data interface{}, jsonMode bool, textFn func()) {
+func Render(cmdName string, data interface{}, jsonMode bool, out io.Writer, textFn func()) {
 	if jsonMode {
 		env := JSONEnvelope{
 			Command:  cmdName,
@@ -36,7 +36,7 @@ func Render(cmdName string, data interface{}, jsonMode bool, textFn func()) {
 			Data:     data,
 			Error:    nil,
 		}
-		enc := json.NewEncoder(os.Stdout)
+		enc := json.NewEncoder(out)
 		enc.SetEscapeHTML(false)
 		_ = enc.Encode(env)
 	} else {
@@ -44,9 +44,9 @@ func Render(cmdName string, data interface{}, jsonMode bool, textFn func()) {
 	}
 }
 
-// RenderError writes a JSON error envelope to stdout and returns the exit code.
+// RenderError writes a JSON error envelope to out and returns the exit code.
 // If jsonMode is false it is a no-op (caller should print its own error to stderr).
-func RenderError(cmdName string, exitCode int, errCode, message string, jsonMode bool) {
+func RenderError(cmdName string, exitCode int, errCode, message string, jsonMode bool, out io.Writer) {
 	if !jsonMode {
 		return
 	}
@@ -60,7 +60,7 @@ func RenderError(cmdName string, exitCode int, errCode, message string, jsonMode
 			Message: message,
 		},
 	}
-	enc := json.NewEncoder(os.Stdout)
+	enc := json.NewEncoder(out)
 	enc.SetEscapeHTML(false)
 	_ = enc.Encode(env)
 }

@@ -43,9 +43,9 @@ func Count(r io.Reader) (WcResult, error) {
 		if n > 0 {
 			res.Bytes += n
 			chunk := buf[:n]
-			
+
 			res.Lines += bytes.Count(chunk, []byte{'\n'})
-			
+
 			res.Chars += utf8.RuneCount(chunk) // Simplified, actual needs state between chunks
 
 			for _, r := range string(chunk) {
@@ -81,7 +81,7 @@ func CountScanner(r io.Reader) (WcResult, error) {
 		if b == '\n' {
 			res.Lines++
 		}
-		
+
 		r := rune(b) // This is naïve for chars, assumes ASCII for the word splitting part. Proper implementation uses a better reader.
 		if unicode.IsSpace(r) {
 			inWord = false
@@ -90,7 +90,7 @@ func CountScanner(r io.Reader) (WcResult, error) {
 			res.Words++
 		}
 	}
-	
+
 	// Real char count needs proper rune parsing
 	// Since we need posix wc, let's use bufio.Reader
 	return res, scanner.Err()
@@ -125,14 +125,14 @@ func CountProper(r io.Reader) (WcResult, error) {
 	return res, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "wc: %v\n", err)
 		return 2
 	}
 	jsonMode := flags.Has("j")
-	
+
 	showLines := flags.Has("l")
 	showWords := flags.Has("w")
 	showBytes := flags.Has("c")
@@ -201,9 +201,9 @@ func run(args []string) int {
 		// Output json results
 		// If single file, unwrap
 		if len(paths) == 1 {
-			common.Render("wc", jsonResults[paths[0]], true, func() {})
+			common.Render("wc", jsonResults[paths[0]], true, out, func() {})
 		} else {
-			common.Render("wc", jsonResults, true, func() {})
+			common.Render("wc", jsonResults, true, out, func() {})
 		}
 	}
 

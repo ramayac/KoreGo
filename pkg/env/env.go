@@ -3,6 +3,7 @@ package env
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -45,7 +46,7 @@ func Run(ignoreEnv bool, positional []string) EnvResult {
 	return EnvResult{Vars: vars}
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "env: %v\n", err)
@@ -55,7 +56,7 @@ func run(args []string) int {
 	ignoreEnv := flags.Has("i")
 	result := Run(ignoreEnv, flags.Positional)
 
-	common.Render("env", result, jsonMode, func() {
+	common.Render("env", result, jsonMode, out, func() {
 		for k, v := range result.Vars {
 			fmt.Printf("%s=%s\n", k, v)
 		}

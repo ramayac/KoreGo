@@ -3,6 +3,7 @@ package ln
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/ramayac/korego/internal/dispatch"
@@ -25,7 +26,7 @@ var spec = common.FlagSpec{
 	},
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ln: %v\n", err)
@@ -54,7 +55,7 @@ func run(args []string) int {
 	}
 	if linkErr != nil {
 		fmt.Fprintf(os.Stderr, "ln: %v\n", linkErr)
-		common.RenderError("ln", 1, "ELN", linkErr.Error(), jsonMode)
+		common.RenderError("ln", 1, "ELN", linkErr.Error(), jsonMode, out)
 		return 1
 	}
 
@@ -63,7 +64,7 @@ func run(args []string) int {
 		Target string `json:"target"`
 		Link   string `json:"link"`
 	}{Target: target, Link: link})
-	common.Render("ln", result, jsonMode, func() {})
+	common.Render("ln", result, jsonMode, out, func() {})
 	return 0
 }
 

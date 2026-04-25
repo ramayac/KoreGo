@@ -3,11 +3,13 @@
 package truefalse
 
 import (
+	"io"
+
 	"github.com/ramayac/korego/internal/dispatch"
 )
 
-func runTrue(_ []string) int  { return 0 }
-func runFalse(_ []string) int { return 1 }
+func runTrue(_ []string, _ io.Writer) int  { return 0 }
+func runFalse(_ []string, _ io.Writer) int { return 1 }
 
 func init() {
 	dispatch.Register(dispatch.Command{

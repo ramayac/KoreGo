@@ -44,7 +44,7 @@ func Run(r io.Reader, w io.Writer, linesCount int) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "head: %v\n", err)
@@ -100,7 +100,7 @@ func run(args []string) int {
 		if jsonMode {
 			writer = os.NewFile(os.Stderr.Fd(), "/dev/null") // redirect to /dev/null temporarily, or rather just discard
 		}
-		
+
 		var w io.Writer = writer
 		if jsonMode {
 			w = io.Discard
@@ -117,7 +117,7 @@ func run(args []string) int {
 	}
 
 	if jsonMode {
-		common.Render("head", HeadResult{Lines: allLines, LineCount: len(allLines)}, true, func() {})
+		common.Render("head", HeadResult{Lines: allLines, LineCount: len(allLines)}, true, out, func() {})
 	}
 
 	return exitCode

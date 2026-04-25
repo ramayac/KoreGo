@@ -3,6 +3,7 @@ package rm
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -86,7 +87,7 @@ func removeAllVerbose(path string, removed *[]string, verbose bool) error {
 	return nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "rm: %v\n", err)
@@ -135,7 +136,7 @@ func run(args []string) int {
 			}
 		}
 	}
-	common.Render("rm", result, jsonMode, func() {})
+	common.Render("rm", result, jsonMode, out, func() {})
 	return exitCode
 }
 

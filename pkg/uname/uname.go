@@ -3,6 +3,7 @@ package uname
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"syscall"
@@ -59,7 +60,7 @@ func Run() (UnameResult, error) {
 	}, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "uname: %v\n", err)
@@ -70,7 +71,7 @@ func run(args []string) int {
 	result, err := Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "uname: %v\n", err)
-		common.RenderError("uname", 1, "EUNAME", err.Error(), jsonMode)
+		common.RenderError("uname", 1, "EUNAME", err.Error(), jsonMode, out)
 		return 1
 	}
 
@@ -86,7 +87,7 @@ func run(args []string) int {
 		s = true
 	}
 
-	common.Render("uname", result, jsonMode, func() {
+	common.Render("uname", result, jsonMode, out, func() {
 		var parts []string
 		if s {
 			parts = append(parts, result.Sysname)

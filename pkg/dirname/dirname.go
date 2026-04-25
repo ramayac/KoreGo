@@ -3,6 +3,7 @@ package dirname
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -26,7 +27,7 @@ func Run(path string) DirnameResult {
 	return DirnameResult{Result: filepath.Dir(path)}
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "dirname: %v\n", err)
@@ -38,7 +39,7 @@ func run(args []string) int {
 	}
 	jsonMode := flags.Has("j")
 	result := Run(flags.Positional[0])
-	common.Render("dirname", result, jsonMode, func() {
+	common.Render("dirname", result, jsonMode, out, func() {
 		fmt.Println(result.Result)
 	})
 	return 0

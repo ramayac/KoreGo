@@ -3,6 +3,7 @@ package readlink
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -39,7 +40,7 @@ func Run(path string, canonicalize bool) (ReadlinkResult, error) {
 	return ReadlinkResult{Path: path, Target: target}, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "readlink: %v\n", err)
@@ -55,11 +56,11 @@ func run(args []string) int {
 		result, err := Run(p, flags.Has("f"))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "readlink: %v\n", err)
-			common.RenderError("readlink", 1, "EREADLINK", err.Error(), jsonMode)
+			common.RenderError("readlink", 1, "EREADLINK", err.Error(), jsonMode, out)
 			exitCode = 1
 			continue
 		}
-		common.Render("readlink", result, jsonMode, func() {
+		common.Render("readlink", result, jsonMode, out, func() {
 			fmt.Println(result.Target)
 		})
 	}

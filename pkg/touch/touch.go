@@ -3,6 +3,7 @@ package touch
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"time"
 
@@ -40,7 +41,7 @@ func Run(paths []string, ts time.Time) (TouchResult, error) {
 	return result, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "touch: %v\n", err)
@@ -80,10 +81,10 @@ func run(args []string) int {
 	result, err := Run(flags.Positional, ts)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "touch: %v\n", err)
-		common.RenderError("touch", 1, "ETOUCH", err.Error(), jsonMode)
+		common.RenderError("touch", 1, "ETOUCH", err.Error(), jsonMode, out)
 		return 1
 	}
-	common.Render("touch", result, jsonMode, func() {})
+	common.Render("touch", result, jsonMode, out, func() {})
 	return 0
 }
 

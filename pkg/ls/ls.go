@@ -3,6 +3,7 @@ package ls
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"os/user"
@@ -228,7 +229,7 @@ func printLong(fi FileInfo, showInode, showBlocks, humanReadable bool) {
 		sizeStr, fi.ModTime.Format("Jan _2 15:04"), name)
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ls: %v\n", err)
@@ -251,16 +252,16 @@ func run(args []string) int {
 	results, err := Run(paths, showAll, almostAll, recursive)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "ls: %v\n", err)
-		common.RenderError("ls", 2, "ENOENT", err.Error(), jsonMode)
+		common.RenderError("ls", 2, "ENOENT", err.Error(), jsonMode, out)
 		return 2
 	}
 
 	if jsonMode {
 		// Flatten to first result for single-path case.
 		if len(results) == 1 {
-			common.Render("ls", results[0], true, func() {})
+			common.Render("ls", results[0], true, out, func() {})
 		} else {
-			common.Render("ls", results, true, func() {})
+			common.Render("ls", results, true, out, func() {})
 		}
 		return 0
 	}

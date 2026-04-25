@@ -3,6 +3,7 @@ package echo
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -46,7 +47,7 @@ func processEscapes(s string) string {
 	return replacer.Replace(s)
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "echo: %v\n", err)
@@ -59,7 +60,7 @@ func run(args []string) int {
 
 	result := Run(noNewline, escape, flags.Positional)
 
-	common.Render("echo", result, jsonMode, func() {
+	common.Render("echo", result, jsonMode, out, func() {
 		if noNewline {
 			fmt.Print(result.Text)
 		} else {

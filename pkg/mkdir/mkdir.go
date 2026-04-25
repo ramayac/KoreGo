@@ -3,6 +3,7 @@ package mkdir
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"strconv"
@@ -42,7 +43,7 @@ func Run(dirs []string, parents bool, mode fs.FileMode) (MkdirResult, error) {
 	return MkdirResult{Created: created}, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "mkdir: %v\n", err)
@@ -66,10 +67,10 @@ func run(args []string) int {
 	result, err := Run(flags.Positional, parents, mode)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "mkdir: %v\n", err)
-		common.RenderError("mkdir", 1, "EMKDIR", err.Error(), jsonMode)
+		common.RenderError("mkdir", 1, "EMKDIR", err.Error(), jsonMode, out)
 		return 1
 	}
-	common.Render("mkdir", result, jsonMode, func() {})
+	common.Render("mkdir", result, jsonMode, out, func() {})
 	return 0
 }
 

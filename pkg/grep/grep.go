@@ -48,7 +48,7 @@ func Run(r io.Reader, filename string, re *regexp.Regexp, fixedPattern string, i
 	for scanner.Scan() {
 		lineNum++
 		text := scanner.Text()
-		
+
 		var matchFound bool
 		var substrings []string
 
@@ -88,13 +88,13 @@ func Run(r io.Reader, filename string, re *regexp.Regexp, fixedPattern string, i
 	return matches, scanner.Err()
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "grep: %v\n", err)
 		return 2
 	}
-	
+
 	if len(flags.Positional) == 0 {
 		fmt.Fprintln(os.Stderr, "grep: missing pattern")
 		return 2
@@ -102,7 +102,7 @@ func run(args []string) int {
 
 	pattern := flags.Positional[0]
 	paths := flags.Positional[1:]
-	
+
 	jsonMode := flags.Has("j")
 	invert := flags.Has("v")
 	ignoreCase := flags.Has("i")
@@ -136,7 +136,7 @@ func run(args []string) int {
 		if ignoreCase {
 			pattern = "(?i)" + pattern
 		}
-		
+
 		compiled, err := regexp.Compile(pattern)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "grep: invalid regex: %v\n", err)
@@ -219,7 +219,7 @@ func run(args []string) int {
 	}
 
 	if jsonMode {
-		common.Render("grep", allMatches, true, func() {})
+		common.Render("grep", allMatches, true, out, func() {})
 	}
 
 	return exitCode

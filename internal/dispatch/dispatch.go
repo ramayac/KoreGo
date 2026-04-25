@@ -3,6 +3,7 @@ package dispatch
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"sort"
 )
@@ -11,7 +12,7 @@ import (
 type Command struct {
 	Name  string
 	Usage string
-	Run   func(args []string) int // returns POSIX exit code
+	Run   func(args []string, out io.Writer) int // returns POSIX exit code
 }
 
 var registry = map[string]Command{}

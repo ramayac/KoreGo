@@ -44,7 +44,10 @@ PKG_DIRS   := ./pkg/common/... \
               ./pkg/sort/... \
               ./pkg/uniq/... \
               ./pkg/grep/... \
-              ./pkg/sed/...
+              ./pkg/sed/... \
+              ./internal/daemon/... \
+              ./pkg/daemon/... \
+              ./pkg/client/...
 
 .DEFAULT_GOAL := help
 

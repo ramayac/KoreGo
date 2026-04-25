@@ -3,6 +3,7 @@ package yes
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"strings"
@@ -14,7 +15,7 @@ import (
 
 // run prints a string (default "y") forever until killed.
 // Note: yes does not support --json per spec.
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, common.FlagSpec{})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "yes: %v\n", err)

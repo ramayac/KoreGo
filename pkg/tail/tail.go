@@ -46,7 +46,7 @@ func Run(r io.Reader, w io.Writer, linesCount int) ([]string, error) {
 	return lines, scanner.Err()
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tail: %v\n", err)
@@ -105,7 +105,7 @@ func run(args []string) int {
 		if jsonMode {
 			writer = os.NewFile(uintptr(os.Stderr.Fd()), "/dev/null")
 		}
-		
+
 		var w io.Writer = writer
 		if jsonMode {
 			w = io.Discard
@@ -137,7 +137,7 @@ func run(args []string) int {
 	}
 
 	if jsonMode {
-		common.Render("tail", TailResult{Lines: allLines, LineCount: len(allLines)}, true, func() {})
+		common.Render("tail", TailResult{Lines: allLines, LineCount: len(allLines)}, true, out, func() {})
 	}
 
 	return exitCode

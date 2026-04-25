@@ -3,6 +3,7 @@ package stat
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"syscall"
 	"time"
@@ -60,7 +61,7 @@ func Run(path string) (StatResult, error) {
 	return sr, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "stat: %v\n", err)
@@ -76,11 +77,11 @@ func run(args []string) int {
 		result, err := Run(p)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "stat: %v\n", err)
-			common.RenderError("stat", 1, "ESTAT", err.Error(), jsonMode)
+			common.RenderError("stat", 1, "ESTAT", err.Error(), jsonMode, out)
 			exitCode = 1
 			continue
 		}
-		common.Render("stat", result, jsonMode, func() {
+		common.Render("stat", result, jsonMode, out, func() {
 			fmt.Printf("  File: %s\n", result.Path)
 			fmt.Printf("  Size: %-15d Blocks: %-10d  %s\n", result.Size, result.Blocks, result.Mode)
 			fmt.Printf("  Inode: %-14d Links: %d\n", result.Inode, result.Links)

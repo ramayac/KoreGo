@@ -14,16 +14,16 @@ Build the persistent JSON-RPC 2.0 daemon that listens on a Unix socket, routes m
 
 `korego daemon --socket /var/run/korego.sock --workers 4 --log-level info`
 
-- [ ] PID file at `/var/run/korego.pid`
-- [ ] Signal handling: `SIGTERM`/`SIGINT` → graceful shutdown (drain in-flight, close socket, remove PID)
-- [ ] `SIGHUP` → reload config (future)
+- [x] PID file at `/var/run/korego.pid`
+- [x] Signal handling: `SIGTERM`/`SIGINT` → graceful shutdown (drain in-flight, close socket, remove PID)
+- [x] `SIGHUP` → reload config (future)
 
 ### 05.2 — Unix Socket Listener (`internal/daemon/server.go`)
 
-- [ ] `net.Listen("unix", socketPath)`
-- [ ] Remove stale socket file on start (`os.Remove` if exists)
-- [ ] Set socket permissions to `0660`
-- [ ] Accept loop with error handling
+- [x] `net.Listen("unix", socketPath)`
+- [x] Remove stale socket file on start (`os.Remove` if exists)
+- [x] Set socket permissions to `0660`
+- [x] Accept loop with error handling
 
 ### 05.3 — JSON-RPC Router
 
@@ -40,10 +40,10 @@ Method naming: `korego.<utility>` (e.g., `korego.ls`, `korego.echo`)
 {"jsonrpc":"2.0","error":{"code":1002,"message":"not found","data":{"path":"/nope"}},"id":1}
 ```
 
-- [ ] Router maps method string → handler function
-- [ ] Auto-register all utilities from dispatcher registry
-- [ ] Unknown method → error code `-32601`
-- [ ] Invalid params → error code `-32602`
+- [x] Router maps method string → handler function
+- [x] Auto-register all utilities from dispatcher registry
+- [x] Unknown method → error code `-32601`
+- [x] Invalid params → error code `-32602`
 
 ### 05.4 — Worker Pool
 
@@ -70,16 +70,16 @@ func (wp *WorkerPool) Submit(ctx context.Context, fn func()) error {
 }
 ```
 
-- [ ] Bounded goroutine pool (default: `runtime.NumCPU()`)
-- [ ] Context-based timeout for queued requests
-- [ ] Metrics: active workers, queued requests, completed, errors
+- [x] Bounded goroutine pool (default: `runtime.NumCPU()`)
+- [x] Context-based timeout for queued requests
+- [x] Metrics: active workers, queued requests, completed, errors
 
 ### 05.5 — Batch Processing
 
-- [ ] Detect JSON array `[{...},{...}]` → batch mode
-- [ ] Process each request concurrently via worker pool
-- [ ] Return results array in same order as requests
-- [ ] Single request failure doesn't abort batch
+- [x] Detect JSON array `[{...},{...}]` → batch mode
+- [x] Process each request concurrently via worker pool
+- [x] Return results array in same order as requests
+- [x] Single request failure doesn't abort batch
 
 ### 05.6 — Health Check
 
@@ -92,18 +92,18 @@ client, _ := koregoclient.Dial("/var/run/korego.sock")
 result, _ := client.Call("korego.ls", map[string]interface{}{"path": "/tmp"})
 ```
 
-- [ ] Go client for tests and future integrations
-- [ ] Connection pooling
-- [ ] Timeout support
+- [x] Go client for tests and future integrations
+- [x] Connection pooling
+- [x] Timeout support
 
 ## Milestone 05
 
-- [ ] `korego daemon` starts and listens on Unix socket
-- [ ] `korego.ls` over socket returns file list without binary restart
-- [ ] Batch of 10 commands returns 10 results
-- [ ] 100 concurrent requests complete without errors
-- [ ] `korego.ping` returns health status
-- [ ] Graceful shutdown completes within 5s
+- [x] `korego daemon` starts and listens on Unix socket
+- [x] `korego.ls` over socket returns file list without binary restart
+- [x] Batch of 10 commands returns 10 results
+- [x] 100 concurrent requests complete without errors
+- [x] `korego.ping` returns health status
+- [x] Graceful shutdown completes within 5s
 
 ## How to Verify
 

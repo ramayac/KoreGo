@@ -57,10 +57,10 @@ func expandSetList(s string) []rune {
 
 func Run(r io.Reader, w io.Writer, set1, set2 string, deleteFlag, squeezeFlag, complementFlag bool) error {
 	reader := bufio.NewReader(r)
-	
+
 	s1List := expandSetList(set1)
 	s1Map := expandSet(set1)
-	
+
 	var s2List []rune
 	if set2 != "" {
 		s2List = expandSetList(set2)
@@ -129,7 +129,7 @@ func Run(r io.Reader, w io.Writer, set1, set2 string, deleteFlag, squeezeFlag, c
 	return nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tr: %v\n", err)

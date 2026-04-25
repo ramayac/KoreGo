@@ -1,6 +1,7 @@
 package common
 
 import (
+
 	"bytes"
 	"encoding/json"
 	"os"
@@ -36,7 +37,7 @@ func TestRenderJSONStructure(t *testing.T) {
 		Text string `json:"text"`
 	}
 	out := redirectStdout(t, func() {
-		Render("echo", payload{Text: "hello"}, true, func() {})
+		Render("echo", payload{Text: "hello"}, true, os.Stdout, func() {})
 	})
 
 	var env JSONEnvelope
@@ -62,7 +63,7 @@ func TestRenderJSONStructure(t *testing.T) {
 
 func TestRenderJSONAllFiveKeys(t *testing.T) {
 	out := redirectStdout(t, func() {
-		Render("ls", nil, true, func() {})
+		Render("ls", nil, true, os.Stdout, func() {})
 	})
 
 	// Check raw JSON has all five keys present.
@@ -76,7 +77,7 @@ func TestRenderJSONAllFiveKeys(t *testing.T) {
 func TestRenderTextMode(t *testing.T) {
 	called := false
 	out := redirectStdout(t, func() {
-		Render("echo", nil, false, func() { called = true })
+		Render("echo", nil, false, os.Stdout, func() { called = true })
 	})
 	if !called {
 		t.Error("textFn not called in text mode")
@@ -88,7 +89,7 @@ func TestRenderTextMode(t *testing.T) {
 
 func TestRenderErrorJSON(t *testing.T) {
 	out := redirectStdout(t, func() {
-		RenderError("ls", 2, "ENOENT", "no such file or directory: /nope", true)
+		RenderError("ls", 2, "ENOENT", "no such file or directory: /nope", true, os.Stdout)
 	})
 
 	var env JSONEnvelope
@@ -111,7 +112,7 @@ func TestRenderErrorJSON(t *testing.T) {
 
 func TestRenderErrorTextModeNoop(t *testing.T) {
 	out := redirectStdout(t, func() {
-		RenderError("ls", 2, "ENOENT", "oops", false)
+		RenderError("ls", 2, "ENOENT", "oops", false, os.Stdout)
 	})
 	if strings.TrimSpace(out) != "" {
 		t.Errorf("expected no output in text mode, got: %s", out)

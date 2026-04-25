@@ -121,7 +121,7 @@ func Run(r io.Reader, fields, delimiter, chars, bytesList string) ([]CutLine, er
 	return lines, scanner.Err()
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cut: %v\n", err)
@@ -168,7 +168,7 @@ func run(args []string) int {
 	}
 
 	if jsonMode {
-		common.Render("cut", CutResult{Lines: allLines}, true, func() {})
+		common.Render("cut", CutResult{Lines: allLines}, true, out, func() {})
 	} else {
 		for _, line := range allLines {
 			if len(line.Fields) > 0 {

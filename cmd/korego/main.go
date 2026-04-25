@@ -15,6 +15,7 @@ import (
 	_ "github.com/ramayac/korego/pkg/cat"
 	_ "github.com/ramayac/korego/pkg/cp"
 	_ "github.com/ramayac/korego/pkg/cut"
+	_ "github.com/ramayac/korego/pkg/daemon"
 	_ "github.com/ramayac/korego/pkg/dirname"
 	_ "github.com/ramayac/korego/pkg/echo"
 	_ "github.com/ramayac/korego/pkg/env"
@@ -78,6 +79,6 @@ func main() {
 		os.Exit(127)
 	}
 
-	exitCode := cmd.Run(os.Args[1:])
+	exitCode := cmd.Run(os.Args[1:], os.Stdout)
 	os.Exit(exitCode)
 }

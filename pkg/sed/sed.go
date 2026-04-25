@@ -22,10 +22,10 @@ var spec = common.FlagSpec{
 }
 
 type substituteCmd struct {
-	re      *regexp.Regexp
-	repl    string
-	global  bool
-	print   bool
+	re     *regexp.Regexp
+	repl   string
+	global bool
+	print  bool
 }
 
 func parseExpr(expr string) (*substituteCmd, error) {
@@ -65,7 +65,7 @@ func Run(r io.Reader, w io.Writer, cmd *substituteCmd, suppressDefault bool) err
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
-		
+
 		matched := false
 		var out string
 		if cmd != nil {
@@ -99,7 +99,7 @@ func Run(r io.Reader, w io.Writer, cmd *substituteCmd, suppressDefault bool) err
 	return scanner.Err()
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sed: %v\n", err)
@@ -107,7 +107,7 @@ func run(args []string) int {
 	}
 	suppressDefault := flags.Has("n")
 	inPlace := flags.Has("i")
-	
+
 	var expr string
 	if e := flags.Get("e"); e != "" {
 		expr = e

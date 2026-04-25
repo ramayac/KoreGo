@@ -45,7 +45,7 @@ func parseLines(r io.Reader, keyField int, delimiter string, numeric bool) ([]li
 	for scanner.Scan() {
 		text := scanner.Text()
 		item := lineItem{original: text, key: text}
-		
+
 		if keyField > 0 {
 			var parts []string
 			if delimiter != "" {
@@ -53,7 +53,7 @@ func parseLines(r io.Reader, keyField int, delimiter string, numeric bool) ([]li
 			} else {
 				parts = strings.Fields(text)
 			}
-			
+
 			if keyField <= len(parts) {
 				item.key = parts[keyField-1]
 			} else {
@@ -71,7 +71,7 @@ func parseLines(r io.Reader, keyField int, delimiter string, numeric bool) ([]li
 				}
 			}
 		}
-		
+
 		items = append(items, item)
 	}
 
@@ -121,19 +121,19 @@ func Run(items []lineItem, reverse, numeric, unique bool) []string {
 	return result
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sort: %v\n", err)
 		return 2
 	}
-	
+
 	jsonMode := flags.Has("j")
 	reverse := flags.Has("r")
 	numeric := flags.Has("n")
 	unique := flags.Has("u")
 	delimiter := flags.Get("t")
-	
+
 	keyField := 0
 	if kStr := flags.Get("k"); kStr != "" {
 		// Just simplistic parsing, ignores 1,2 complex ranges for now
@@ -175,7 +175,7 @@ func run(args []string) int {
 	sortedLines := Run(allItems, reverse, numeric, unique)
 
 	if jsonMode {
-		common.Render("sort", SortResult{Lines: sortedLines, Count: len(sortedLines)}, true, func() {})
+		common.Render("sort", SortResult{Lines: sortedLines, Count: len(sortedLines)}, true, out, func() {})
 	} else {
 		for _, line := range sortedLines {
 			fmt.Println(line)

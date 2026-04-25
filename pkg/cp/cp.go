@@ -111,7 +111,7 @@ func Run(srcs []string, dst string, recursive, preserve bool) (CpResult, error) 
 	return result, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cp: %v\n", err)
@@ -127,10 +127,10 @@ func run(args []string) int {
 	result, err := Run(srcs, dst, flags.Has("r"), flags.Has("p"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cp: %v\n", err)
-		common.RenderError("cp", 1, "ECP", err.Error(), jsonMode)
+		common.RenderError("cp", 1, "ECP", err.Error(), jsonMode, out)
 		return 1
 	}
-	common.Render("cp", result, jsonMode, func() {})
+	common.Render("cp", result, jsonMode, out, func() {})
 	return 0
 }
 

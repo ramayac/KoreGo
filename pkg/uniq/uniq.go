@@ -73,7 +73,7 @@ func Run(r io.Reader, countMode, duplicatesOnly, uniqueOnly, ignoreCase bool) ([
 	return items, scanner.Err()
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "uniq: %v\n", err)
@@ -96,7 +96,7 @@ func run(args []string) int {
 		in = f
 	}
 
-	var out io.Writer = os.Stdout
+	out = os.Stdout
 	if len(flags.Positional) > 1 {
 		f, err := os.Create(flags.Positional[1])
 		if err != nil {
@@ -114,7 +114,7 @@ func run(args []string) int {
 	}
 
 	if jsonMode {
-		common.Render("uniq", items, true, func() {})
+		common.Render("uniq", items, true, out, func() {})
 	} else {
 		for _, item := range items {
 			if countMode {

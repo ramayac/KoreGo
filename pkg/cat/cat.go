@@ -60,7 +60,7 @@ func Run(r io.Reader, w io.Writer, numberAll, numberNonBlank, squeezeBlank bool)
 	return lines, scanner.Err()
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cat: %v\n", err)
@@ -100,7 +100,7 @@ func run(args []string) int {
 			}
 			allLines = append(allLines, lines...)
 		}
-		common.Render("cat", CatResult{Lines: allLines, LineCount: len(allLines)}, true, func() {})
+		common.Render("cat", CatResult{Lines: allLines, LineCount: len(allLines)}, true, out, func() {})
 		return 0
 	}
 

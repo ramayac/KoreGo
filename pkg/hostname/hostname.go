@@ -3,6 +3,7 @@ package hostname
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/ramayac/korego/internal/dispatch"
@@ -29,7 +30,7 @@ func Run() (HostnameResult, error) {
 	return HostnameResult{Name: name}, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "hostname: %v\n", err)
@@ -40,11 +41,11 @@ func run(args []string) int {
 	result, err := Run()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "hostname: %v\n", err)
-		common.RenderError("hostname", 1, "EHOSTNAME", err.Error(), jsonMode)
+		common.RenderError("hostname", 1, "EHOSTNAME", err.Error(), jsonMode, out)
 		return 1
 	}
 
-	common.Render("hostname", result, jsonMode, func() {
+	common.Render("hostname", result, jsonMode, out, func() {
 		fmt.Println(result.Name)
 	})
 	return 0

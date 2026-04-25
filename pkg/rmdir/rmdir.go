@@ -3,6 +3,7 @@ package rmdir
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -42,7 +43,7 @@ func Run(dirs []string, parents bool) (RmdirResult, error) {
 	return RmdirResult{Removed: removed}, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "rmdir: %v\n", err)
@@ -56,10 +57,10 @@ func run(args []string) int {
 	result, err := Run(flags.Positional, flags.Has("p"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "rmdir: %v\n", err)
-		common.RenderError("rmdir", 1, "ERMDIR", err.Error(), jsonMode)
+		common.RenderError("rmdir", 1, "ERMDIR", err.Error(), jsonMode, out)
 		return 1
 	}
-	common.Render("rmdir", result, jsonMode, func() {})
+	common.Render("rmdir", result, jsonMode, out, func() {})
 	return 0
 }
 

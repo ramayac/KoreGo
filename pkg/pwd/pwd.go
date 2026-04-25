@@ -3,6 +3,7 @@ package pwd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -38,7 +39,7 @@ func Run(physical bool) (PwdResult, error) {
 	return PwdResult{Path: dir}, nil
 }
 
-func run(args []string) int {
+func run(args []string, out io.Writer) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pwd: %v\n", err)
@@ -50,11 +51,11 @@ func run(args []string) int {
 	result, err := Run(physical)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pwd: %v\n", err)
-		common.RenderError("pwd", 1, "EPWD", err.Error(), jsonMode)
+		common.RenderError("pwd", 1, "EPWD", err.Error(), jsonMode, out)
 		return 1
 	}
 
-	common.Render("pwd", result, jsonMode, func() {
+	common.Render("pwd", result, jsonMode, out, func() {
 		fmt.Println(result.Path)
 	})
 	return 0
