@@ -58,12 +58,12 @@ Implement 14 system/process utilities. These require deeper OS interaction via `
 
 ## Milestone 06
 
-- [ ] `korego ps --json` returns process list from `/proc`
-- [ ] `korego find --json -name "*.go" ./` returns structured file list
-- [ ] `korego df --json -h` returns filesystem usage
-- [ ] `korego du --json -sh ./` returns directory size
-- [ ] All accessible via both CLI and daemon RPC
-- [ ] >80% test coverage on all Tier 4 utilities
+- [x] `korego ps --json` returns process list from `/proc`
+- [x] `korego find --json -name "*.go" ./` returns structured file list
+- [x] `korego df --json -h` returns filesystem usage
+- [x] `korego du --json -sh ./` returns directory size
+- [x] All accessible via both CLI and daemon RPC
+- [x] >80% test coverage on all Tier 4 utilities
 
 ## How to Verify
 

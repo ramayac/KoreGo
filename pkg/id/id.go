@@ -1,0 +1,85 @@
+package id
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"os/user"
+	"strconv"
+
+	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/korego/pkg/common"
+)
+
+var spec = common.FlagSpec{
+	Defs: []common.FlagDef{
+		{Short: "j", Long: "json", Type: common.FlagBool},
+	},
+}
+
+type IDInfo struct {
+	UID    int      `json:"uid"`
+	User   string   `json:"user"`
+	GID    int      `json:"gid"`
+	Group  string   `json:"group"`
+	Groups []string `json:"groups"`
+}
+
+func run(args []string, out io.Writer) int {
+	flags, err := common.ParseFlags(args, spec)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "id: %v\n", err)
+		return 1
+	}
+
+	u, err := user.Current()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "id: %v\n", err)
+		return 1
+	}
+
+	uid, _ := strconv.Atoi(u.Uid)
+	gid, _ := strconv.Atoi(u.Gid)
+	
+	g, _ := user.LookupGroupId(u.Gid)
+	groupName := u.Gid
+	if g != nil {
+		groupName = g.Name
+	}
+
+	gids, _ := u.GroupIds()
+
+	info := IDInfo{
+		UID:    uid,
+		User:   u.Username,
+		GID:    gid,
+		Group:  groupName,
+		Groups: gids,
+	}
+
+	jsonMode := flags.Has("j")
+
+	common.Render("id", info, jsonMode, out, func() {
+		fmt.Fprintf(out, "uid=%d(%s) gid=%d(%s)", uid, u.Username, gid, groupName)
+		if len(gids) > 0 {
+			fmt.Fprint(out, " groups=")
+			for i, gg := range gids {
+				gn := gg
+				if goBj, err := user.LookupGroupId(gg); err == nil {
+					gn = goBj.Name
+				}
+				if i > 0 {
+					fmt.Fprint(out, ",")
+				}
+				fmt.Fprintf(out, "%s(%s)", gg, gn)
+			}
+		}
+		fmt.Fprintln(out)
+	})
+
+	return 0
+}
+
+func init() {
+	dispatch.Register(dispatch.Command{Name: "id", Usage: "Print real and effective user and group IDs", Run: run})
+}

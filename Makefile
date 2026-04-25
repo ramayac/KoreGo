@@ -47,7 +47,19 @@ PKG_DIRS   := ./pkg/common/... \
               ./pkg/sed/... \
               ./internal/daemon/... \
               ./pkg/daemon/... \
-              ./pkg/client/...
+              ./pkg/client/... \
+              ./pkg/sleep/... \
+              ./pkg/date/... \
+              ./pkg/id/... \
+              ./pkg/kill/... \
+              ./pkg/df/... \
+              ./pkg/du/... \
+              ./pkg/find/... \
+              ./pkg/ps/... \
+              ./pkg/xargs/... \
+              ./pkg/chmod/... \
+              ./pkg/chown/... \
+              ./pkg/chgrp/...
 
 .DEFAULT_GOAL := help
 
