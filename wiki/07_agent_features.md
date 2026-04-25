@@ -89,12 +89,13 @@ Targets:
 
 ## Milestone 07
 
-- [ ] Agent creates session, sets cwd, runs relative commands
-- [ ] `korego.shell.exec "ls | grep go | wc -l"` returns structured result
-- [ ] Daemon latency < 1ms for `echo`, < 5ms for `ls`
-- [ ] Sessions auto-expire after TTL
-- [ ] `sha256sum --json file` returns hash
-- [ ] `tar -czf archive.tar.gz dir/` creates archive
+- [x] Agent creates session, sets cwd, runs relative commands
+- [x] `korego.shell.exec "ls | grep go | wc -l"` returns structured result
+- [x] Daemon latency < 1ms for `echo`, < 5ms for `ls`
+- [x] Sessions auto-expire after TTL
+- [x] `sha256sum --json file` returns hash
+- [x] `tar -czf archive.tar.gz dir/` creates archive
+- [x] Makefile target so the user can get an interactive shell in the docker image. (docker run -it korego)
 
 ## How to Verify
 

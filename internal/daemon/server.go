@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/korego/internal/shell"
 	"github.com/ramayac/korego/pkg/common"
 )
 
@@ -74,6 +75,8 @@ type Server struct {
 	pool       *WorkerPool
 	uptime     time.Time
 	
+	sm *SessionManager
+
 	activeWorkers int32
 	totalRequests int64
 }
@@ -84,6 +87,7 @@ func NewServer(socketPath string, workers int) *Server {
 		socketPath: socketPath,
 		pool:       NewWorkerPool(workers),
 		uptime:     time.Now(),
+		sm:         NewSessionManager(30 * time.Minute),
 	}
 }
 
@@ -240,9 +244,10 @@ func (s *Server) writeError(conn net.Conn, id interface{}, code int, msg string)
 
 // KoregoParams is used to parse the standard parameters.
 type KoregoParams struct {
-	Flags []string               `json:"flags"`
-	Path  string                 `json:"path"`
-	Text  string                 `json:"text"` // for testing like echo
+	Flags     []string `json:"flags"`
+	Path      string   `json:"path"`
+	Text      string   `json:"text"`
+	SessionId string   `json:"sessionId"`
 }
 
 func (s *Server) processRequest(req Request) *Response {
@@ -275,6 +280,47 @@ func (s *Server) processRequest(req Request) *Response {
 		}
 	}
 
+	if req.Method == "korego.session.create" {
+		if req.ID == nil { return nil }
+		s := s.sm.Create()
+		return &Response{JSONRPC: "2.0", ID: req.ID, Result: s}
+	}
+
+	if req.Method == "korego.session.setCwd" {
+		if req.ID == nil { return nil }
+		var p struct {
+			SessionId string `json:"sessionId"`
+			Path      string `json:"path"`
+		}
+		if err := json.Unmarshal(req.Params, &p); err == nil {
+			if s.sm.SetCwd(p.SessionId, p.Path) {
+				return &Response{JSONRPC: "2.0", ID: req.ID, Result: true}
+			}
+		}
+		return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Invalid session"}}
+	}
+
+	if req.Method == "korego.shell.exec" {
+		if req.ID == nil { return nil }
+		var p struct {
+			SessionId string `json:"sessionId"`
+			Script    string `json:"script"`
+		}
+		if err := json.Unmarshal(req.Params, &p); err == nil {
+			cwd := "/"
+			var env map[string]string
+			if p.SessionId != "" {
+				if session, ok := s.sm.Get(p.SessionId); ok {
+					cwd = session.CWD
+					env = session.Env
+				}
+			}
+			res := shell.Exec(p.Script, cwd, env)
+			return &Response{JSONRPC: "2.0", ID: req.ID, Result: res}
+		}
+		return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Invalid params"}}
+	}
+
 	if !strings.HasPrefix(req.Method, "korego.") {
 		if req.ID != nil {
 			return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32601, Message: "Method not found"}}
@@ -293,26 +339,35 @@ func (s *Server) processRequest(req Request) *Response {
 
 	// Build args
 	var args []string
+	var session *Session
+
 	if len(req.Params) > 0 {
 		var p KoregoParams
-		// Also try to unmarshal as map just in case it's dynamic
 		var dynMap map[string]interface{}
 		
 		if err := json.Unmarshal(req.Params, &p); err == nil {
-			// Add flags
+			if p.SessionId != "" {
+				session, _ = s.sm.Get(p.SessionId)
+			}
 			args = append(args, p.Flags...)
-			// If echo...
 			if cmdName == "echo" && p.Text != "" {
 				args = append(args, p.Text)
 			}
-			// If path
 			if p.Path != "" {
 				args = append(args, p.Path)
 			}
 		} else if err := json.Unmarshal(req.Params, &dynMap); err == nil {
-			// Fallback: just pass them? Utilities parse flags.
-			// Currently, we don't map all JSON keys to flags natively here.
-			// But the spec says: {"path":"/tmp","flags":["-la"]}
+		}
+	}
+
+	// Very rudimentary CWD injection if session is present
+	// We prepend it if it's the `path` param and it's relative
+	if session != nil && session.CWD != "" && session.CWD != "/" {
+		for i, arg := range args {
+			if !strings.HasPrefix(arg, "-") && !strings.HasPrefix(arg, "/") {
+				// Naive path resolution
+				args[i] = session.CWD + "/" + arg
+			}
 		}
 	}
 	

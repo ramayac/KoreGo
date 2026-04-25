@@ -59,7 +59,10 @@ PKG_DIRS   := ./pkg/common/... \
               ./pkg/xargs/... \
               ./pkg/chmod/... \
               ./pkg/chown/... \
-              ./pkg/chgrp/...
+              ./pkg/chgrp/... \
+              ./pkg/sha256sum/... \
+              ./pkg/tar/... \
+              ./internal/shell/...
 
 .DEFAULT_GOAL := help
 
@@ -180,11 +183,12 @@ docker:
 	  -f docker/Dockerfile .
 
 .PHONY: docker-debug
-docker-debug:
-	docker build \
-	  --build-arg VERSION=$(VERSION) \
-	  -t korego:debug \
-	  -f docker/Dockerfile.debug .
+docker-debug: ## Build debug alpine docker image
+	docker build -t korego:debug -f docker/Dockerfile.debug .
+
+.PHONY: docker-shell
+docker-shell: docker-debug ## Run an interactive shell in the docker image
+	docker run -it --rm korego:debug sh
 
 # smoke-docker: run smoke checks inside the production scratch container.
 .PHONY: smoke-docker
