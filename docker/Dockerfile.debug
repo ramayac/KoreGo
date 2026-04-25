@@ -35,4 +35,4 @@ RUN while IFS= read -r cmd; do ln -s /bin/korego "/bin/${cmd}"; done < /commands
 RUN addgroup -g 1000 korego && adduser -u 1000 -G korego -s /bin/sh -D korego
 
 USER korego
-ENTRYPOINT ["/bin/korego"]
+CMD ["/bin/sh"]
