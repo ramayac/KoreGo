@@ -2,11 +2,9 @@
 # Debug image — same binary, Alpine base so you can exec in and poke around.
 # Usage: docker run -it --rm korego:debug sh
 # =============================================================================
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 RUN apk add --no-cache git ca-certificates
-
-WORKDIR /src
 COPY go.mod ./
 RUN go mod download
 COPY . .
