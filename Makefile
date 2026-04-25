@@ -190,6 +190,10 @@ docker-debug: ## Build debug alpine docker image
 docker-shell: docker-debug ## Run an interactive shell in the docker image
 	docker run -it --rm korego:debug sh
 
+.PHONY: docker-run
+docker-run: docker ## Run a command in the production scratch container (e.g., make docker-run CMD="ls -la")
+	docker run --rm $(DOCKER_IMG) $(CMD)
+
 # smoke-docker: run smoke checks inside the production scratch container.
 .PHONY: smoke-docker
 smoke-docker: docker

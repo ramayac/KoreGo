@@ -21,16 +21,19 @@ RUN VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "dev")
 # Emit one command name per line for the symlink stage.
 RUN /korego --list-commands > /commands.txt
 
-# =============================================================================
-# Stage 2: Symlink generator (needs a shell)
+# Stage 2: Symlink generator
 # =============================================================================
 FROM alpine:3.20 AS symlinker
 
-COPY --from=builder /korego /bin/korego
+# We create a clean directory for our binary and symlinks to avoid 
+# pulling in alpine's busybox and other binaries.
+RUN mkdir -p /out/bin
+
+COPY --from=builder /korego /out/bin/korego
 COPY --from=builder /commands.txt /commands.txt
 
-# Create /bin symlinks for every registered command.
-RUN while IFS= read -r cmd; do ln -s /bin/korego "/bin/${cmd}"; done < /commands.txt
+# Create /bin symlinks for every registered command inside /out/bin
+RUN while IFS= read -r cmd; do ln -s /bin/korego "/out/bin/${cmd}"; done < /commands.txt
 
 # Non-root user & group for the scratch stage.
 RUN echo "korego:x:1000:1000::/home/korego:/bin/false" >> /etc/passwd && \
@@ -54,8 +57,8 @@ COPY --from=symlinker /etc/passwd /etc/passwd
 COPY --from=symlinker /etc/group  /etc/group
 COPY --from=symlinker /home/korego /home/korego
 
-# Binary + every symlink.
-COPY --from=symlinker /bin/ /bin/
+# Copy our clean /bin directory.
+COPY --from=symlinker /out/bin/ /bin/
 
 USER korego
 ENTRYPOINT ["/bin/korego"]

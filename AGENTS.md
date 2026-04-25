@@ -63,4 +63,11 @@ Refer to the Phase documents in `wiki/` (e.g., `wiki/plan_updated.md`) to unders
 - **Phase 06:** System & Process Utils (ps, find, df, du, etc.) — **COMPLETED**
 - **Phase 07+:** See project roadmap.
 
+## 7. Docker & Containerization Insights
+
+- **Go Version Alignment:** Always ensure the `golang` base image version in `docker/Dockerfile*` matches or exceeds the `go` version specified in `go.mod`. Failing to do so will break the build during `go mod download`.
+- **Debug Image Flexibility:** Use `CMD ["/bin/sh"]` instead of `ENTRYPOINT` in debug images. This allows `docker run -it korego:debug sh` to work as expected, rather than passing `sh` as an argument to the `korego` multicall binary.
+- **Scratch Image Purity:** When generating symlinks in a multi-stage Docker build, do **not** `COPY --from=stage /bin/ /bin/`. This pulls in all host OS binaries (like Alpine's BusyBox). Instead, create a dedicated output directory (e.g., `/out/bin`) in the intermediate stage and copy only that to the final `scratch` image.
+- **Testing Production:** Use `make smoke-docker` to verify the production image. Use `make docker-run CMD="ls -la"` for ad-hoc testing of specific utilities inside the minimal `scratch` environment.
+
 **Always read the active Phase document before writing code!**

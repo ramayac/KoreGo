@@ -76,7 +76,7 @@ korego/
 ├── docs/
 │   ├── JSON_SCHEMA.md
 │   ├── RPC_API.md
-│   └── POSIX_COVERAGE.md
+│   └── ...
 ├── go.mod
 ├── Makefile
 └── README.md
@@ -110,6 +110,7 @@ korego/
 | [07_agent_features.md](07_agent_features.md) | Agent-Ready Features (sessions, shell, Tier 5) | TODO |
 | [08_hardening.md](08_hardening.md) | Production Hardening & Security | TODO |
 | [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | TODO |
+| [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | TODO |
 
 ---
 

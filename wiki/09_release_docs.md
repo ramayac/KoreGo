@@ -55,7 +55,7 @@ changelog:
 | `AGENTS.md` | Coding conventions, commit format, PR rules | [ ] |
 | `docs/JSON_SCHEMA.md` | `--json` output schema for every utility with examples | [ ] |
 | `docs/RPC_API.md` | JSON-RPC method catalog, request/response, error codes | [ ] |
-| `docs/POSIX_COVERAGE.md` | Compliance matrix: utility × flag × status | [ ] |
+| `wiki/posix_coverage.md` | Compliance matrix: utility × flag × status | [ ] |
 | `docs/ARCHITECTURE.md` | System architecture, package diagram, data flow | [ ] |
 | GoDoc (inline) | Every exported function, type, and package | [ ] |
 

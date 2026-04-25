@@ -46,7 +46,7 @@ Harden the daemon and container for production use. Security audit, resource lim
 - [ ] Socket file cleanup on crash (stale socket detection on restart)
 - [ ] Fuzz testing on JSON-RPC parser (`go test -fuzz`)
 
-### 08.5 — POSIX Coverage Matrix (`docs/POSIX_COVERAGE.md`)
+### 08.5 — POSIX Coverage Matrix (`wiki/posix_coverage.md`)
 
 ```markdown
 | Utility | Status | Flags Implemented | Flags Missing | Notes |
