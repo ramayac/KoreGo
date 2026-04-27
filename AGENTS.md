@@ -1,6 +1,6 @@
 # Agent Context & Directives for KoreGo
 
-**Hello AI Assistant!** If you are reading this, you are working on **KoreGo** (formerly CoreGoLinux). This document provides the critical context, architectural invariants, and workflow rules required to contribute successfully to this project. 
+**Hello AI Assistant!** you are working on **KoreGo**. This document provides the critical context, architectural invariants, and workflow rules required to contribute successfully to this project. 
 
 ## 1. Project Identity & Goal
 
