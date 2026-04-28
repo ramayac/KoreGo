@@ -50,7 +50,7 @@ korego binary (single static ELF, ~15MB)
 | **2 — Filesystem** | `ls`, `cat`, `mkdir`, `rmdir`, `rm`, `cp`, `mv`, `touch`, `ln`, `stat`, `readlink`, `basename`, `dirname` | 03 |
 | **3 — Text** | `head`, `tail`, `wc`, `sort`, `uniq`, `tr`, `cut`, `tee`, `grep`, `sed` | 04 |
 | **4 — System** | `ps`, `kill`, `sleep`, `date`, `id`, `groups`, `chmod`, `chown`, `chgrp`, `df`, `du`, `find`, `xargs` | 06 |
-| **5 — Advanced** | `awk`, `tar`, `gzip`, `sha256sum`, `md5sum`, `diff`, `patch`, `test`/`[`, `printf`, `expr` | 07 |
+| **5 — Advanced** | `awk` (Deferred), `tar`, `gzip`, `sha256sum`, `md5sum`, `diff`, `patch`, `test`/`[`, `printf`, `expr` | 07 |
 
 ### Directory Layout
 
@@ -107,7 +107,7 @@ korego/
 | [04_text_processing.md](04_text_processing.md) | Tier 3 — Text Processing Utilities | **COMPLETED** |
 | [05_daemon_core.md](05_daemon_core.md) | JSON-RPC Daemon — Core Server | **COMPLETED** |
 | [06_system_utils.md](06_system_utils.md) | Tier 4 — System & Process Utilities | **COMPLETED** |
-| [07_agent_features.md](07_agent_features.md) | Agent-Ready Features (sessions, shell, Tier 5) | TODO |
+| [07_agent_features.md](07_agent_features.md) | Agent-Ready Features (sessions, shell, Tier 5) | **COMPLETED** |
 | [08_hardening.md](08_hardening.md) | Production Hardening & Security | TODO |
 | [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | TODO |
 | [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | TODO |
@@ -119,7 +119,7 @@ korego/
 | Risk | Impact | Likelihood | Mitigation |
 |------|--------|------------|------------|
 | POSIX spec ambiguity | Med | High | Use GNU coreutils behavior as reference |
-| `awk`/`sed` complexity | High | High | Start with feature subset, iterate |
+| `awk`/`sed` complexity | High | High | `awk` deferred to post-MVP, `sed` implemented incrementally |
 | Binary size bloat | Med | Med | `-ldflags="-s -w"`, build tags |
 | Daemon memory leaks | High | Med | `go test -race`, `pprof`, session TTLs |
 | Shell interpreter security | High | Med | Sandbox: no network, restricted fs, timeouts |

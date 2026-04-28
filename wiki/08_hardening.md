@@ -48,18 +48,11 @@ Harden the daemon and container for production use. Security audit, resource lim
 
 ### 08.5 — POSIX Coverage Matrix (`wiki/posix_coverage.md`)
 
-```markdown
-| Utility | Status | Flags Implemented | Flags Missing | Notes |
-|---------|--------|-------------------|---------------|-------|
-| ls      | ✅     | -laRhtrdSi1A      | -C -x -g -G   | |
-| grep    | ⚠️     | -ivclnrEFwx       | BRE backrefs   | Go RE2 limitation |
-| sed     | ⚠️     | s, d, p, q, -i    | y, H, G, N     | Incremental |
-| awk     | ⚠️     | Basic patterns     | Full awk spec  | Subset only |
-```
-
-- [ ] Matrix covers all 50+ utilities
-- [ ] Each utility lists: implemented flags, missing flags, known deviations
+- [x] Matrix covers all 50+ utilities (Completed, see `posix_coverage.md`)
+- [x] Each utility lists: implemented flags, missing flags, known deviations
 - [ ] Overall compliance percentage calculated
+
+*(Note: `awk` has been explicitly deferred from the MVP scope.)*
 
 ## Milestone 08
 
