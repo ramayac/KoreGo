@@ -61,16 +61,146 @@ All daemon operations log as structured JSON to stderr/file.
 
 ### 07.4 — Tier 5 Utilities
 
-| Utility | Notes |
-|---------|-------|
-| `test`/`[` | Conditional expressions. Returns exit code 0/1. |
-| `printf` | Formatted output (POSIX format specifiers) |
-| `expr` | Integer arithmetic and string operations |
-| `sha256sum`/`md5sum` | Hash files. `--json` → `[{"file":"f","hash":"abc..."}]` |
-| `tar` | Create/extract archives. `-c`, `-x`, `-f`, `-z` (gzip), `-v` |
-| `gzip`/`gunzip` | Compress/decompress. Uses `compress/gzip` stdlib |
-| `diff` | Compare files line by line. `--json` → structured hunks |
-| `awk` | Start with basic: pattern matching, field splitting, print |
+Implemented in order of complexity, each building on patterns established by earlier utilities.
+
+> **Note:** `awk` has been moved to a dedicated document — see [07a_awk.md](07a_awk.md).
+
+---
+
+#### 07.4.1 — `printf` (Formatted Output) ⚠️ Partial
+
+**Complexity:** Low — pure output, no filesystem interaction.
+
+Implement POSIX `printf` with format specifiers (`%s`, `%d`, `%x`, `%o`, `%f`, `\n`, `\t`, `\\`, `\0NNN`).
+
+- [x] Parse format string and argument list (basic — delegates to `fmt.Sprintf`)
+- [x] Support escape sequences `\n`, `\t`, `\r`
+- [ ] Support `%x`, `%o`, `%f` specifiers with width/precision (currently relies on Go's Sprintf)
+- [ ] Support `\\`, `\0NNN` octal escapes
+- [ ] Cycle through args if more args than specifiers
+- [x] `--json` output via `common.Render`
+- [ ] Unit tests
+- [ ] Compliance test
+
+---
+
+#### 07.4.2 — `expr` (Integer Arithmetic & String Ops) ⚠️ Naive Stub
+
+**Complexity:** Low-Medium — recursive-descent expression parser, no I/O.
+
+Implement POSIX `expr` supporting arithmetic (`+`, `-`, `*`, `/`, `%`), comparison (`<`, `<=`, `=`, `!=`, `>=`, `>`), logical (`|`, `&`), string matching (`:` / `match`), and `substr`, `index`, `length`.
+
+- [x] Basic `A OP B` arithmetic (`+`, `-`, `*`, `/`) with `Atoi`
+- [x] Division-by-zero guard
+- [x] Exit code `1` when result is zero, `2` on error
+- [ ] Tokenizer for full POSIX expr grammar
+- [ ] Recursive-descent evaluator with correct operator precedence
+- [ ] Comparison operators (`<`, `<=`, `=`, `!=`, `>=`, `>`)
+- [ ] Logical operators (`|`, `&`)
+- [ ] Modulo (`%`)
+- [ ] String operations: `match`, `substr`, `index`, `length`
+- [x] `--json` output via `common.Render`
+- [ ] Unit tests
+- [ ] Compliance test
+
+---
+
+#### 07.4.3 — `test` / `[` (Conditional Expressions) ❌ Not Implemented
+
+**Complexity:** Medium — must handle file tests, string tests, integer comparisons, and compound expressions.
+
+Implement POSIX `test` (and `[` symlink form) for shell conditional evaluation.
+
+> ⚠️ `pkg/testcmd/` directory exists but is **empty** — no source code.
+
+- [ ] File tests: `-e`, `-f`, `-d`, `-s`, `-r`, `-w`, `-x`, `-L`, `-h`
+- [ ] String tests: `-z`, `-n`, `=`, `!=`
+- [ ] Integer comparisons: `-eq`, `-ne`, `-lt`, `-le`, `-gt`, `-ge`
+- [ ] Logical operators: `!`, `-a`, `-o`, `(`, `)`
+- [ ] `[` mode: validate closing `]` argument
+- [ ] Exit code only (no stdout), `--json` → `{"result": true/false}`
+- [ ] Unit tests
+- [ ] Compliance test
+
+---
+
+#### 07.4.4 — `sha256sum` / `md5sum` (Cryptographic Hashing) ⚠️ Partial
+
+**Complexity:** Medium — streaming file I/O with `crypto/sha256` and `crypto/md5`.
+
+Hash one or more files, output in standard `HASH  FILENAME` format.
+
+**`sha256sum`** — partial implementation (75 lines):
+- [x] Stream file contents through `sha256.New()` via `io.Copy` (no full-file buffering)
+- [x] Multi-file hashing with per-file error handling
+- [x] `--json` output via `common.Render`
+- [ ] Support `-c` / `--check` mode (verify hashes from a checksum file)
+- [ ] Handle stdin via `-` argument (stub comment exists, not implemented)
+
+**`md5sum`** — not implemented:
+- [ ] `pkg/md5sum/` directory exists but is **empty**
+- [ ] Implement `md5sum` (mirror `sha256sum` with `crypto/md5`)
+
+**Shared:**
+- [ ] Unit tests
+- [ ] Compliance test
+
+---
+
+#### 07.4.5 — `diff` (File Comparison) ⚠️ Naive Stub
+
+**Complexity:** Medium-High — Myers diff algorithm, hunk formatting.
+
+Compare two files line by line, producing unified diff output.
+
+- [x] Read two files, compare with `bytes.Equal`
+- [x] Exit code: `0` (identical), `1` (different), `2` (error)
+- [x] Basic `--json` output (`{"differ": true/false}`)
+- [ ] Implement Myers diff algorithm (or equivalent LCS-based)
+- [ ] Unified diff format with `---`/`+++` headers and `@@` hunk markers
+- [ ] Context lines (default 3, configurable via `-U N`)
+- [ ] `--json` structured hunks: `{"files": [...], "hunks": [...]}`
+- [ ] Unit tests
+- [ ] Compliance test
+
+---
+
+#### 07.4.6 — `gzip` / `gunzip` (Compression) ⚠️ Partial
+
+**Complexity:** Medium-High — streaming compression with `compress/gzip`, file replacement semantics.
+
+Compress and decompress files using gzip format.
+
+- [x] `gzip FILE` → creates `FILE.gz`, removes original
+- [x] `gunzip FILE.gz` → restores `FILE`, removes `.gz`
+- [x] `-d` / `--decompress` — gzip delegates to gunzip
+- [x] Stdin/stdout piping when no file argument
+- [ ] `-c` / `--stdout` — write to stdout, keep original
+- [ ] `-k` / `--keep` — keep original file
+- [ ] `-f` / `--force` — overwrite existing output
+- [ ] `--json` output with size/ratio stats (currently just `{"status": "compressed successfully"}`)
+- [ ] Unit tests
+- [ ] Compliance test
+
+---
+
+#### 07.4.7 — `tar` (Archive Create/Extract) ⚠️ Partial
+
+**Complexity:** High — recursive directory traversal, multiple archive formats, gzip integration.
+
+Create and extract tar archives with optional gzip compression.
+
+- [x] `-c` — create archive (working, uses `filepath.Walk` + `tar.Writer`)
+- [x] `-f FILE` — specify archive filename
+- [x] `-z` — gzip compression on create (via `compress/gzip`)
+- [x] `-v` — verbose listing during create
+- [x] Preserve permissions and timestamps (via `tar.FileInfoHeader`)
+- [ ] `-x` — extract archive (**stub only** — returns 0 but does nothing)
+- [ ] `-t` — list archive contents
+- [ ] `-C DIR` — change to directory before operating
+- [ ] `--json` output: `{"files": [{"name": "...", "size": N, "mode": "..."}]}`
+- [ ] Unit tests
+- [ ] Compliance test
 
 ### 07.5 — Benchmarking Suite
 

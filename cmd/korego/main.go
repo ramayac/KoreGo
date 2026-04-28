@@ -58,6 +58,10 @@ import (
 	_ "github.com/ramayac/korego/pkg/whoami"
 	_ "github.com/ramayac/korego/pkg/xargs"
 	_ "github.com/ramayac/korego/pkg/yes"
+	_ "github.com/ramayac/korego/pkg/printf"
+	_ "github.com/ramayac/korego/pkg/expr"
+	_ "github.com/ramayac/korego/pkg/gzip"
+	_ "github.com/ramayac/korego/pkg/diff"
 )
 
 // Version is set by -ldflags at build time.
