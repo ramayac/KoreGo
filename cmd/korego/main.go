@@ -62,6 +62,8 @@ import (
 	_ "github.com/ramayac/korego/pkg/expr"
 	_ "github.com/ramayac/korego/pkg/gzip"
 	_ "github.com/ramayac/korego/pkg/diff"
+	_ "github.com/ramayac/korego/pkg/testcmd"
+	_ "github.com/ramayac/korego/pkg/md5sum"
 )
 
 // Version is set by -ldflags at build time.

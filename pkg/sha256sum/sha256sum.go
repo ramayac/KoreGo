@@ -1,25 +1,46 @@
+// Package sha256sum implements the POSIX sha256sum utility.
 package sha256sum
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/ramayac/korego/internal/dispatch"
 	"github.com/ramayac/korego/pkg/common"
 )
 
+// HashResult holds a single file hash result.
+type HashResult struct {
+	File      string `json:"file"`
+	Hash      string `json:"hash"`
+	Algorithm string `json:"algorithm"`
+}
+
+// CheckResult holds the result of verifying one line from a checksum file.
+type CheckResult struct {
+	File   string `json:"file"`
+	Status string `json:"status"` // "OK" or "FAILED"
+}
+
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
+		{Short: "c", Long: "check", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
 
-type HashResult struct {
-	File string `json:"file"`
-	Hash string `json:"hash"`
+// HashFile computes the SHA-256 hash of an io.Reader.
+func HashFile(r io.Reader) (string, error) {
+	h := sha256.New()
+	if _, err := io.Copy(h, r); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 func run(args []string, out io.Writer) int {
@@ -29,37 +50,53 @@ func run(args []string, out io.Writer) int {
 		return 1
 	}
 
+	jsonMode := flags.Has("json")
+	checkMode := flags.Has("check")
+
+	if checkMode {
+		return runCheck(flags.Positional, jsonMode, out)
+	}
+
+	return runHash(flags.Positional, flags.Stdin, jsonMode, out)
+}
+
+func runHash(files []string, readStdin bool, jsonMode bool, out io.Writer) int {
 	var results []HashResult
 	exitCode := 0
 
-	files := flags.Positional
-	if len(files) == 0 {
-		// Read from stdin?
-		// For simplicity we skip stdin hashing for now and just require files
+	// If no files specified or stdin marker, read from stdin
+	if len(files) == 0 || readStdin {
+		if len(files) == 0 {
+			files = []string{"-"}
+		}
 	}
 
 	for _, file := range files {
-		f, err := os.Open(file)
+		var r io.Reader
+		var name string
+		if file == "-" {
+			r = os.Stdin
+			name = "-"
+		} else {
+			f, err := os.Open(file)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "sha256sum: %s: %v\n", file, err)
+				exitCode = 1
+				continue
+			}
+			defer f.Close()
+			r = f
+			name = file
+		}
+
+		hash, err := HashFile(r)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "sha256sum: %s: %v\n", file, err)
+			fmt.Fprintf(os.Stderr, "sha256sum: %s: %v\n", name, err)
 			exitCode = 1
 			continue
 		}
-		
-		h := sha256.New()
-		if _, err := io.Copy(h, f); err != nil {
-			fmt.Fprintf(os.Stderr, "sha256sum: %s: %v\n", file, err)
-			exitCode = 1
-			f.Close()
-			continue
-		}
-		f.Close()
-
-		hash := hex.EncodeToString(h.Sum(nil))
-		results = append(results, HashResult{File: file, Hash: hash})
+		results = append(results, HashResult{File: name, Hash: hash, Algorithm: "sha256"})
 	}
-
-	jsonMode := flags.Has("j")
 
 	common.Render("sha256sum", results, jsonMode, out, func() {
 		for _, r := range results {
@@ -70,6 +107,89 @@ func run(args []string, out io.Writer) int {
 	return exitCode
 }
 
+func runCheck(files []string, jsonMode bool, out io.Writer) int {
+	if len(files) == 0 {
+		common.RenderError("sha256sum", 1, "MISSING_FILE", "no checksum file specified", jsonMode, out)
+		if !jsonMode {
+			fmt.Fprintf(os.Stderr, "sha256sum: no checksum file specified\n")
+		}
+		return 1
+	}
+
+	exitCode := 0
+	var results []CheckResult
+
+	for _, checksumFile := range files {
+		f, err := os.Open(checksumFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "sha256sum: %s: %v\n", checksumFile, err)
+			exitCode = 1
+			continue
+		}
+		defer f.Close()
+
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+
+			// Format: HASH  FILENAME (two spaces between)
+			parts := strings.SplitN(line, "  ", 2)
+			if len(parts) != 2 {
+				// Try single space
+				parts = strings.SplitN(line, " ", 2)
+				if len(parts) != 2 {
+					fmt.Fprintf(os.Stderr, "sha256sum: %s: improperly formatted checksum line\n", checksumFile)
+					exitCode = 1
+					continue
+				}
+				parts[1] = strings.TrimLeft(parts[1], " ")
+			}
+
+			expectedHash := parts[0]
+			targetFile := parts[1]
+
+			tf, err := os.Open(targetFile)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s: FAILED open or read\n", targetFile)
+				results = append(results, CheckResult{File: targetFile, Status: "FAILED"})
+				exitCode = 1
+				continue
+			}
+
+			actualHash, err := HashFile(tf)
+			tf.Close()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s: FAILED open or read\n", targetFile)
+				results = append(results, CheckResult{File: targetFile, Status: "FAILED"})
+				exitCode = 1
+				continue
+			}
+
+			if actualHash == expectedHash {
+				results = append(results, CheckResult{File: targetFile, Status: "OK"})
+			} else {
+				results = append(results, CheckResult{File: targetFile, Status: "FAILED"})
+				exitCode = 1
+			}
+		}
+	}
+
+	common.Render("sha256sum", results, jsonMode, out, func() {
+		for _, r := range results {
+			fmt.Fprintf(out, "%s: %s\n", r.File, r.Status)
+		}
+	})
+
+	return exitCode
+}
+
 func init() {
-	dispatch.Register(dispatch.Command{Name: "sha256sum", Usage: "Compute and check SHA256 message digest", Run: run})
+	dispatch.Register(dispatch.Command{
+		Name:  "sha256sum",
+		Usage: "Compute and check SHA256 message digest",
+		Run:   run,
+	})
 }

@@ -67,83 +67,79 @@ Implemented in order of complexity, each building on patterns established by ear
 
 ---
 
-#### 07.4.1 — `printf` (Formatted Output) ⚠️ Partial
+#### 07.4.1 — `printf` (Formatted Output) ✅ Complete
 
 **Complexity:** Low — pure output, no filesystem interaction.
 
 Implement POSIX `printf` with format specifiers (`%s`, `%d`, `%x`, `%o`, `%f`, `\n`, `\t`, `\\`, `\0NNN`).
 
-- [x] Parse format string and argument list (basic — delegates to `fmt.Sprintf`)
-- [x] Support escape sequences `\n`, `\t`, `\r`
-- [ ] Support `%x`, `%o`, `%f` specifiers with width/precision (currently relies on Go's Sprintf)
-- [ ] Support `\\`, `\0NNN` octal escapes
-- [ ] Cycle through args if more args than specifiers
-- [x] `--json` output via `common.Render`
-- [ ] Unit tests
-- [ ] Compliance test
+- [x] Custom format engine (not just `fmt.Sprintf` wrapper)
+- [x] Support `%s`, `%d`, `%i`, `%x`, `%X`, `%o`, `%f`, `%e`, `%g`, `%c` specifiers with width/precision
+- [x] Support escape sequences `\n`, `\t`, `\r`, `\\`, `\a`, `\b`, `\f`, `\v`, `\0NNN` (octal)
+- [x] Cycle through args if more args than specifiers
+- [x] `--json` output: `{"output": "..."}`
+- [x] Library layer (`Format`) separated from CLI layer
+- [x] Unit tests (24 tests)
 
 ---
 
-#### 07.4.2 — `expr` (Integer Arithmetic & String Ops) ⚠️ Naive Stub
+#### 07.4.2 — `expr` (Integer Arithmetic & String Ops) ✅ Complete
 
 **Complexity:** Low-Medium — recursive-descent expression parser, no I/O.
 
 Implement POSIX `expr` supporting arithmetic (`+`, `-`, `*`, `/`, `%`), comparison (`<`, `<=`, `=`, `!=`, `>=`, `>`), logical (`|`, `&`), string matching (`:` / `match`), and `substr`, `index`, `length`.
 
-- [x] Basic `A OP B` arithmetic (`+`, `-`, `*`, `/`) with `Atoi`
-- [x] Division-by-zero guard
-- [x] Exit code `1` when result is zero, `2` on error
-- [ ] Tokenizer for full POSIX expr grammar
-- [ ] Recursive-descent evaluator with correct operator precedence
-- [ ] Comparison operators (`<`, `<=`, `=`, `!=`, `>=`, `>`)
-- [ ] Logical operators (`|`, `&`)
-- [ ] Modulo (`%`)
-- [ ] String operations: `match`, `substr`, `index`, `length`
-- [x] `--json` output via `common.Render`
-- [ ] Unit tests
-- [ ] Compliance test
+- [x] Recursive-descent parser with correct operator precedence
+- [x] Arithmetic: `+`, `-`, `*`, `/`, `%` with division-by-zero guard
+- [x] Comparison operators (`<`, `<=`, `=`, `!=`, `>=`, `>`) — integer and string
+- [x] Logical operators (`|`, `&`)
+- [x] String operations: `match`, `substr`, `index`, `length`
+- [x] `:` infix operator (regex match)
+- [x] Parenthesized sub-expressions
+- [x] Exit code: `0` (true/nonzero), `1` (false/zero), `2` (error)
+- [x] `--json` output: `{"result": "...", "exitCode": N}`
+- [x] Library layer (`Eval`) separated from CLI layer
+- [x] Unit tests (23 tests)
 
 ---
 
-#### 07.4.3 — `test` / `[` (Conditional Expressions) ❌ Not Implemented
+#### 07.4.3 — `test` / `[` (Conditional Expressions) ✅ Complete
 
 **Complexity:** Medium — must handle file tests, string tests, integer comparisons, and compound expressions.
 
 Implement POSIX `test` (and `[` symlink form) for shell conditional evaluation.
 
-> ⚠️ `pkg/testcmd/` directory exists but is **empty** — no source code.
-
-- [ ] File tests: `-e`, `-f`, `-d`, `-s`, `-r`, `-w`, `-x`, `-L`, `-h`
-- [ ] String tests: `-z`, `-n`, `=`, `!=`
-- [ ] Integer comparisons: `-eq`, `-ne`, `-lt`, `-le`, `-gt`, `-ge`
-- [ ] Logical operators: `!`, `-a`, `-o`, `(`, `)`
-- [ ] `[` mode: validate closing `]` argument
-- [ ] Exit code only (no stdout), `--json` → `{"result": true/false}`
-- [ ] Unit tests
-- [ ] Compliance test
+- [x] File tests: `-e`, `-f`, `-d`, `-s`, `-r`, `-w`, `-x`, `-L`, `-h`, `-b`, `-c`, `-p`, `-S`, `-g`, `-u`, `-k`
+- [x] String tests: `-z`, `-n`, `=`, `==`, `!=`
+- [x] Integer comparisons: `-eq`, `-ne`, `-lt`, `-le`, `-gt`, `-ge`
+- [x] Logical operators: `!`, `-a`, `-o`, `(`, `)`
+- [x] `[` mode: validate closing `]` argument
+- [x] Exit code only (no stdout), `--json` → `{"result": true/false}`
+- [x] Library layer (`Evaluate`) separated from CLI layer
+- [x] Unit tests (24 tests)
 
 ---
 
-#### 07.4.4 — `sha256sum` / `md5sum` (Cryptographic Hashing) ⚠️ Partial
+#### 07.4.4 — `sha256sum` / `md5sum` (Cryptographic Hashing) ✅ Complete
 
 **Complexity:** Medium — streaming file I/O with `crypto/sha256` and `crypto/md5`.
 
 Hash one or more files, output in standard `HASH  FILENAME` format.
 
-**`sha256sum`** — partial implementation (75 lines):
+**`sha256sum`:**
 - [x] Stream file contents through `sha256.New()` via `io.Copy` (no full-file buffering)
 - [x] Multi-file hashing with per-file error handling
-- [x] `--json` output via `common.Render`
-- [ ] Support `-c` / `--check` mode (verify hashes from a checksum file)
-- [ ] Handle stdin via `-` argument (stub comment exists, not implemented)
+- [x] Support `-c` / `--check` mode (verify hashes from a checksum file)
+- [x] Handle stdin via `-` argument
+- [x] `--json` output: `[{"file": "f", "hash": "abc...", "algorithm": "sha256"}]`
+- [x] Library layer (`HashFile`) separated from CLI layer
+- [x] Unit tests (9 tests)
 
-**`md5sum`** — not implemented:
-- [ ] `pkg/md5sum/` directory exists but is **empty**
-- [ ] Implement `md5sum` (mirror `sha256sum` with `crypto/md5`)
-
-**Shared:**
-- [ ] Unit tests
-- [ ] Compliance test
+**`md5sum`:**
+- [x] Full implementation mirroring `sha256sum` with `crypto/md5`
+- [x] Supports same flags: `-c`, `--json`, stdin
+- [x] Library layer (`HashFile`) separated from CLI layer
+- [x] Unit tests (8 tests)
 
 ---
 

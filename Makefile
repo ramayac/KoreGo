@@ -62,7 +62,11 @@ PKG_DIRS   := ./pkg/common/... \
               ./pkg/chgrp/... \
               ./pkg/sha256sum/... \
               ./pkg/tar/... \
-              ./internal/shell/...
+              ./internal/shell/... \
+              ./pkg/printf/... \
+              ./pkg/expr/... \
+              ./pkg/testcmd/... \
+              ./pkg/md5sum/...
 
 .DEFAULT_GOAL := help
 
