@@ -11,6 +11,24 @@ import (
 	"github.com/ramayac/korego/pkg/common"
 )
 
+// GzipStat holds the result of compressing or decompressing a single file.
+type GzipStat struct {
+	File         string  `json:"file"`
+	OriginalSize int64   `json:"originalSize"`
+	NewSize      int64   `json:"newSize"`
+	Ratio        float64 `json:"ratio"`
+}
+
+var spec = common.FlagSpec{
+	Defs: []common.FlagDef{
+		{Short: "d", Long: "decompress", Type: common.FlagBool},
+		{Short: "c", Long: "stdout", Type: common.FlagBool},
+		{Short: "k", Long: "keep", Type: common.FlagBool},
+		{Short: "f", Long: "force", Type: common.FlagBool},
+		{Short: "j", Long: "json", Type: common.FlagBool},
+	},
+}
+
 func init() {
 	dispatch.Register(dispatch.Command{
 		Name:  "gzip",
@@ -25,12 +43,14 @@ func init() {
 }
 
 func runGzip(args []string, out io.Writer) int {
-	spec := common.FlagSpec{
-		Defs: []common.FlagDef{
-			{Short: "d", Long: "decompress", Type: common.FlagBool},
-			{Short: "j", Long: "json", Type: common.FlagBool},
-		},
-	}
+	return execute(args, out, false)
+}
+
+func runGunzip(args []string, out io.Writer) int {
+	return execute(args, out, true)
+}
+
+func execute(args []string, out io.Writer, forceDecompress bool) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
@@ -38,113 +58,159 @@ func runGzip(args []string, out io.Writer) int {
 	}
 
 	isJSON := flags.Has("json")
+	toStdout := flags.Has("c")
+	keepOriginal := flags.Has("k") || toStdout
+	force := flags.Has("f")
+	decompress := forceDecompress || flags.Has("d")
+	
 	files := flags.Positional
 
-	if flags.Has("d") {
-		return runGunzip(args, out)
-	}
-
 	if len(files) == 0 {
-		gw := gzip.NewWriter(out)
-		io.Copy(gw, os.Stdin)
-		gw.Close()
+		if decompress {
+			gr, err := gzip.NewReader(os.Stdin)
+			if err != nil {
+				if !isJSON {
+					fmt.Fprintf(os.Stderr, "gzip: stdin: %v\n", err)
+				}
+				return 1
+			}
+			io.Copy(out, gr)
+			gr.Close()
+		} else {
+			gw := gzip.NewWriter(out)
+			io.Copy(gw, os.Stdin)
+			gw.Close()
+		}
 		return 0
 	}
 
+	exitCode := 0
+	var stats []GzipStat
+
 	for _, file := range files {
+		inInfo, err := os.Stat(file)
+		if err != nil {
+			common.RenderError("gzip", 1, "STAT_FAIL", err.Error(), isJSON, out)
+			if !isJSON {
+				fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+			}
+			exitCode = 1
+			continue
+		}
+
 		in, err := os.Open(file)
 		if err != nil {
 			common.RenderError("gzip", 1, "OPEN_FAIL", err.Error(), isJSON, out)
 			if !isJSON {
 				fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
 			}
-			return 1
+			exitCode = 1
+			continue
 		}
 
-		outName := file + ".gz"
-		outFile, err := os.Create(outName)
-		if err != nil {
-			in.Close()
-			common.RenderError("gzip", 1, "CREATE_FAIL", err.Error(), isJSON, out)
-			if !isJSON {
-				fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+		var targetWriter io.Writer
+		var outFile *os.File
+		var outName string
+
+		if toStdout {
+			targetWriter = out
+		} else {
+			if decompress {
+				outName = strings.TrimSuffix(file, ".gz")
+				if outName == file {
+					outName = file + ".unpacked"
+				}
+			} else {
+				outName = file + ".gz"
 			}
-			return 1
+
+			if !force {
+				if _, err := os.Stat(outName); err == nil {
+					if !isJSON {
+						fmt.Fprintf(os.Stderr, "gzip: %s already exists; use -f to overwrite\n", outName)
+					}
+					in.Close()
+					exitCode = 1
+					continue
+				}
+			}
+
+			outFile, err = os.OpenFile(outName, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, inInfo.Mode())
+			if err != nil {
+				common.RenderError("gzip", 1, "CREATE_FAIL", err.Error(), isJSON, out)
+				if !isJSON {
+					fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+				}
+				in.Close()
+				exitCode = 1
+				continue
+			}
+			targetWriter = outFile
 		}
 
-		gw := gzip.NewWriter(outFile)
-		io.Copy(gw, in)
-		gw.Close()
-		outFile.Close()
+		var processErr error
+		if decompress {
+			gr, err := gzip.NewReader(in)
+			if err != nil {
+				processErr = err
+			} else {
+				_, processErr = io.Copy(targetWriter, gr)
+				gr.Close()
+			}
+		} else {
+			gw := gzip.NewWriter(targetWriter)
+			_, processErr = io.Copy(gw, in)
+			gw.Close()
+		}
+
+		if outFile != nil {
+			outFile.Close()
+		}
 		in.Close()
 
-		os.Remove(file)
-	}
-
-	common.Render("gzip", map[string]string{"status": "compressed successfully"}, isJSON, out, func() {})
-	return 0
-}
-
-func runGunzip(args []string, out io.Writer) int {
-	spec := common.FlagSpec{
-		Defs: []common.FlagDef{
-			{Short: "j", Long: "json", Type: common.FlagBool},
-		},
-	}
-	flags, err := common.ParseFlags(args, spec)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "gunzip: %v\n", err)
-		return 1
-	}
-
-	isJSON := flags.Has("json")
-	files := flags.Positional
-
-	if len(files) == 0 {
-		gr, err := gzip.NewReader(os.Stdin)
-		if err == nil {
-			io.Copy(out, gr)
-			gr.Close()
-		}
-		return 0
-	}
-
-	for _, file := range files {
-		in, err := os.Open(file)
-		if err != nil {
-			common.RenderError("gunzip", 1, "OPEN_FAIL", err.Error(), isJSON, out)
+		if processErr != nil {
+			common.RenderError("gzip", 1, "PROCESS_FAIL", processErr.Error(), isJSON, out)
 			if !isJSON {
-				fmt.Fprintf(os.Stderr, "gunzip: %v\n", err)
+				fmt.Fprintf(os.Stderr, "gzip: %v\n", processErr)
 			}
-			return 1
-		}
-
-		outName := strings.TrimSuffix(file, ".gz")
-		if outName == file {
-			outName = file + ".unpacked"
-		}
-
-		outFile, err := os.Create(outName)
-		if err != nil {
-			in.Close()
-			common.RenderError("gunzip", 1, "CREATE_FAIL", err.Error(), isJSON, out)
-			if !isJSON {
-				fmt.Fprintf(os.Stderr, "gunzip: %v\n", err)
+			if outFile != nil {
+				os.Remove(outName) // remove incomplete output
 			}
-			return 1
+			exitCode = 1
+			continue
 		}
 
-		gr, err := gzip.NewReader(in)
-		if err == nil {
-			io.Copy(outFile, gr)
-			gr.Close()
+		var outSize int64
+		if !toStdout && outFile != nil {
+			if outInfo, err := os.Stat(outName); err == nil {
+				outSize = outInfo.Size()
+			}
+			if !keepOriginal {
+				os.Remove(file)
+			}
 		}
-		outFile.Close()
-		in.Close()
 
-		os.Remove(file)
+		inSize := inInfo.Size()
+		var ratio float64
+		if inSize > 0 && outSize > 0 {
+			if decompress {
+				ratio = float64(outSize) / float64(inSize)
+			} else {
+				ratio = float64(inSize) / float64(outSize)
+			}
+		}
+
+		stats = append(stats, GzipStat{
+			File:         file,
+			OriginalSize: inSize,
+			NewSize:      outSize,
+			Ratio:        ratio,
+		})
 	}
 
-	common.Render("gunzip", map[string]string{"status": "decompressed successfully"}, isJSON, out, func() {})
-	return 0
+	if isJSON {
+		common.Render("gzip", stats, true, out, func() {})
+	}
+
+	return exitCode
 }

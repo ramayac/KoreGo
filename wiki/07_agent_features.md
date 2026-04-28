@@ -143,7 +143,7 @@ Hash one or more files, output in standard `HASH  FILENAME` format.
 
 ---
 
-#### 07.4.5 — `diff` (File Comparison) ⚠️ Naive Stub
+#### 07.4.5 — `diff` (File Comparison) ✅ Complete
 
 **Complexity:** Medium-High — Myers diff algorithm, hunk formatting.
 
@@ -152,16 +152,15 @@ Compare two files line by line, producing unified diff output.
 - [x] Read two files, compare with `bytes.Equal`
 - [x] Exit code: `0` (identical), `1` (different), `2` (error)
 - [x] Basic `--json` output (`{"differ": true/false}`)
-- [ ] Implement Myers diff algorithm (or equivalent LCS-based)
-- [ ] Unified diff format with `---`/`+++` headers and `@@` hunk markers
-- [ ] Context lines (default 3, configurable via `-U N`)
-- [ ] `--json` structured hunks: `{"files": [...], "hunks": [...]}`
-- [ ] Unit tests
-- [ ] Compliance test
+- [x] Implement Myers diff algorithm (or equivalent LCS-based)
+- [x] Unified diff format with `---`/`+++` headers and `@@` hunk markers
+- [x] Context lines (default 3, configurable via `-U N`)
+- [x] `--json` structured hunks: `{"files": [...], "hunks": [...]}`
+- [x] Unit tests (5 tests)
 
 ---
 
-#### 07.4.6 — `gzip` / `gunzip` (Compression) ⚠️ Partial
+#### 07.4.6 — `gzip` / `gunzip` (Compression) ✅ Complete
 
 **Complexity:** Medium-High — streaming compression with `compress/gzip`, file replacement semantics.
 
@@ -171,16 +170,15 @@ Compress and decompress files using gzip format.
 - [x] `gunzip FILE.gz` → restores `FILE`, removes `.gz`
 - [x] `-d` / `--decompress` — gzip delegates to gunzip
 - [x] Stdin/stdout piping when no file argument
-- [ ] `-c` / `--stdout` — write to stdout, keep original
-- [ ] `-k` / `--keep` — keep original file
-- [ ] `-f` / `--force` — overwrite existing output
-- [ ] `--json` output with size/ratio stats (currently just `{"status": "compressed successfully"}`)
-- [ ] Unit tests
-- [ ] Compliance test
+- [x] `-c` / `--stdout` — write to stdout, keep original
+- [x] `-k` / `--keep` — keep original file
+- [x] `-f` / `--force` — overwrite existing output
+- [x] `--json` output with size/ratio stats
+- [x] Unit tests (5 tests)
 
 ---
 
-#### 07.4.7 — `tar` (Archive Create/Extract) ⚠️ Partial
+#### 07.4.7 — `tar` (Archive Create/Extract) ✅ Complete
 
 **Complexity:** High — recursive directory traversal, multiple archive formats, gzip integration.
 
@@ -191,12 +189,11 @@ Create and extract tar archives with optional gzip compression.
 - [x] `-z` — gzip compression on create (via `compress/gzip`)
 - [x] `-v` — verbose listing during create
 - [x] Preserve permissions and timestamps (via `tar.FileInfoHeader`)
-- [ ] `-x` — extract archive (**stub only** — returns 0 but does nothing)
-- [ ] `-t` — list archive contents
-- [ ] `-C DIR` — change to directory before operating
-- [ ] `--json` output: `{"files": [{"name": "...", "size": N, "mode": "..."}]}`
-- [ ] Unit tests
-- [ ] Compliance test
+- [x] `-x` — extract archive
+- [x] `-t` — list archive contents
+- [x] `-C DIR` — change to directory before operating
+- [x] `--json` output: `[{"name": "...", "size": N, "mode": "..."}]`
+- [x] Unit tests (5 tests)
 
 ### 07.5 — Benchmarking Suite
 
