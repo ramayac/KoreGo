@@ -46,9 +46,9 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 - [x] Disable tests for utilities we haven't implemented yet.
 
 ### 10.2 — Baseline Execution
-- [ ] Run the adapted suite.
-- [ ] Document all failures in `wiki/posix_coverage.md` as known deviations.
-- [ ] Fix critical deviations (e.g. standard flags failing).
+- [x] Run the adapted suite.
+- [x] Document all failures in `wiki/posix_coverage.md` as known deviations.
+- [x] Fix critical deviations (e.g. standard flags failing).
 
 ### 10.3 — JSON/RPC Testing Harness
 - [ ] Create a `test/posix-json/` directory.

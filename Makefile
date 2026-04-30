@@ -303,6 +303,11 @@ compliance: build
 	bash test/compliance/test_basename_dirname.sh
 	@echo "compliance: all suites passed"
 
+.PHONY: testsuite
+testsuite: build
+	@echo "--- BusyBox Test Suite ---"
+	cd test/busybox_testsuite && ./runtest
+
 .PHONY: ci
 ci: vet test build docker smoke-docker
 	@echo "ci: full pipeline complete"

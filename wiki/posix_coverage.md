@@ -9,6 +9,8 @@ This document tracks the implementation status of KoreGo utilities against the P
 - **Deferred (❌):** 1 (2.0%)
 - **Overall Completion (Target Scope):** ~98%
 
+> **Note on BusyBox Test Suite:** As part of Phase 10, we integrated the busybox test suite. The baseline execution resulted in ~150 failures, almost entirely driven by flags that are not implemented in our MVP (e.g., `tar -x`, `tail -c`, `uniq -f`) or minor POSIX deviations. These will be incrementally addressed.
+
 > **Note on `awk`:** We have decided **not** to implement `awk` for this MVP. Building a full POSIX-compliant `awk` parser and interpreter is a massive undertaking that would delay the core goal of providing an agent-ready userland. We will revisit `awk` in a future phase. Complex text processing should be handled by `grep`, `sed`, or the agent directly via JSON structured output.
 
 ### Phase 00 & 01: Core & Env

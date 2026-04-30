@@ -38,15 +38,9 @@ export SKIP=
 
 # Helper for helpers. Oh my...
 
+# We use korego echo which supports -n and -e
 test x"$ECHO" != x"" || {
-	ECHO="echo"
-	test x"`echo -ne`" = x"" || {
-		# Compile and use a replacement 'echo' which understands -e -n
-		ECHO="$PWD/echo-ne"
-		test -x "$ECHO" || {
-			gcc -Os -o "$ECHO" ../scripts/echo.c || exit 1
-		}
-	}
+	ECHO="../../korego echo"
 	export ECHO
 }
 
