@@ -41,9 +41,9 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 ## Tasks
 
 ### 10.1 — Framework Selection and Porting
-- [ ] Investigate and fork the BusyBox `testsuite/` directory.
-- [ ] Adapt the runner to execute against the `korego` binary instead of `busybox`.
-- [ ] Disable tests for utilities we haven't implemented yet.
+- [x] Investigate and fork the BusyBox `testsuite/` directory.
+- [x] Adapt the runner to execute against the `korego` binary instead of `busybox`.
+- [x] Disable tests for utilities we haven't implemented yet.
 
 ### 10.2 — Baseline Execution
 - [ ] Run the adapted suite.
