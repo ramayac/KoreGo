@@ -29,6 +29,7 @@ var spec = common.FlagSpec{
 		{Short: "d", Long: "delimiter", Type: common.FlagValue},
 		{Short: "c", Long: "characters", Type: common.FlagValue},
 		{Short: "b", Long: "bytes", Type: common.FlagValue},
+		{Short: "s", Long: "only-delimited", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
@@ -55,7 +56,7 @@ func parseList(list string) map[int]bool {
 	return sel
 }
 
-func Run(r io.Reader, fields, delimiter, chars, bytesList string) ([]CutLine, error) {
+func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited bool) ([]CutLine, error) {
 	scanner := bufio.NewScanner(r)
 	var lines []CutLine
 
@@ -86,7 +87,11 @@ func Run(r io.Reader, fields, delimiter, chars, bytesList string) ([]CutLine, er
 			// If no delimiter found, POSIX cut by default prints the whole line
 			// (unless -s is passed, but we'll ignore -s for simplicity unless required)
 			if len(parts) == 1 && !strings.Contains(text, delim) {
-				extracted = append(extracted, text)
+				if !onlyDelimited {
+					extracted = append(extracted, text)
+				} else {
+					continue // Suppress line
+				}
 			} else {
 				var selected []string
 				for i, p := range parts {
@@ -132,6 +137,7 @@ func run(args []string, out io.Writer) int {
 	delimiter := flags.Get("d")
 	chars := flags.Get("c")
 	bytesList := flags.Get("b")
+	onlyDelimited := flags.Has("s")
 
 	if fields == "" && chars == "" && bytesList == "" {
 		fmt.Fprintf(os.Stderr, "cut: you must specify a list of bytes, characters, or fields\n")
@@ -159,7 +165,7 @@ func run(args []string, out io.Writer) int {
 
 	var allLines []CutLine
 	for _, r := range readers {
-		lines, err := Run(r, fields, delimiter, chars, bytesList)
+		lines, err := Run(r, fields, delimiter, chars, bytesList, onlyDelimited)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "cut: %v\n", err)
 			return 1
