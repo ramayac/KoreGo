@@ -108,9 +108,9 @@ korego/
 | [05_daemon_core.md](05_daemon_core.md) | JSON-RPC Daemon — Core Server | **COMPLETED** |
 | [06_system_utils.md](06_system_utils.md) | Tier 4 — System & Process Utilities | **COMPLETED** |
 | [07_agent_features.md](07_agent_features.md) | Agent-Ready Features (sessions, shell, Tier 5) | **COMPLETED** |
-| [08_hardening.md](08_hardening.md) | Production Hardening & Security | TODO |
-| [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | TODO |
-| [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | TODO |
+| [08_hardening.md](08_hardening.md) | Production Hardening & Security | **COMPLETED** |
+| [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | **COMPLETED** |
+| [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | **IN PROGRESS** |
 
 ---
 
