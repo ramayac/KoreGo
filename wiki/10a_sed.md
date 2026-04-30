@@ -42,21 +42,21 @@ We need to rewrite `pkg/sed` to separate the parsing phase (building an abstract
 ## Task Breakdown
 
 ### Step 1: Lexer and Parser Foundation
-- [ ] Create `parser.go` for `sed`.
-- [ ] Define the AST structs (`Instruction`, `Address`, `Command`).
-- [ ] Implement parsing for simple commands without addresses (`p`, `d`, `q`).
-- [ ] Implement address parsing (line numbers and simple regex).
+- [x] Create `parser.go` for `sed`.
+- [x] Define the AST structs (`Instruction`, `Address`, `Command`).
+- [x] Implement parsing for simple commands without addresses (`p`, `d`, `q`).
+- [x] Implement address parsing (line numbers and simple regex).
 
 ### Step 2: Substitution and Delimiters
-- [ ] Expand `s///` parsing to support arbitrary delimiters (e.g., `s@foo@bar@`).
-- [ ] Implement `g`, `p`, `[NUM]`, and `w` flags for substitution.
-- [ ] Handle regex backreferences and escape sequences in the replacement string.
+- [x] Expand `s///` parsing to support arbitrary delimiters (e.g., `s@foo@bar@`).
+- [x] Implement `g`, `p`, `[NUM]`, and `w` flags for substitution.
+- [x] Handle regex backreferences and escape sequences in the replacement string.
 
 ### Step 3: Execution Engine & State
-- [ ] Create `engine.go` with a `SedEngine` struct.
-- [ ] Implement pattern space and hold space memory.
-- [ ] Implement the main execution loop over `io.Reader`.
-- [ ] Implement `n` and `N` commands.
+- [x] Create `engine.go` with a `SedEngine` struct.
+- [x] Implement pattern space and hold space memory.
+- [x] Implement the main execution loop over `io.Reader`.
+- [x] Implement `n` and `N` commands.
 
 ### Step 4: Flow Control and Blocks
 - [ ] Implement labels (`:`) and branching (`b`).

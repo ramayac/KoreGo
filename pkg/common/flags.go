@@ -38,8 +38,10 @@ func (e *FlagError) Error() string { return e.Msg }
 type ParseResult struct {
 	// Bools tracks bool flags that were set, keyed by short OR long name.
 	Bools map[string]bool
-	// Values holds key=value style flags.
+	// Values holds key=value style flags (last value seen).
 	Values map[string]string
+	// ValuesList holds all key=value style flags (all values seen).
+	ValuesList map[string][]string
 	// Count tracks how many times a flag was repeated (for -vvv style).
 	Count map[string]int
 	// Positional holds non-flag arguments.
@@ -50,9 +52,10 @@ type ParseResult struct {
 
 func newParseResult() *ParseResult {
 	return &ParseResult{
-		Bools:  make(map[string]bool),
-		Values: make(map[string]string),
-		Count:  make(map[string]int),
+		Bools:      make(map[string]bool),
+		Values:     make(map[string]string),
+		ValuesList: make(map[string][]string),
+		Count:      make(map[string]int),
 	}
 }
 
@@ -64,6 +67,11 @@ func (r *ParseResult) Has(name string) bool {
 // Get returns the value for a value-type flag.
 func (r *ParseResult) Get(name string) string {
 	return r.Values[name]
+}
+
+// GetAll returns all values for a value-type flag.
+func (r *ParseResult) GetAll(name string) []string {
+	return r.ValuesList[name]
 }
 
 // ParseFlags parses args according to spec.
@@ -126,8 +134,10 @@ func ParseFlags(args []string, spec FlagSpec) (*ParseResult, error) {
 				}
 				if def.Short != "" {
 					res.Values[def.Short] = value
+					res.ValuesList[def.Short] = append(res.ValuesList[def.Short], value)
 				}
 				res.Values[name] = value
+				res.ValuesList[name] = append(res.ValuesList[name], value)
 			} else {
 				if def.Short != "" {
 					res.Bools[def.Short] = true
@@ -154,8 +164,10 @@ func ParseFlags(args []string, spec FlagSpec) (*ParseResult, error) {
 					remainder := chars[ci+1:]
 					if remainder != "" {
 						res.Values[key] = remainder
+						res.ValuesList[key] = append(res.ValuesList[key], remainder)
 						if def.Long != "" {
 							res.Values[def.Long] = remainder
+							res.ValuesList[def.Long] = append(res.ValuesList[def.Long], remainder)
 						}
 					} else {
 						if i+1 >= len(args) {
@@ -163,8 +175,10 @@ func ParseFlags(args []string, spec FlagSpec) (*ParseResult, error) {
 						}
 						i++
 						res.Values[key] = args[i]
+						res.ValuesList[key] = append(res.ValuesList[key], args[i])
 						if def.Long != "" {
 							res.Values[def.Long] = args[i]
+							res.ValuesList[def.Long] = append(res.ValuesList[def.Long], args[i])
 						}
 					}
 					break // value flags always consume the rest of the cluster.
