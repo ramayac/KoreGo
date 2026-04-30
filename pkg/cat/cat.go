@@ -104,6 +104,16 @@ func run(args []string, out io.Writer) int {
 		return 0
 	}
 
+	if !numberAll && !numberNonBlank && !squeezeBlank {
+		for _, r := range readers {
+			if _, err := io.Copy(os.Stdout, r); err != nil {
+				fmt.Fprintf(os.Stderr, "cat: %v\n", err)
+				return 1
+			}
+		}
+		return 0
+	}
+
 	for _, r := range readers {
 		if _, err := Run(r, os.Stdout, numberAll, numberNonBlank, squeezeBlank); err != nil {
 			fmt.Fprintf(os.Stderr, "cat: %v\n", err)

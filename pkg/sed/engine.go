@@ -33,11 +33,44 @@ type engineState struct {
 
 	addrState map[*Instruction]bool
 	
-	scanner *bufio.Scanner
+	reader *bufio.Reader
+	hasTrailingNewline bool
+	nextLine string
+	lastLacked map[string]bool
+}
+
+func (e *engineState) printStream(w io.Writer, s string, streamID string) {
+	fmt.Fprintf(os.Stderr, "DEBUG printStream %q: hasNewline=%v lastLacked=%v text=%q\n", streamID, e.hasTrailingNewline, e.lastLacked[streamID], s)
+	if e.lastLacked[streamID] {
+		fmt.Fprint(w, "\n")
+	}
+	fmt.Fprint(w, s)
+	if e.hasTrailingNewline {
+		fmt.Fprint(w, "\n")
+		e.lastLacked[streamID] = false
+	} else {
+		e.lastLacked[streamID] = true
+	}
 }
 
 func (e *engineState) printLine(s string) {
-	fmt.Fprintln(e.out, s)
+	streamID := "stdout"
+	if e.inPlace {
+		streamID = e.currentFile
+	}
+	e.printStream(e.out, s, streamID)
+}
+
+func (e *engineState) printText(s string) {
+	streamID := "stdout"
+	if e.inPlace {
+		streamID = e.currentFile
+	}
+	if e.lastLacked[streamID] {
+		fmt.Fprint(e.out, "\n")
+	}
+	fmt.Fprint(e.out, s, "\n")
+	e.lastLacked[streamID] = false
 }
 
 func (e *engineState) printLineRaw(s string) {
@@ -45,6 +78,9 @@ func (e *engineState) printLineRaw(s string) {
 }
 
 func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bool, globalOut io.Writer) int {
+	insts = compileAst(insts)
+	truncateWFiles(insts)
+	
 	if len(readers) == 0 {
 		readers = []string{"-"}
 	}
@@ -54,6 +90,7 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 		suppress:  suppress,
 		inPlace:   inPlace,
 		addrState: make(map[*Instruction]bool),
+		lastLacked: make(map[string]bool),
 		out:       globalOut,
 	}
 
@@ -63,6 +100,10 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 		e.fileIdx = i
 		path := e.files[i]
 		e.currentFile = path
+		if e.inPlace {
+			e.lineNum = 0
+			e.addrState = make(map[*Instruction]bool)
+		}
 
 		var r io.Reader
 		if path == "-" {
@@ -90,15 +131,28 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 			e.out = tmpFile
 		}
 
-		e.scanner = bufio.NewScanner(r)
+		e.reader = bufio.NewReader(r)
 		
-		var nextLine string
 		var hasNext bool
 
-		if e.scanner.Scan() {
-			nextLine = e.scanner.Text()
+		lineStr, _ := e.reader.ReadString('\n')
+		if len(lineStr) > 0 {
+			if strings.HasSuffix(lineStr, "\n") {
+				e.hasTrailingNewline = true
+				e.nextLine = lineStr[:len(lineStr)-1]
+				if strings.HasSuffix(e.nextLine, "\r") {
+					e.nextLine = e.nextLine[:len(e.nextLine)-1]
+				}
+			} else {
+				e.hasTrailingNewline = false
+				e.nextLine = lineStr
+			}
 			hasNext = true
 		} else {
+			hasNext = false
+		}
+
+		if !hasNext {
 			// empty file
 			if e.inPlace && e.tmpFile != nil {
 				e.tmpFile.Close()
@@ -109,13 +163,24 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 
 		for hasNext {
 			if !e.skipRead {
-				e.patSpace = nextLine
+				e.patSpace = e.nextLine
 				e.lineNum++
+				e.substituted = false
 			}
 			e.skipRead = false
 
-			if e.scanner.Scan() {
-				nextLine = e.scanner.Text()
+			lineStr, _ = e.reader.ReadString('\n')
+			if len(lineStr) > 0 {
+				if strings.HasSuffix(lineStr, "\n") {
+					e.hasTrailingNewline = true
+					e.nextLine = lineStr[:len(lineStr)-1]
+					if strings.HasSuffix(e.nextLine, "\r") {
+						e.nextLine = e.nextLine[:len(e.nextLine)-1]
+					}
+				} else {
+					e.hasTrailingNewline = false
+					e.nextLine = lineStr
+				}
 				hasNext = true
 				e.isEOF = false
 			} else {
@@ -124,7 +189,7 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 			}
 
 			// execute instructions
-			if err := e.execBlock(insts); err != nil {
+			if err := e.execFlat(insts); err != nil {
 				if err.Error() == "quit" {
 					if !e.suppress && !e.skipRead {
 						e.printLine(e.patSpace)
@@ -147,7 +212,7 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 			
 			// flush appends
 			for _, text := range e.pendingAppend {
-				e.printLine(text)
+				e.printText(text)
 			}
 			e.pendingAppend = nil
 		}
@@ -221,18 +286,19 @@ func (e *engineState) shouldRun(inst *Instruction) bool {
 	return result != inst.AddressInvert
 }
 
-func (e *engineState) execBlock(insts []*Instruction) error {
-	for i := 0; i < len(insts); i++ {
-		inst := insts[i]
+func (e *engineState) execFlat(insts []*Instruction) error {
+	for ip := 0; ip < len(insts); ip++ {
+		inst := insts[ip]
 		if !e.shouldRun(inst) {
+			if inst.Cmd == '{' {
+				ip = inst.JumpTarget // skip block
+			}
 			continue
 		}
 
 		switch inst.Cmd {
-		case '{':
-			if err := e.execBlock(inst.Block); err != nil {
-				return err
-			}
+		case '{', '}', ':':
+			// structure only
 		case 's':
 			re := inst.Regexp
 			if re == nil {
@@ -271,7 +337,7 @@ func (e *engineState) execBlock(insts []*Instruction) error {
 					if inst.WFile != "" {
 						f, err := os.OpenFile(inst.WFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 						if err == nil {
-							fmt.Fprintln(f, e.patSpace)
+							e.printStream(f, e.patSpace, inst.WFile)
 							f.Close()
 						}
 					}
@@ -295,31 +361,71 @@ func (e *engineState) execBlock(insts []*Instruction) error {
 				// POSIX says if pattern space is not empty, start next cycle without reading a new line.
 				// We can achieve this by rewinding to the start of the block and setting skipRead = true.
 				e.skipRead = true
-				i = -1 // restart block
+				ip = -1 // restart script
 				continue
 			} else {
 				return fmt.Errorf("next")
 			}
 		case 'n':
-			// print current, read next
 			if !e.suppress {
 				e.printLine(e.patSpace)
 			}
-			if e.scanner.Scan() {
-				e.patSpace = e.scanner.Text()
-				e.lineNum++
-			} else {
+			
+			if e.isEOF {
 				return fmt.Errorf("quit_no_print")
 			}
+			
+			e.patSpace = e.nextLine
+			e.lineNum++
+			
+			lineStr, _ := e.reader.ReadString('\n')
+			if len(lineStr) > 0 {
+				if strings.HasSuffix(lineStr, "\n") {
+					e.hasTrailingNewline = true
+					e.nextLine = lineStr[:len(lineStr)-1]
+					if strings.HasSuffix(e.nextLine, "\r") {
+						e.nextLine = e.nextLine[:len(e.nextLine)-1]
+					}
+				} else {
+					e.hasTrailingNewline = false
+					e.nextLine = lineStr
+				}
+				e.isEOF = false
+			} else {
+				e.isEOF = true
+			}
 		case 'N':
-			// append next line to pattern space
+			if e.isEOF {
+				// GNU sed prints pattern space if N is at EOF
+				return fmt.Errorf("quit")
+			}
+			
+			e.patSpace += "\n" + e.nextLine
+			e.lineNum++
+			
+			lineStr, _ := e.reader.ReadString('\n')
+			if len(lineStr) > 0 {
+				if strings.HasSuffix(lineStr, "\n") {
+					e.hasTrailingNewline = true
+					e.nextLine = lineStr[:len(lineStr)-1]
+					if strings.HasSuffix(e.nextLine, "\r") {
+						e.nextLine = e.nextLine[:len(e.nextLine)-1]
+					}
+				} else {
+					e.hasTrailingNewline = false
+					e.nextLine = lineStr
+				}
+				e.isEOF = false
+			} else {
+				e.isEOF = true
+			}
 		case 'a':
 			e.pendingAppend = append(e.pendingAppend, inst.Text)
 		case 'i':
-			e.printLine(inst.Text)
+			e.printText(inst.Text)
 		case 'c':
 			// delete pattern space, print text, skip rest of script
-			e.printLine(inst.Text)
+			e.printText(inst.Text)
 			return fmt.Errorf("next")
 		case 'q':
 			return fmt.Errorf("quit")
@@ -336,26 +442,89 @@ func (e *engineState) execBlock(insts []*Instruction) error {
 		case 'x':
 			e.patSpace, e.holdSpace = e.holdSpace, e.patSpace
 		case 'b':
-			if inst.Label == "" {
-				return nil // jump to end of script, print pattern space
-			}
-			// need label resolution
+			ip = inst.JumpTarget - 1
 		case 't':
-			if e.substituted {
-				e.substituted = false
-				if inst.Label == "" {
-					return nil // jump to end of script
-				}
-				// jump to label
+			cond := e.substituted
+			e.substituted = false
+			if cond {
+				ip = inst.JumpTarget - 1
 			}
 		case 'T':
-			if !e.substituted {
-				if inst.Label == "" {
-					return nil // jump to end of script
+			cond := e.substituted
+			e.substituted = false
+			if !cond {
+				ip = inst.JumpTarget - 1
+			}
+		case 'w':
+			if inst.File != "" {
+				f, err := os.OpenFile(inst.File, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				if err == nil {
+					e.printStream(f, e.patSpace, inst.File)
+					f.Close()
 				}
-				// jump to label
 			}
 		}
 	}
 	return nil
+}
+
+func truncateWFiles(insts []*Instruction) {
+	for _, inst := range insts {
+		var file string
+		if inst.Cmd == 'w' {
+			file = inst.File
+		} else if inst.Cmd == 's' && inst.WFile != "" {
+			file = inst.WFile
+		}
+		if file != "" {
+			f, _ := os.Create(file)
+			f.Close()
+		}
+		if inst.Block != nil {
+			truncateWFiles(inst.Block)
+		}
+	}
+}
+
+func compileAst(insts []*Instruction) []*Instruction {
+	var flat []*Instruction
+	var flatten func([]*Instruction)
+	flatten = func(in []*Instruction) {
+		for _, inst := range in {
+			if inst.Cmd == '{' {
+				start := &Instruction{Cmd: '{', Addr1: inst.Addr1, Addr2: inst.Addr2, AddressInvert: inst.AddressInvert}
+				flat = append(flat, start)
+				flatten(inst.Block)
+				end := &Instruction{Cmd: '}'}
+				flat = append(flat, end)
+				start.JumpTarget = len(flat) - 1
+			} else {
+				flat = append(flat, inst)
+			}
+		}
+	}
+	flatten(insts)
+
+	labels := make(map[string]int)
+	for i, inst := range flat {
+		if inst.Cmd == ':' {
+			labels[inst.Label] = i
+		}
+	}
+
+	for _, inst := range flat {
+		if inst.Cmd == 'b' || inst.Cmd == 't' || inst.Cmd == 'T' {
+			if inst.Label == "" {
+				inst.JumpTarget = len(flat)
+			} else {
+				if target, ok := labels[inst.Label]; ok {
+					inst.JumpTarget = target
+				} else {
+					inst.JumpTarget = len(flat)
+				}
+			}
+		}
+	}
+
+	return flat
 }

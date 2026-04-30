@@ -49,6 +49,9 @@ type Instruction struct {
 
 	// For block {}
 	Block []*Instruction
+
+	// Execution state
+	JumpTarget int
 }
 
 type Parser struct {
@@ -144,6 +147,7 @@ func (p *Parser) parseAddress() (*Address, error) {
 			delim = p.next()
 		}
 		start := p.pos
+		inBracket := false
 		for {
 			c := p.peek()
 			if c == 0 || c == '\n' {
@@ -156,7 +160,11 @@ func (p *Parser) parseAddress() (*Address, error) {
 				}
 				continue
 			}
-			if c == delim {
+			if c == '[' && !inBracket {
+				inBracket = true
+			} else if c == ']' && inBracket {
+				inBracket = false
+			} else if c == delim && !inBracket {
 				break
 			}
 			p.next()
@@ -170,7 +178,7 @@ func (p *Parser) parseAddress() (*Address, error) {
 			return &Address{Type: AddrRegexp, Regexp: nil}, nil
 		}
 
-		re, err := regexp.Compile(expr)
+		re, err := compileBRE(expr, delim)
 		if err != nil {
 			return nil, err
 		}
@@ -236,6 +244,7 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		}
 		// parse pattern
 		start := p.pos
+		inBracket := false
 		for {
 			c := p.peek()
 			if c == 0 || c == '\n' {
@@ -248,7 +257,11 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 				}
 				continue
 			}
-			if c == delim {
+			if c == '[' && !inBracket {
+				inBracket = true
+			} else if c == ']' && inBracket {
+				inBracket = false
+			} else if c == delim && !inBracket {
 				break
 			}
 			p.next()
@@ -284,14 +297,14 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		for i := 0; i < len(replRaw); i++ {
 			if replRaw[i] == '\\' && i+1 < len(replRaw) {
 				next := replRaw[i+1]
-				if next >= '1' && next <= '9' {
+				if next == delim {
+					repl += string(delim)
+				} else if next >= '1' && next <= '9' {
 					repl += "$" + string(next)
 				} else if next == '&' {
 					repl += "&" // escaped & becomes literal &
 				} else if next == '\\' {
 					repl += "\\"
-				} else if next == delim {
-					repl += string(delim)
 				} else if next == 'n' {
 					repl += "\n"
 				} else if next == 't' {
@@ -347,7 +360,7 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		if pat == "" {
 			inst.Regexp = nil
 		} else {
-			re, err := regexp.Compile(pat)
+			re, err := compileBRE(pat, delim)
 			if err != nil {
 				return nil, err
 			}
@@ -355,6 +368,9 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		}
 
 	case 'a', 'i', 'c':
+		for p.peek() == ' ' || p.peek() == '\t' {
+			p.next()
+		}
 		if p.peek() == '\\' {
 			p.next()
 		}
@@ -369,10 +385,15 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 			}
 			if c == '\\' {
 				p.next()
+				if p.peek() == 0 {
+					break
+				}
 				if p.peek() == '\n' {
 					p.next()
 					continue
 				}
+				p.next() // consume escaped char
+				continue
 			}
 			if c == '\n' {
 				// end of text
@@ -421,4 +442,48 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 	}
 
 	return inst, nil
+}
+
+func compileBRE(expr string, delim byte) (*regexp.Regexp, error) {
+	var ere strings.Builder
+	escaped := false
+	for i := 0; i < len(expr); i++ {
+		c := expr[i]
+		if escaped {
+			if c == delim {
+				switch c {
+				case '.', '+', '*', '?', '(', ')', '[', ']', '{', '}', '|', '^', '$', '\\':
+					ere.WriteByte('\\')
+					ere.WriteByte(c)
+				default:
+					ere.WriteByte(c)
+				}
+			} else {
+				switch c {
+				case '|', '+', '?', '(', ')', '{', '}':
+					ere.WriteByte(c)
+				default:
+					ere.WriteByte('\\')
+					ere.WriteByte(c)
+				}
+			}
+			escaped = false
+		} else {
+			if c == '\\' {
+				escaped = true
+			} else {
+				switch c {
+				case '|', '+', '?', '(', ')', '{', '}':
+					ere.WriteByte('\\')
+					ere.WriteByte(c)
+				default:
+					ere.WriteByte(c)
+				}
+			}
+		}
+	}
+	if escaped {
+		ere.WriteByte('\\')
+	}
+	return regexp.Compile(ere.String())
 }

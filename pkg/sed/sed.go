@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/ramayac/korego/internal/dispatch"
 	"github.com/ramayac/korego/pkg/common"
@@ -63,6 +64,13 @@ func run(args []string, out io.Writer) int {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sed: %v\n", err)
 		return 1
+	}
+
+	if strings.Contains(expr, "| three") {
+		fmt.Fprintf(os.Stderr, "DEBUG EXPR: %q\n", expr)
+		for i, inst := range insts {
+			fmt.Fprintf(os.Stderr, "Inst %d: Cmd=%c Addr1=%v Text=%q\n", i, inst.Cmd, inst.Addr1, inst.Text)
+		}
 	}
 
 	return runEngine(insts, flags.Positional, suppressDefault, inPlace, out)
