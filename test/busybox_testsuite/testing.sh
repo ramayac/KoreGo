@@ -39,10 +39,10 @@ export SKIP=
 # Helper for helpers. Oh my...
 
 # We use korego echo which supports -n and -e
-test x"$ECHO" != x"" || {
-	ECHO="../../korego echo"
+if [ x"$ECHO" = x"" ]; then
+	ECHO="korego echo"
 	export ECHO
-}
+fi
 
 # Helper functions
 

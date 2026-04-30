@@ -49,10 +49,10 @@ func run(args []string, out io.Writer) int {
 
 	eofStr := ""
 	hasEOF := false
-	if flags.Has("E") {
+	if _, ok := flags.Values["E"]; ok {
 		eofStr = flags.Get("E")
 		hasEOF = true
-	} else if flags.Has("e") {
+	} else if _, ok := flags.Values["e"]; ok {
 		eofStr = flags.Get("e")
 		hasEOF = true
 	}

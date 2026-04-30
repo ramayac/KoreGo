@@ -32,6 +32,9 @@ var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "u", Long: "unified", Type: common.FlagBool},
 		{Short: "U", Long: "unified-context", Type: common.FlagValue},
+		{Short: "b", Long: "ignore-space-change", Type: common.FlagBool},
+		{Short: "B", Long: "ignore-blank-lines", Type: common.FlagBool},
+		{Short: "q", Long: "brief", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
@@ -359,7 +362,9 @@ func run(args []string, out io.Writer) int {
 
 	if differ {
 		common.Render("diff", res, jsonMode, out, func() {
-			if flags.Has("u") || flags.Has("U") {
+			if flags.Has("q") {
+				fmt.Fprintf(out, "Files %s and %s differ\n", files[0], files[1])
+			} else if flags.Has("u") || flags.Has("U") {
 				fmt.Fprintf(out, "--- %s\n+++ %s\n", files[0], files[1])
 				for _, h := range hunks {
 					fmt.Fprintf(out, "@@ -%d,%d +%d,%d @@\n", h.OldStart, h.OldLines, h.NewStart, h.NewLines)

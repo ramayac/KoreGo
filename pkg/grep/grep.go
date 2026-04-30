@@ -28,6 +28,8 @@ var spec = common.FlagSpec{
 		{Short: "c", Long: "count", Type: common.FlagBool},
 		{Short: "n", Long: "line-number", Type: common.FlagBool},
 		{Short: "l", Long: "files-with-matches", Type: common.FlagBool},
+		{Short: "L", Long: "files-without-match", Type: common.FlagBool},
+		{Short: "o", Long: "only-matching", Type: common.FlagBool},
 		{Short: "r", Long: "recursive", Type: common.FlagBool},
 		{Short: "q", Long: "quiet", Type: common.FlagBool},
 		{Short: "s", Long: "no-messages", Type: common.FlagBool},
@@ -142,7 +144,14 @@ func run(args []string, out io.Writer) int {
 		patterns = append(patterns, strings.Split(pattern, "\n")...)
 	}
 	if filePattern != "" {
-		b, err := os.ReadFile(filePattern)
+		var b []byte
+		var err error
+		if filePattern == "-" {
+			b, err = io.ReadAll(os.Stdin)
+		} else {
+			b, err = os.ReadFile(filePattern)
+		}
+		
 		if err == nil {
 			patterns = append(patterns, strings.Split(strings.TrimSuffix(string(b), "\n"), "\n")...)
 		} else if !suppressErrors {
@@ -257,6 +266,13 @@ func run(args []string, out io.Writer) int {
 			continue
 		}
 
+		if flags.Has("L") {
+			if len(matches) == 0 {
+				fmt.Println(fname)
+			}
+			continue
+		}
+
 		if countMode {
 			prefix := ""
 			if len(readers) > 1 {
@@ -274,7 +290,13 @@ func run(args []string, out io.Writer) int {
 			if lineNum {
 				prefix += fmt.Sprintf("%d:", m.Line)
 			}
-			fmt.Printf("%s%s\n", prefix, m.Text)
+			if flags.Has("o") {
+				for _, sub := range m.Matches {
+					fmt.Printf("%s%s\n", prefix, sub)
+				}
+			} else {
+				fmt.Printf("%s%s\n", prefix, m.Text)
+			}
 		}
 	}
 

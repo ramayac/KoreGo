@@ -65,6 +65,10 @@ func Run(r io.Reader, countMode, duplicatesOnly, uniqueOnly, ignoreCase bool, sk
 	scanner := bufio.NewScanner(r)
 	var items []UniqItem
 
+	if uniqueOnly && duplicatesOnly {
+		return items, scanner.Err()
+	}
+
 	var prev string
 	var prevOrig string
 	count := 0

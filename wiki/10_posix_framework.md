@@ -55,6 +55,9 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 - [ ] Implement a Go-based TAP runner that runs POSIX commands via the JSON-RPC daemon.
 - [ ] Verify that the structured output semantics map correctly to POSIX expectations (e.g. exit codes, stderr vs stdout separation).
 
+### 10.4 - Sed
+- [ ] Fix test/busybox_testsuite/sed.testdir/ to pass all tests.
+
 ## Milestone 10
 - [ ] External test suite integrated into `make test` or `make compliance`.
 - [ ] CI pipeline runs the external test suite.

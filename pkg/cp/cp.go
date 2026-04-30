@@ -25,9 +25,14 @@ type CpResult struct {
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "r", Long: "recursive", Type: common.FlagBool},
+		{Short: "R", Long: "recursive-R", Type: common.FlagBool},
 		{Short: "p", Long: "preserve", Type: common.FlagBool},
 		{Short: "i", Long: "interactive", Type: common.FlagBool},
 		{Short: "f", Long: "force", Type: common.FlagBool},
+		{Short: "d", Long: "no-dereference", Type: common.FlagBool},
+		{Short: "P", Long: "no-dereference-p", Type: common.FlagBool},
+		{Short: "L", Long: "dereference", Type: common.FlagBool},
+		{Short: "H", Long: "dereference-command-line", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
@@ -124,7 +129,7 @@ func run(args []string, out io.Writer) int {
 	}
 	srcs := flags.Positional[:len(flags.Positional)-1]
 	dst := flags.Positional[len(flags.Positional)-1]
-	result, err := Run(srcs, dst, flags.Has("r"), flags.Has("p"))
+	result, err := Run(srcs, dst, flags.Has("r") || flags.Has("R"), flags.Has("p"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cp: %v\n", err)
 		common.RenderError("cp", 1, "ECP", err.Error(), jsonMode, out)

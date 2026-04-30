@@ -29,31 +29,60 @@ var spec = common.FlagSpec{
 		{Short: "d", Long: "delimiter", Type: common.FlagValue},
 		{Short: "c", Long: "characters", Type: common.FlagValue},
 		{Short: "b", Long: "bytes", Type: common.FlagValue},
+		{Short: "n", Long: "no-split-chars", Type: common.FlagBool},
 		{Short: "s", Long: "only-delimited", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
 
-// parseList parses a list like "1,3,5" or "1-5" into a map of selected 1-based indices.
-func parseList(list string) map[int]bool {
-	sel := make(map[int]bool)
+// rangeSpec defines an inclusive range.
+type rangeSpec struct {
+	start, end int
+}
+
+// parseList parses a list like "1,3,5" or "1-5" or "1-" or "-5"
+func parseList(list string) ([]rangeSpec, error) {
+	var specs []rangeSpec
 	parts := strings.Split(list, ",")
 	for _, p := range parts {
 		if strings.Contains(p, "-") {
 			sp := strings.SplitN(p, "-", 2)
-			start, _ := strconv.Atoi(sp[0])
-			end, _ := strconv.Atoi(sp[1])
-			// naive range
-			for i := start; i <= end; i++ {
-				sel[i] = true
+			start := 1
+			if sp[0] != "" {
+				v, err := strconv.Atoi(sp[0])
+				if err != nil || v < 1 {
+					return nil, fmt.Errorf("invalid byte, character or field list")
+				}
+				start = v
 			}
+			end := int(^uint(0) >> 1) // math.MaxInt
+			if sp[1] != "" {
+				v, err := strconv.Atoi(sp[1])
+				// POSIX says start <= end is not strictly required to be error, but busybox does
+				if err != nil || v < 1 {
+					return nil, fmt.Errorf("invalid byte, character or field list")
+				}
+				end = v
+			}
+			specs = append(specs, rangeSpec{start, end})
 		} else {
-			if v, err := strconv.Atoi(p); err == nil {
-				sel[v] = true
+			v, err := strconv.Atoi(p)
+			if err != nil || v < 1 {
+				return nil, fmt.Errorf("invalid byte, character or field list")
 			}
+			specs = append(specs, rangeSpec{v, v})
 		}
 	}
-	return sel
+	return specs, nil
+}
+
+func inRange(idx int, specs []rangeSpec) bool {
+	for _, s := range specs {
+		if idx >= s.start && idx <= s.end {
+			return true
+		}
+	}
+	return false
 }
 
 func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited bool) ([]CutLine, error) {
@@ -65,17 +94,24 @@ func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited 
 		delim = delimiter
 	}
 
-	var fieldSel map[int]bool
+	var fieldSel []rangeSpec
+	var err error
 	if fields != "" {
-		fieldSel = parseList(fields)
+		if fieldSel, err = parseList(fields); err != nil {
+			return nil, err
+		}
 	}
-	var charSel map[int]bool
+	var charSel []rangeSpec
 	if chars != "" {
-		charSel = parseList(chars)
+		if charSel, err = parseList(chars); err != nil {
+			return nil, err
+		}
 	}
-	var byteSel map[int]bool
+	var byteSel []rangeSpec
 	if bytesList != "" {
-		byteSel = parseList(bytesList)
+		if byteSel, err = parseList(bytesList); err != nil {
+			return nil, err
+		}
 	}
 
 	for scanner.Scan() {
@@ -95,7 +131,7 @@ func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited 
 			} else {
 				var selected []string
 				for i, p := range parts {
-					if fieldSel[i+1] {
+					if inRange(i+1, fieldSel) {
 						selected = append(selected, p)
 					}
 				}
@@ -105,7 +141,7 @@ func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited 
 			runes := []rune(text)
 			var sb strings.Builder
 			for i, r := range runes {
-				if charSel[i+1] {
+				if inRange(i+1, charSel) {
 					sb.WriteRune(r)
 				}
 			}
@@ -113,7 +149,7 @@ func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited 
 		} else if bytesList != "" {
 			var sb strings.Builder
 			for i := 0; i < len(text); i++ {
-				if byteSel[i+1] {
+				if inRange(i+1, byteSel) {
 					sb.WriteByte(text[i])
 				}
 			}
