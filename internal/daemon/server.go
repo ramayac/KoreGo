@@ -142,17 +142,25 @@ func (s *Server) acceptLoop() {
 func (s *Server) handleConn(conn net.Conn) {
 	defer conn.Close()
 
+	rl := NewRateLimiter(100.0, 200)
+	limitReader := io.LimitReader(conn, 1024*1024)
+
 	// Parse incoming JSON stream. It can be a single object or array.
-	dec := json.NewDecoder(conn)
+	dec := json.NewDecoder(limitReader)
 	for {
 		// Read raw message to check if it's array or object
 		var raw json.RawMessage
 		err := dec.Decode(&raw)
 		if err != nil {
 			if err != io.EOF {
-				s.writeError(conn, nil, -32700, "Parse error")
+				s.writeError(conn, nil, -32700, "Parse error or request too large")
 			}
 			return
+		}
+
+		if !rl.Allow() {
+			s.writeError(conn, nil, -32000, "Rate limit exceeded")
+			continue
 		}
 
 		if len(raw) > 0 && raw[0] == '[' {
@@ -277,6 +285,13 @@ func (s *Server) processRequest(req Request) *Response {
 		return nil
 	}
 
+	if len(req.Method) > 256 {
+		if req.ID != nil {
+			return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32600, Message: "Method too long"}}
+		}
+		return nil
+	}
+
 	if req.Method == "korego.ping" {
 		if req.ID == nil {
 			return nil
@@ -383,6 +398,22 @@ func (s *Server) processRequest(req Request) *Response {
 			if p.SessionId != "" {
 				session, _ = s.sm.Get(p.SessionId)
 			}
+
+			if p.Path != "" {
+				base := "/"
+				if session != nil && session.CWD != "" {
+					base = session.CWD
+				}
+				securePath, err := common.SecurePath(p.Path, base)
+				if err != nil {
+					if req.ID != nil {
+						return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Path traversal detected"}}
+					}
+					return nil
+				}
+				p.Path = securePath
+			}
+
 			args = append(args, p.Flags...)
 			if cmdName == "echo" && p.Text != "" {
 				args = append(args, p.Text)

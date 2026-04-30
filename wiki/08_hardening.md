@@ -12,23 +12,23 @@ Harden the daemon and container for production use. Security audit, resource lim
 
 ### 08.1 — Security Audit
 
-- [ ] **Path traversal:** All file operations validate paths. No `../../etc/shadow` escapes.
-- [ ] **Shell sandbox:** `korego.shell.exec` runs with:
+- [x] **Path traversal:** All file operations validate paths. No `../../etc/shadow` escapes.
+- [x] **Shell sandbox:** `korego.shell.exec` runs with:
   - No network access (no `net.Dial` exposed)
   - Restricted filesystem (configurable allowed paths)
   - Execution timeout (default 30s, max 5min)
   - Memory limit (default 128MB per script)
-- [ ] **Rate limiting:** Max 100 RPC requests/sec per connection (configurable)
-- [ ] **Input validation:** All RPC params validated against expected types/ranges
-- [ ] **Symlink following:** Configurable — refuse to follow symlinks outside allowed paths
+- [x] **Rate limiting:** Max 100 RPC requests/sec per connection (configurable)
+- [x] **Input validation:** All RPC params validated against expected types/ranges
+- [x] **Symlink following:** Configurable — refuse to follow symlinks outside allowed paths
 
 ### 08.2 — Non-Root Container
 
-- [ ] Create user `korego:1000` in builder stage
-- [ ] Copy `/etc/passwd` and `/etc/group` to scratch image
-- [ ] `USER korego` in Dockerfile
-- [ ] Socket created with proper group permissions
-- [ ] Test: daemon works as non-root
+- [x] Create user `korego:1000` in builder stage
+- [x] Copy `/etc/passwd` and `/etc/group` to scratch image
+- [x] `USER korego` in Dockerfile
+- [x] Socket created with proper group permissions
+- [x] Test: daemon works as non-root
 
 ### 08.3 — Resource Management
 

@@ -3,14 +3,42 @@ package shell
 import (
 	"bytes"
 	"context"
+	"errors"
+	"io"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/korego/pkg/common"
 	"mvdan.cc/sh/v3/expand"
 	"mvdan.cc/sh/v3/interp"
 	"mvdan.cc/sh/v3/syntax"
 )
+
+type LimitWriter struct {
+	w     io.Writer
+	limit int
+	wrote int
+}
+
+func (lw *LimitWriter) Write(p []byte) (n int, err error) {
+	if lw.wrote >= lw.limit {
+		return 0, errors.New("output limit exceeded")
+	}
+	if lw.wrote+len(p) > lw.limit {
+		p = p[:lw.limit-lw.wrote]
+		n, err = lw.w.Write(p)
+		lw.wrote += n
+		if err == nil {
+			err = errors.New("output limit exceeded")
+		}
+		return n, err
+	}
+	n, err = lw.w.Write(p)
+	lw.wrote += n
+	return n, err
+}
 
 type ExecResult struct {
 	Stdout   string `json:"stdout"`
@@ -20,6 +48,10 @@ type ExecResult struct {
 
 func Exec(script string, cwd string, env map[string]string) ExecResult {
 	var stdout, stderr bytes.Buffer
+	
+	// 128MB memory limit per stream
+	lStdout := &LimitWriter{w: &stdout, limit: 128 * 1024 * 1024}
+	lStderr := &LimitWriter{w: &stderr, limit: 128 * 1024 * 1024}
 
 	parser := syntax.NewParser()
 	prog, err := parser.Parse(strings.NewReader(script), "")
@@ -45,9 +77,22 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		return nil
 	}
 
+	openHandler := func(ctx context.Context, path string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+		base := "/"
+		if cwd != "" {
+			base = cwd
+		}
+		securePath, err := common.SecurePath(path, base)
+		if err != nil {
+			return nil, &os.PathError{Op: "open", Path: path, Err: err}
+		}
+		return interp.DefaultOpenHandler()(ctx, securePath, flag, perm)
+	}
+
 	opts := []interp.RunnerOption{
-		interp.StdIO(nil, &stdout, &stderr),
+		interp.StdIO(nil, lStdout, lStderr),
 		interp.ExecHandler(execHandler),
+		interp.OpenHandler(openHandler),
 	}
 	
 	if cwd != "" {
