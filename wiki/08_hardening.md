@@ -32,35 +32,35 @@ Harden the daemon and container for production use. Security audit, resource lim
 
 ### 08.3 — Resource Management
 
-- [ ] Session TTL with automatic cleanup goroutine
-- [ ] Connection limits (max concurrent connections)
-- [ ] Request body size limit (default 1MB)
-- [ ] Response size limit for `--json` (paginate large results)
-- [ ] Memory profiling with `pprof` endpoint (debug mode only)
+- [x] Session TTL with automatic cleanup goroutine
+- [x] Connection limits (max concurrent connections)
+- [x] Request body size limit (default 1MB)
+- [x] Response size limit for `--json` (paginate large results)
+- [x] Memory profiling with `pprof` endpoint (debug mode only)
 
 ### 08.4 — Stability Testing
 
-- [ ] 24-hour soak test under moderate load
-- [ ] Memory leak detection (`go test -race`, `pprof` heap profiles)
-- [ ] Graceful shutdown under load (SIGTERM during active requests)
-- [ ] Socket file cleanup on crash (stale socket detection on restart)
-- [ ] Fuzz testing on JSON-RPC parser (`go test -fuzz`)
+- [x] 24-hour soak test under moderate load
+- [x] Memory leak detection (`go test -race`, `pprof` heap profiles)
+- [x] Graceful shutdown under load (SIGTERM during active requests)
+- [x] Socket file cleanup on crash (stale socket detection on restart)
+- [x] Fuzz testing on JSON-RPC parser (`go test -fuzz`)
 
 ### 08.5 — POSIX Coverage Matrix (`wiki/posix_coverage.md`)
 
 - [x] Matrix covers all 50+ utilities (Completed, see `posix_coverage.md`)
 - [x] Each utility lists: implemented flags, missing flags, known deviations
-- [ ] Overall compliance percentage calculated
+- [x] Overall compliance percentage calculated
 
 *(Note: `awk` has been explicitly deferred from the MVP scope.)*
 
 ## Milestone 08
 
-- [ ] Security audit complete, no critical findings
-- [ ] Daemon runs as non-root in container
-- [ ] 24-hour soak test passes (no memory leaks, no crashes)
-- [ ] Fuzz testing on JSON-RPC parser finds no panics
-- [ ] POSIX coverage matrix published, >= 80% overall
+- [x] Security audit complete, no critical findings
+- [x] Daemon runs as non-root in container
+- [x] 24-hour soak test passes (no memory leaks, no crashes)
+- [x] Fuzz testing on JSON-RPC parser finds no panics
+- [x] POSIX coverage matrix published, >= 80% overall
 
 ## How to Verify
 

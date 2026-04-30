@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"strings"
@@ -80,6 +82,10 @@ type Server struct {
 
 	activeWorkers int32
 	totalRequests int64
+
+	connSem      chan struct{}
+	connWG       sync.WaitGroup
+	shuttingDown int32
 }
 
 // NewServer creates a new daemon server.
@@ -89,6 +95,7 @@ func NewServer(socketPath string, workers int) *Server {
 		pool:       NewWorkerPool(workers),
 		uptime:     time.Now(),
 		sm:         NewSessionManager(30 * time.Minute),
+		connSem:    make(chan struct{}, 100), // Max 100 concurrent connections
 	}
 }
 
@@ -115,10 +122,11 @@ func (s *Server) Start() error {
 
 // Stop gracefully shuts down the server.
 func (s *Server) Stop() {
+	atomic.StoreInt32(&s.shuttingDown, 1)
 	if s.listener != nil {
 		s.listener.Close()
 	}
-	// Wait for workers? We can add waitgroup later if needed.
+	s.connWG.Wait()
 	os.Remove(s.socketPath)
 }
 
@@ -126,6 +134,9 @@ func (s *Server) acceptLoop() {
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
+			if atomic.LoadInt32(&s.shuttingDown) == 1 {
+				return
+			}
 			// If listener closed, stop accepting
 			select {
 			case <-time.After(10 * time.Millisecond):
@@ -135,7 +146,15 @@ func (s *Server) acceptLoop() {
 			}
 			continue
 		}
-		go s.handleConn(conn)
+
+		s.connSem <- struct{}{}
+		s.connWG.Add(1)
+
+		go func(c net.Conn) {
+			defer s.connWG.Done()
+			defer func() { <-s.connSem }()
+			s.handleConn(c)
+		}(conn)
 	}
 }
 
@@ -439,9 +458,11 @@ func (s *Server) processRequest(req Request) *Response {
 	args = append(args, "--json") // Force JSON mode
 
 	var buf bytes.Buffer
-	
+	// 50MB response limit to prevent OOM
+	lw := &common.LimitWriter{W: &buf, Limit: 50 * 1024 * 1024}
+
 	// Execute the command
-	cmd.Run(args, &buf)
+	cmd.Run(args, lw)
 
 	// We intercept the output which should be a JSONEnvelope.
 	// But `buf` might contain multiple lines or other things if the utility misbehaves.
@@ -490,8 +511,17 @@ func (s *Server) processRequest(req Request) *Response {
 func RunDaemon(socketPath string, workers int) error {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
-	
+
 	slog.Info("starting korego daemon", "socket", socketPath, "workers", workers)
+
+	if os.Getenv("KOREGO_DEBUG") == "1" {
+		go func() {
+			slog.Info("starting pprof on :6060")
+			if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+				slog.Error("pprof server failed", "error", err)
+			}
+		}()
+	}
 
 	server := NewServer(socketPath, workers)
 	if err := server.Start(); err != nil {

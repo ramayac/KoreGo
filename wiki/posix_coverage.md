@@ -2,6 +2,13 @@
 
 This document tracks the implementation status of KoreGo utilities against the POSIX standard.
 
+## Overall Compliance Summary
+- **Targeted Utilities (MVP Scope):** 49
+- **Fully Implemented (✅):** 46 (93.8%)
+- **Partially Implemented (⚠️):** 2 (4.1%)
+- **Deferred (❌):** 1 (2.0%)
+- **Overall Completion (Target Scope):** ~98%
+
 > **Note on `awk`:** We have decided **not** to implement `awk` for this MVP. Building a full POSIX-compliant `awk` parser and interpreter is a massive undertaking that would delay the core goal of providing an agent-ready userland. We will revisit `awk` in a future phase. Complex text processing should be handled by `grep`, `sed`, or the agent directly via JSON structured output.
 
 ### Phase 00 & 01: Core & Env
