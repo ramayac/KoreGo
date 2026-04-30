@@ -46,7 +46,12 @@ func run(args []string, out io.Writer) int {
 	escape := false
 	var positional []string
 
-	for i, arg := range args {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "-j" || arg == "--json" {
+			jsonMode = true
+			continue
+		}
 		if arg == "-n" {
 			noNewline = true
 		} else if arg == "-e" {
@@ -54,11 +59,8 @@ func run(args []string, out io.Writer) int {
 		} else if arg == "-ne" || arg == "-en" {
 			noNewline = true
 			escape = true
-		} else if arg == "-j" || arg == "--json" {
-			jsonMode = true
 		} else {
-			positional = args[i:]
-			break
+			positional = append(positional, arg)
 		}
 	}
 

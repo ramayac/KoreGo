@@ -66,7 +66,8 @@ PKG_DIRS   := ./pkg/common/... \
               ./pkg/printf/... \
               ./pkg/expr/... \
               ./pkg/testcmd/... \
-              ./pkg/md5sum/...
+              ./pkg/md5sum/... \
+              ./test/posix-json/...
 
 .DEFAULT_GOAL := help
 

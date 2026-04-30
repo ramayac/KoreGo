@@ -451,7 +451,7 @@ func (s *Server) processRequest(req Request) *Response {
 	lw := &common.LimitWriter{W: &buf, Limit: 50 * 1024 * 1024}
 
 	// Execute the command
-	cmd.Run(args, lw)
+	exitCode := cmd.Run(args, lw)
 
 	// We intercept the output which should be a JSONEnvelope.
 	// But `buf` might contain multiple lines or other things if the utility misbehaves.
@@ -460,13 +460,19 @@ func (s *Server) processRequest(req Request) *Response {
 	
 	// Try parsing it
 	if err := json.Unmarshal(buf.Bytes(), &env); err != nil {
-		// It might be raw ndjson or something else.
-		// For simplicity, just return it as data if it's valid JSON, else string.
+		// It might be raw ndjson or something else, or completely empty (true/false)
 		if req.ID != nil {
+			var resultData interface{} = nil
+			if buf.Len() > 0 {
+				resultData = buf.String()
+			}
 			return &Response{
 				JSONRPC: "2.0",
 				ID:      req.ID,
-				Result:  buf.String(),
+				Result: map[string]interface{}{
+					"exitCode": exitCode,
+					"data":     resultData,
+				},
 			}
 		}
 		return nil
@@ -484,7 +490,10 @@ func (s *Server) processRequest(req Request) *Response {
 			Error: &Error{
 				Code:    -32000,
 				Message: env.Error.Message,
-				Data:    env.Error.Code,
+				Data: map[string]interface{}{
+					"exitCode": exitCode,
+					"code":     env.Error.Code,
+				},
 			},
 		}
 	}
@@ -492,7 +501,10 @@ func (s *Server) processRequest(req Request) *Response {
 	return &Response{
 		JSONRPC: "2.0",
 		ID:      req.ID,
-		Result:  env.Data, // Extract just the data
+		Result: map[string]interface{}{
+			"exitCode": exitCode,
+			"data":     env.Data,
+		},
 	}
 }
 
