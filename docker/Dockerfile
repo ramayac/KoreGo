@@ -12,8 +12,10 @@ RUN go mod download
 COPY . .
 
 ARG VERSION
+ARG TARGETARCH
 RUN VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "dev")} && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    TARGETARCH=${TARGETARCH:-amd64} && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
     go build \
       -ldflags="-s -w -X 'github.com/ramayac/korego/pkg/common.Version=${VERSION}' -X 'main.Version=${VERSION}'" \
       -o /korego ./cmd/korego/

@@ -1,0 +1,35 @@
+builds:
+  - id: korego
+    main: ./cmd/korego/
+    binary: korego
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
+    ldflags: ["-s", "-w", "-X 'github.com/ramayac/korego/pkg/common.Version={{.Version}}' -X 'main.Version={{.Version}}'"]
+
+dockers:
+  - image_templates: ["ghcr.io/ramayac/korego:{{.Version}}-amd64"]
+    dockerfile: docker/Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+  - image_templates: ["ghcr.io/ramayac/korego:{{.Version}}-arm64"]
+    dockerfile: docker/Dockerfile
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+
+docker_manifests:
+  - name_template: ghcr.io/ramayac/korego:{{.Version}}
+    image_templates:
+      - ghcr.io/ramayac/korego:{{.Version}}-amd64
+      - ghcr.io/ramayac/korego:{{.Version}}-arm64
+  - name_template: ghcr.io/ramayac/korego:latest
+    image_templates:
+      - ghcr.io/ramayac/korego:{{.Version}}-amd64
+      - ghcr.io/ramayac/korego:{{.Version}}-arm64
+
+changelog:
+  sort: asc
+  filters:
+    exclude: ["^docs:", "^test:", "^ci:"]

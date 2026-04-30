@@ -12,11 +12,11 @@ Automate releases, finalize all documentation, and prepare for public launch.
 
 ### 09.1 — Multi-Arch Builds
 
-- [ ] Build for `linux/amd64` and `linux/arm64`
-- [ ] Docker `buildx` with `--platform linux/amd64,linux/arm64`
-- [ ] CI builds both architectures
-- [ ] Binary size targets: < 15MB per arch (stripped)
-- [ ] Image size targets: < 20MB per arch
+- [x] Build for `linux/amd64` and `linux/arm64`
+- [x] Docker `buildx` with `--platform linux/amd64,linux/arm64`
+- [x] CI builds both architectures
+- [x] Binary size targets: < 15MB per arch (stripped)
+- [x] Image size targets: < 20MB per arch (warn to the user if this is not the case but don't block anything)
 
 ### 09.2 — Release Automation (GoReleaser)
 
@@ -42,22 +42,22 @@ changelog:
     exclude: ["^docs:", "^test:", "^ci:"]
 ```
 
-- [ ] Semantic versioning (v0.1.0, v0.2.0, ...)
-- [ ] Git tags trigger release builds
-- [ ] Docker images published to GHCR
-- [ ] GitHub Release with binaries + checksums
+- [x] Semantic versioning (v0.1.0, v0.2.0, ...)
+- [x] Git tags trigger release builds
+- [x] Docker images published to GHCR
+- [x] GitHub Release with binaries + checksums
 
 ### 09.3 — Documentation Finalization
 
 | Document | Content | Status |
 |----------|---------|--------|
-| `README.md` | Project overview, quickstart, Docker usage, examples | [ ] |
-| `AGENTS.md` | Coding conventions, commit format, PR rules | [ ] |
-| `docs/JSON_SCHEMA.md` | `--json` output schema for every utility with examples | [ ] |
-| `docs/RPC_API.md` | JSON-RPC method catalog, request/response, error codes | [ ] |
-| `wiki/posix_coverage.md` | Compliance matrix: utility × flag × status | [ ] |
-| `docs/ARCHITECTURE.md` | System architecture, package diagram, data flow | [ ] |
-| GoDoc (inline) | Every exported function, type, and package | [ ] |
+| `README.md` | Project overview, quickstart, Docker usage, examples | [x] |
+| `AGENTS.md` | Coding conventions, commit format, PR rules | [x] |
+| `docs/JSON_SCHEMA.md` | `--json` output schema for every utility with examples | [x] |
+| `docs/RPC_API.md` | JSON-RPC method catalog, request/response, error codes | [x] |
+| `wiki/posix_coverage.md` | Compliance matrix: utility × flag × status | [x] |
+| `docs/ARCHITECTURE.md` | System architecture, package diagram, data flow | [x] |
+| GoDoc (inline) | Every exported function, type, and package | [x] |
 
 ### 09.4 — End-to-End Agent Test
 
@@ -79,9 +79,9 @@ func TestAgentWorkflow(t *testing.T) {
 }
 ```
 
-- [ ] Full workflow passes end-to-end
-- [ ] All RPC responses are valid JSON-RPC 2.0
-- [ ] No errors, no panics, no resource leaks
+- [x] Full workflow passes end-to-end
+- [x] All RPC responses are valid JSON-RPC 2.0
+- [x] No errors, no panics, no resource leaks
 
 ### 09.5 — Performance Report
 
@@ -101,13 +101,13 @@ Docker image size:         14.8 MB
 
 ## Milestone 09 (Final)
 
-- [ ] Multi-arch images published to GHCR
-- [ ] GoReleaser pipeline produces tagged releases
-- [ ] All 7 documentation deliverables complete
-- [ ] E2E agent test passes
-- [ ] Binary < 15MB, image < 20MB
-- [ ] README has quickstart that works in < 2 minutes
-- [ ] POSIX compliance >= 80% across all implemented utilities
+- [x] Multi-arch images published to GHCR
+- [x] GoReleaser pipeline produces tagged releases
+- [x] All 7 documentation deliverables complete
+- [x] E2E agent test passes
+- [x] Binary < 15MB, image < 20MB
+- [x] README has quickstart that works in < 2 minutes
+- [x] POSIX compliance >= 80% across all implemented utilities
 
 ## How to Verify
 
@@ -131,15 +131,15 @@ docker run --rm ghcr.io/org/korego:latest uname --json
 
 ## Project Complete Checklist
 
-- [ ] **50+ POSIX utilities** implemented in pure Go
-- [ ] **`--json` flag** on every utility with consistent envelope
-- [ ] **JSON-RPC 2.0 daemon** over Unix socket
-- [ ] **Stateful sessions** for agentic workflows
-- [ ] **Shell interpreter** via mvdan/sh
-- [ ] **FROM scratch** Docker image < 20MB
-- [ ] **Multi-arch** (amd64 + arm64)
-- [ ] **> 80% POSIX compliance** with documented coverage
-- [ ] **< 1ms daemon latency** for trivial commands
-- [ ] **Security hardened** (non-root, sandboxed shell, rate limits)
-- [ ] **Fully documented** (JSON schemas, RPC API, architecture)
-- [ ] **CI/CD** with automated releases
+- [x] **50+ POSIX utilities** implemented in pure Go
+- [x] **`--json` flag** on every utility with consistent envelope
+- [x] **JSON-RPC 2.0 daemon** over Unix socket
+- [x] **Stateful sessions** for agentic workflows
+- [x] **Shell interpreter** via mvdan/sh
+- [x] **FROM scratch** Docker image < 20MB
+- [x] **Multi-arch** (amd64 + arm64)
+- [x] **> 80% POSIX compliance** with documented coverage
+- [x] **< 1ms daemon latency** for trivial commands
+- [x] **Security hardened** (non-root, sandboxed shell, rate limits)
+- [x] **Fully documented** (JSON schemas, RPC API, architecture)
+- [x] **CI/CD** with automated releases

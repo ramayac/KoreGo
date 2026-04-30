@@ -444,17 +444,6 @@ func (s *Server) processRequest(req Request) *Response {
 		}
 	}
 
-	// Very rudimentary CWD injection if session is present
-	// We prepend it if it's the `path` param and it's relative
-	if session != nil && session.CWD != "" && session.CWD != "/" {
-		for i, arg := range args {
-			if !strings.HasPrefix(arg, "-") && !strings.HasPrefix(arg, "/") {
-				// Naive path resolution
-				args[i] = session.CWD + "/" + arg
-			}
-		}
-	}
-	
 	args = append(args, "--json") // Force JSON mode
 
 	var buf bytes.Buffer

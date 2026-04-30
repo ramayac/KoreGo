@@ -61,7 +61,9 @@ Refer to the Phase documents in `wiki/` (e.g., `wiki/plan_updated.md`) to unders
 - **Phase 04:** Text Utils (grep, sed, sort, wc, etc.) — **COMPLETED**
 - **Phase 05:** JSON-RPC Daemon Core — **COMPLETED**
 - **Phase 06:** System & Process Utils (ps, find, df, du, etc.) — **COMPLETED**
-- **Phase 07+:** See project roadmap.
+- **Phase 07:** Agent-Ready Features (diff, tar, shell) — **COMPLETED**
+- **Phase 08:** Security Hardening — **COMPLETED**
+- **Phase 09:** Release & Automation — **COMPLETED**
 
 ## 7. Docker & Containerization Insights
 
