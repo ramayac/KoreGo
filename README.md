@@ -21,6 +21,11 @@ make all
 ./korego --list-commands
 ```
 
+### Run POSIX Tests
+```bash
+make testsuite
+```
+
 ### Start Daemon
 ```bash
 ./korego daemon --socket /tmp/korego.sock &

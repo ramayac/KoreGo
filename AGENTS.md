@@ -64,6 +64,7 @@ Refer to the Phase documents in `wiki/` (e.g., `wiki/plan_updated.md`) to unders
 - **Phase 07:** Agent-Ready Features (diff, tar, shell) — **COMPLETED**
 - **Phase 08:** Security Hardening — **COMPLETED**
 - **Phase 09:** Release & Automation — **COMPLETED**
+- **Phase 10:** POSIX Test Framework — **IN PROGRESS (10.1, 10.2)**
 
 ## 7. Docker & Containerization Insights
 

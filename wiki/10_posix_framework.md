@@ -41,19 +41,26 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 ## Tasks
 
 ### 10.1 — Framework Selection and Porting
-- [ ] Investigate and fork the BusyBox `testsuite/` directory.
-- [ ] Adapt the runner to execute against the `korego` binary instead of `busybox`.
-- [ ] Disable tests for utilities we haven't implemented yet.
+- [x] Investigate and fork the BusyBox `testsuite/` directory.
+- [x] Adapt the runner to execute against the `korego` binary instead of `busybox`.
+- [x] Disable tests for utilities we haven't implemented yet.
 
 ### 10.2 — Baseline Execution
-- [ ] Run the adapted suite.
-- [ ] Document all failures in `wiki/posix_coverage.md` as known deviations.
-- [ ] Fix critical deviations (e.g. standard flags failing).
+- [x] Run the adapted suite.
+- [x] Document all failures in `wiki/posix_coverage.md` as known deviations.
+- [x] Fix critical deviations (e.g. standard flags failing).
 
 ### 10.3 — JSON/RPC Testing Harness
-- [ ] Create a `test/posix-json/` directory.
-- [ ] Implement a Go-based TAP runner that runs POSIX commands via the JSON-RPC daemon.
-- [ ] Verify that the structured output semantics map correctly to POSIX expectations (e.g. exit codes, stderr vs stdout separation).
+- [x] Create a `test/posix-json/` directory.
+- [x] Implement a Go-based TAP runner that runs POSIX commands via the JSON-RPC daemon.
+- [x] Verify that the structured output semantics map correctly to POSIX expectations (e.g. exit codes, stderr vs stdout separation).
+
+### 10.4 - Sed
+- [ ] Fix test/busybox_testsuite/sed.tests to pass all tests. (See [10a_sed.md](10a_sed.md) for detailed sub-tasks)
+
+### 10.5 - busybox test step in github action
+- [ ] Add a step in github action to run the busybox test suite.
+
 
 ## Milestone 10
 - [ ] External test suite integrated into `make test` or `make compliance`.

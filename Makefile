@@ -66,7 +66,8 @@ PKG_DIRS   := ./pkg/common/... \
               ./pkg/printf/... \
               ./pkg/expr/... \
               ./pkg/testcmd/... \
-              ./pkg/md5sum/...
+              ./pkg/md5sum/... \
+              ./test/posix-json/...
 
 .DEFAULT_GOAL := help
 
@@ -302,6 +303,11 @@ compliance: build
 	@echo "--- basename/dirname compliance ---"
 	bash test/compliance/test_basename_dirname.sh
 	@echo "compliance: all suites passed"
+
+.PHONY: testsuite
+testsuite: build
+	@echo "--- BusyBox Test Suite ---"
+	cd test/busybox_testsuite && ./runtest
 
 .PHONY: ci
 ci: vet test build docker smoke-docker

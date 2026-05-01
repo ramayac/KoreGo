@@ -9,6 +9,8 @@ This document tracks the implementation status of KoreGo utilities against the P
 - **Deferred (❌):** 1 (2.0%)
 - **Overall Completion (Target Scope):** ~98%
 
+> **Note on BusyBox Test Suite:** As part of Phase 10, we integrated the busybox test suite. The baseline execution resulted in ~150 failures, almost entirely driven by flags that are not implemented in our MVP (e.g., `tar -x`, `tail -c`, `uniq -f`) or minor POSIX deviations. These will be incrementally addressed.
+
 > **Note on `awk`:** We have decided **not** to implement `awk` for this MVP. Building a full POSIX-compliant `awk` parser and interpreter is a massive undertaking that would delay the core goal of providing an agent-ready userland. We will revisit `awk` in a future phase. Complex text processing should be handled by `grep`, `sed`, or the agent directly via JSON structured output.
 
 ### Phase 00 & 01: Core & Env
@@ -29,7 +31,7 @@ This document tracks the implementation status of KoreGo utilities against the P
 | Utility    | Status | Flags Implemented           | Notes |
 |------------|--------|-----------------------------|-------|
 | `cat`      | ✅     | `-b`, `-n`, `-s`            | POSIX compliant |
-| `cp`       | ✅     | `-f`, `-i`, `-p`, `-r`, `-R`| POSIX compliant |
+| `cp`       | ✅     | `-d`, `-f`, `-H`, `-i`, `-L`, `-P`, `-p`, `-r`, `-R` | POSIX compliant |
 | `ln`       | ✅     | `-f`, `-s`                  | POSIX compliant |
 | `ls`       | ✅     | `-1`, `-A`, `-R`, `-S`, `-a`, `-d`, `-h`, `-i`, `-l`, `-r`, `-s`, `-t` | Broad compliance |
 | `mkdir`    | ✅     | `-m`, `-p`                  | POSIX compliant |
@@ -43,8 +45,8 @@ This document tracks the implementation status of KoreGo utilities against the P
 ### Phase 04: Text Utils
 | Utility    | Status | Flags Implemented           | Notes |
 |------------|--------|-----------------------------|-------|
-| `cut`      | ✅     | `-b`, `-c`, `-d`, `-f`      | POSIX compliant |
-| `grep`     | ⚠️     | `-A`, `-B`, `-C`, `-E`, `-F`, `-c`, `-i`, `-l`, `-n`, `-r`, `-v`, `-w`, `-x` | Lacks BRE backrefs (Go RE2 limitation) |
+| `cut`      | ✅     | `-b`, `-c`, `-d`, `-f`, `-n`| POSIX compliant |
+| `grep`     | ⚠️     | `-A`, `-B`, `-C`, `-E`, `-F`, `-L`, `-c`, `-i`, `-l`, `-n`, `-o`, `-r`, `-v`, `-w`, `-x` | Lacks BRE backrefs (Go RE2 limitation) |
 | `head`     | ✅     | `-n`                        | POSIX compliant |
 | `sed`      | ⚠️     | `-e`, `-i`, `-n`, `s`, `d`, `p`, `q` | Incremental implementation |
 | `sort`     | ✅     | `-k`, `-n`, `-r`, `-t`, `-u`| POSIX compliant |
@@ -68,12 +70,12 @@ This document tracks the implementation status of KoreGo utilities against the P
 | `ps`       | ✅     | `-e`                        | POSIX compliant |
 | `sleep`    | ✅     | *N/A*                       | POSIX compliant |
 | `uname`    | ✅     | `-a`, `-m`, `-n`, `-r`, `-s`, `-v` | POSIX compliant |
-| `xargs`    | ✅     | *N/A*                       | POSIX compliant |
+| `xargs`    | ✅     | `-E`, `-e`                  | POSIX compliant |
 
 ### Phase 07: Agent-Ready Features
 | Utility    | Status | Flags Implemented           | Notes |
 |------------|--------|-----------------------------|-------|
-| `diff`     | ✅     | `-U`, `-u`                  | Core unified diff supported |
+| `diff`     | ✅     | `-B`, `-b`, `-U`, `-q`, `-u`| Core unified diff supported |
 | `expr`     | ✅     | *N/A*                       | Core arithmetic/string supported |
 | `gzip`     | ✅     | `-c`, `-d`, `-f`, `-k`      | Common compression options |
 | `printf`   | ✅     | *N/A*                       | POSIX compliant formatting |

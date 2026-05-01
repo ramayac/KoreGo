@@ -24,13 +24,50 @@ var spec = common.FlagSpec{
 		{Short: "d", Long: "repeated", Type: common.FlagBool},
 		{Short: "u", Long: "unique", Type: common.FlagBool},
 		{Short: "i", Long: "ignore-case", Type: common.FlagBool},
+		{Short: "f", Long: "skip-fields", Type: common.FlagValue},
+		{Short: "s", Long: "skip-chars", Type: common.FlagValue},
+		{Short: "w", Long: "check-chars", Type: common.FlagValue},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
 
-func Run(r io.Reader, countMode, duplicatesOnly, uniqueOnly, ignoreCase bool) ([]UniqItem, error) {
+func extractCompareKey(line string, skipFields, skipChars, checkChars int) string {
+	// Skip fields
+	for i := 0; i < skipFields; i++ {
+		line = strings.TrimLeft(line, " \t")
+		idx := strings.IndexAny(line, " \t")
+		if idx == -1 {
+			line = ""
+			break
+		}
+		line = line[idx:]
+	}
+	// Skip chars
+	if skipChars > 0 {
+		runes := []rune(line)
+		if len(runes) > skipChars {
+			line = string(runes[skipChars:])
+		} else {
+			line = ""
+		}
+	}
+	// Check chars
+	if checkChars > 0 {
+		runes := []rune(line)
+		if len(runes) > checkChars {
+			line = string(runes[:checkChars])
+		}
+	}
+	return line
+}
+
+func Run(r io.Reader, countMode, duplicatesOnly, uniqueOnly, ignoreCase bool, skipFields, skipChars, checkChars int) ([]UniqItem, error) {
 	scanner := bufio.NewScanner(r)
 	var items []UniqItem
+
+	if uniqueOnly && duplicatesOnly {
+		return items, scanner.Err()
+	}
 
 	var prev string
 	var prevOrig string
@@ -43,6 +80,7 @@ func Run(r io.Reader, countMode, duplicatesOnly, uniqueOnly, ignoreCase bool) ([
 		if ignoreCase {
 			line = strings.ToLower(line)
 		}
+		line = extractCompareKey(line, skipFields, skipChars, checkChars)
 
 		if first {
 			prev = line
@@ -84,6 +122,18 @@ func run(args []string, out io.Writer) int {
 	duplicatesOnly := flags.Has("d")
 	uniqueOnly := flags.Has("u")
 	ignoreCase := flags.Has("i")
+	skipFields := 0
+	if val := flags.Get("f"); val != "" {
+		fmt.Sscanf(val, "%d", &skipFields)
+	}
+	skipChars := 0
+	if val := flags.Get("s"); val != "" {
+		fmt.Sscanf(val, "%d", &skipChars)
+	}
+	checkChars := 0
+	if val := flags.Get("w"); val != "" {
+		fmt.Sscanf(val, "%d", &checkChars)
+	}
 
 	var in io.Reader = os.Stdin
 	if len(flags.Positional) > 0 && flags.Positional[0] != "-" {
@@ -97,7 +147,7 @@ func run(args []string, out io.Writer) int {
 	}
 
 	out = os.Stdout
-	if len(flags.Positional) > 1 {
+	if len(flags.Positional) > 1 && flags.Positional[1] != "-" {
 		f, err := os.Create(flags.Positional[1])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "uniq: %v\n", err)
@@ -107,7 +157,7 @@ func run(args []string, out io.Writer) int {
 		out = f
 	}
 
-	items, err := Run(in, countMode, duplicatesOnly, uniqueOnly, ignoreCase)
+	items, err := Run(in, countMode, duplicatesOnly, uniqueOnly, ignoreCase, skipFields, skipChars, checkChars)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "uniq: %v\n", err)
 		return 1

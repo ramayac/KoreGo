@@ -9,7 +9,7 @@ import (
 func TestRunBasic(t *testing.T) {
 	in := strings.NewReader("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n")
 	var out bytes.Buffer
-	lines, err := Run(in, &out, 10)
+	lines, err := Run(in, &out, 10, 0, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func TestRunBasic(t *testing.T) {
 func TestRunShort(t *testing.T) {
 	in := strings.NewReader("1\n2\n")
 	var out bytes.Buffer
-	lines, _ := Run(in, &out, 10)
+	lines, _ := Run(in, &out, 10, 0, false)
 	if len(lines) != 2 {
 		t.Errorf("expected 2 lines, got %d", len(lines))
 	}

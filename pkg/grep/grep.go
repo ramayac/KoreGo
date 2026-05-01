@@ -28,7 +28,13 @@ var spec = common.FlagSpec{
 		{Short: "c", Long: "count", Type: common.FlagBool},
 		{Short: "n", Long: "line-number", Type: common.FlagBool},
 		{Short: "l", Long: "files-with-matches", Type: common.FlagBool},
+		{Short: "L", Long: "files-without-match", Type: common.FlagBool},
+		{Short: "o", Long: "only-matching", Type: common.FlagBool},
 		{Short: "r", Long: "recursive", Type: common.FlagBool},
+		{Short: "q", Long: "quiet", Type: common.FlagBool},
+		{Short: "s", Long: "no-messages", Type: common.FlagBool},
+		{Short: "f", Long: "file", Type: common.FlagValue},
+		{Short: "e", Long: "regexp", Type: common.FlagValue},
 		{Short: "E", Long: "extended-regexp", Type: common.FlagBool},
 		{Short: "F", Long: "fixed-strings", Type: common.FlagBool},
 		{Short: "w", Long: "word-regexp", Type: common.FlagBool},
@@ -40,7 +46,7 @@ var spec = common.FlagSpec{
 	},
 }
 
-func Run(r io.Reader, filename string, re *regexp.Regexp, fixedPattern string, invert, fixed, lineRegexp bool) ([]GrepMatch, error) {
+func Run(r io.Reader, filename string, re *regexp.Regexp, fixedPatterns []string, invert, fixed, lineRegexp bool) ([]GrepMatch, error) {
 	scanner := bufio.NewScanner(r)
 	var matches []GrepMatch
 	lineNum := 0
@@ -53,13 +59,19 @@ func Run(r io.Reader, filename string, re *regexp.Regexp, fixedPattern string, i
 		var substrings []string
 
 		if fixed {
-			if lineRegexp {
-				matchFound = text == fixedPattern
-			} else {
-				matchFound = strings.Contains(text, fixedPattern)
-			}
-			if matchFound && !invert {
-				substrings = append(substrings, fixedPattern)
+			for _, pat := range fixedPatterns {
+				var found bool
+				if lineRegexp {
+					found = text == pat
+				} else {
+					found = strings.Contains(text, pat)
+				}
+				if found {
+					matchFound = true
+					if !invert {
+						substrings = append(substrings, pat)
+					}
+				}
 			}
 		} else {
 			if lineRegexp {
@@ -95,13 +107,27 @@ func run(args []string, out io.Writer) int {
 		return 2
 	}
 
-	if len(flags.Positional) == 0 {
-		fmt.Fprintln(os.Stderr, "grep: missing pattern")
-		return 2
+	var pattern string
+	var paths []string
+
+	if ePat := flags.Get("e"); ePat != "" {
+		pattern = ePat
+		paths = flags.Positional
+	} else if len(flags.Positional) > 0 {
+		pattern = flags.Positional[0]
+		paths = flags.Positional[1:]
 	}
 
-	pattern := flags.Positional[0]
-	paths := flags.Positional[1:]
+	quiet := flags.Has("q")
+	suppressErrors := flags.Has("s")
+	filePattern := flags.Get("f")
+
+	if pattern == "" && filePattern == "" {
+		if !suppressErrors {
+			fmt.Fprintln(os.Stderr, "grep: missing pattern")
+		}
+		return 2
+	}
 
 	jsonMode := flags.Has("j")
 	invert := flags.Has("v")
@@ -113,33 +139,69 @@ func run(args []string, out io.Writer) int {
 	wordRegexp := flags.Has("w")
 	lineRegexp := flags.Has("x")
 
+	var patterns []string
+	if pattern != "" {
+		patterns = append(patterns, strings.Split(pattern, "\n")...)
+	}
+	if filePattern != "" {
+		var b []byte
+		var err error
+		if filePattern == "-" {
+			b, err = io.ReadAll(os.Stdin)
+		} else {
+			b, err = os.ReadFile(filePattern)
+		}
+		
+		if err == nil {
+			patterns = append(patterns, strings.Split(strings.TrimSuffix(string(b), "\n"), "\n")...)
+		} else if !suppressErrors {
+			fmt.Fprintf(os.Stderr, "grep: %v\n", err)
+			return 2
+		}
+	}
+
 	var re *regexp.Regexp
-	var fixedPattern string = pattern
+	var fixedPatterns []string
 
 	if fixed {
-		if ignoreCase {
-			fixedPattern = strings.ToLower(pattern) // simplified
-			// Actually fixed ignoreCase is tricky, but let's just make it regex if ignoreCase + fixed
-			// For simplicity we will compile it as regex anyway if ignoreCase is true.
+		if ignoreCase || wordRegexp {
+			var reParts []string
+			for _, p := range patterns {
+				escaped := regexp.QuoteMeta(p)
+				if wordRegexp {
+					escaped = "\\b" + escaped + "\\b"
+				}
+				reParts = append(reParts, escaped)
+			}
+			pattern = strings.Join(reParts, "|")
+			if ignoreCase {
+				pattern = "(?i)" + pattern
+			}
 			fixed = false
-			pattern = regexp.QuoteMeta(pattern)
+		} else {
+			fixedPatterns = patterns
 		}
 	}
 
 	if !fixed {
-		if wordRegexp {
-			pattern = "\\b" + pattern + "\\b"
+		if len(patterns) > 0 && pattern == "" {
+			pattern = strings.Join(patterns, "|")
+		}
+		if wordRegexp && !strings.Contains(pattern, "\\b") {
+			pattern = "\\b(" + pattern + ")\\b"
 		}
 		if lineRegexp {
-			pattern = "^" + pattern + "$"
+			pattern = "^(" + pattern + ")$"
 		}
-		if ignoreCase {
+		if ignoreCase && !strings.HasPrefix(pattern, "(?i)") {
 			pattern = "(?i)" + pattern
 		}
 
 		compiled, err := regexp.Compile(pattern)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "grep: invalid regex: %v\n", err)
+			if !suppressErrors {
+				fmt.Fprintf(os.Stderr, "grep: invalid regex: %v\n", err)
+			}
 			return 2
 		}
 		re = compiled
@@ -164,7 +226,9 @@ func run(args []string, out io.Writer) int {
 		} else {
 			f, err := os.Open(path)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "grep: %s: %v\n", path, err)
+				if !suppressErrors {
+					fmt.Fprintf(os.Stderr, "grep: %s: %v\n", path, err)
+				}
 				exitCode = 2
 				continue
 			}
@@ -173,15 +237,20 @@ func run(args []string, out io.Writer) int {
 			fname = path
 		}
 
-		matches, err := Run(r, fname, re, fixedPattern, invert, fixed, lineRegexp)
+		matches, err := Run(r, fname, re, fixedPatterns, invert, fixed, lineRegexp)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "grep: %v\n", err)
+			if !suppressErrors {
+				fmt.Fprintf(os.Stderr, "grep: %v\n", err)
+			}
 			exitCode = 2
 		}
 
 		if len(matches) > 0 {
 			if exitCode != 2 {
 				exitCode = 0
+			}
+			if quiet {
+				return 0
 			}
 		}
 
@@ -192,6 +261,13 @@ func run(args []string, out io.Writer) int {
 
 		if filesWithMatches {
 			if len(matches) > 0 {
+				fmt.Println(fname)
+			}
+			continue
+		}
+
+		if flags.Has("L") {
+			if len(matches) == 0 {
 				fmt.Println(fname)
 			}
 			continue
@@ -214,7 +290,13 @@ func run(args []string, out io.Writer) int {
 			if lineNum {
 				prefix += fmt.Sprintf("%d:", m.Line)
 			}
-			fmt.Printf("%s%s\n", prefix, m.Text)
+			if flags.Has("o") {
+				for _, sub := range m.Matches {
+					fmt.Printf("%s%s\n", prefix, sub)
+				}
+			} else {
+				fmt.Printf("%s%s\n", prefix, m.Text)
+			}
 		}
 	}
 

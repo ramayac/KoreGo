@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ramayac/korego/internal/dispatch"
@@ -22,25 +23,64 @@ type TailResult struct {
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "n", Long: "lines", Type: common.FlagValue},
+		{Short: "c", Long: "bytes", Type: common.FlagValue},
 		{Short: "f", Long: "follow", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
 
-// Run reads all lines and writes the last `linesCount` lines.
-func Run(r io.Reader, w io.Writer, linesCount int) ([]string, error) {
+func Run(r io.Reader, w io.Writer, linesCount int, bytesCount int, fromStart bool) ([]string, error) {
+	if bytesCount > 0 {
+		data, err := io.ReadAll(r)
+		if err != nil {
+			return nil, err
+		}
+		if fromStart {
+			skip := bytesCount - 1
+			if skip < 0 {
+				skip = 0
+			}
+			if skip > len(data) {
+				skip = len(data)
+			}
+			data = data[skip:]
+		} else {
+			if bytesCount > len(data) {
+				bytesCount = len(data)
+			}
+			data = data[len(data)-bytesCount:]
+		}
+		w.Write(data)
+		return []string{string(data)}, nil
+	}
+
 	scanner := bufio.NewScanner(r)
 	var lines []string
 
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-		if len(lines) > linesCount {
-			lines = lines[1:]
+	if fromStart {
+		skip := linesCount - 1
+		if skip < 0 {
+			skip = 0
 		}
-	}
+		lineNum := 0
+		for scanner.Scan() {
+			if lineNum >= skip {
+				lines = append(lines, scanner.Text())
+				fmt.Fprintln(w, scanner.Text())
+			}
+			lineNum++
+		}
+	} else {
+		for scanner.Scan() {
+			lines = append(lines, scanner.Text())
+			if len(lines) > linesCount {
+				lines = lines[1:]
+			}
+		}
 
-	for _, line := range lines {
-		fmt.Fprintln(w, line)
+		for _, line := range lines {
+			fmt.Fprintln(w, line)
+		}
 	}
 
 	return lines, scanner.Err()
@@ -55,7 +95,33 @@ func run(args []string, out io.Writer) int {
 	jsonMode := flags.Has("j")
 	follow := flags.Has("f")
 	linesCount := 10
-	if nStr := flags.Get("n"); nStr != "" {
+	bytesCount := 0
+	fromStart := false
+	
+	nStr := flags.Get("n")
+	cStr := flags.Get("c")
+	
+	if len(flags.Positional) > 0 && strings.HasPrefix(flags.Positional[0], "+") {
+		nStr = flags.Positional[0]
+		flags.Positional = flags.Positional[1:]
+	}
+
+	if cStr != "" {
+		if strings.HasPrefix(cStr, "+") {
+			fromStart = true
+			cStr = cStr[1:]
+		}
+		n, err := strconv.Atoi(cStr)
+		if err != nil || n < 0 {
+			fmt.Fprintf(os.Stderr, "tail: illegal byte count -- %s\n", cStr)
+			return 2
+		}
+		bytesCount = n
+	} else if nStr != "" {
+		if strings.HasPrefix(nStr, "+") {
+			fromStart = true
+			nStr = nStr[1:]
+		}
 		n, err := strconv.Atoi(nStr)
 		if err != nil || n < 0 {
 			fmt.Fprintf(os.Stderr, "tail: illegal line count -- %s\n", nStr)
@@ -111,7 +177,7 @@ func run(args []string, out io.Writer) int {
 			w = io.Discard
 		}
 
-		lines, err := Run(f, w, linesCount)
+		lines, err := Run(f, w, linesCount, bytesCount, fromStart)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "tail: %v\n", err)
 			exitCode = 1
