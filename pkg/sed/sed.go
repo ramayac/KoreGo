@@ -16,6 +16,7 @@ var spec = common.FlagSpec{
 		{Short: "e", Long: "expression", Type: common.FlagValue},
 		{Short: "f", Long: "file", Type: common.FlagValue},
 		{Short: "i", Long: "in-place", Type: common.FlagBool},
+		{Long: "version", Type: common.FlagBool},
 	},
 }
 
@@ -24,6 +25,10 @@ func run(args []string, out io.Writer) int {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sed: %v\n", err)
 		return 2
+	}
+	if flags.Has("version") {
+		fmt.Fprintln(out, "GNU sed version 4.0 (KoreGo)")
+		return 0
 	}
 	suppressDefault := flags.Has("n")
 	inPlace := flags.Has("i")

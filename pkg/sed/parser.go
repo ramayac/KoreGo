@@ -299,7 +299,7 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 				next := replRaw[i+1]
 				if next == delim {
 					repl += string(delim)
-				} else if next >= '1' && next <= '9' {
+				} else if next >= '0' && next <= '9' {
 					repl += "$" + string(next)
 				} else if next == '&' {
 					repl += "&" // escaped & becomes literal &

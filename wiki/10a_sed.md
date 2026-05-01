@@ -59,12 +59,12 @@ We need to rewrite `pkg/sed` to separate the parsing phase (building an abstract
 - [x] Implement `n` and `N` commands.
 
 ### Step 4: Flow Control and Blocks
-- [ ] Implement labels (`:`) and branching (`b`).
-- [ ] Implement test branching (`t`, `T`) and the `Substituted` flag.
-- [ ] Implement blocks `{ ... }` and nested execution.
+- [x] Implement labels (`:`) and branching (`b`).
+- [x] Implement test branching (`t`, `T`) and the `Substituted` flag.
+- [x] Implement blocks `{ ... }` and nested execution.
 
 ### Step 5: Advanced Features & Testing
-- [ ] Implement text insertion (`a`, `i`, `c`).
-- [ ] Implement advanced address ranges (e.g., `/regex/,+2`).
-- [ ] Run the `test/busybox_testsuite/runtest sed` suite continuously.
-- [ ] Fix edge cases (e.g., empty files, no trailing newline, `-i` behavior across multiple files).
+- [x] Implement text insertion (`a`, `i`, `c`).
+- [x] Implement advanced address ranges (e.g., `/regex/,+2`).
+- [x] Run the `test/busybox_testsuite/runtest sed` suite continuously.
+- [x] Fix edge cases (e.g., empty files, no trailing newline, `-i` behavior across multiple files).

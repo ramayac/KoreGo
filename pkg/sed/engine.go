@@ -32,15 +32,17 @@ type engineState struct {
 	pendingRead   []string
 
 	addrState map[*Instruction]bool
+	matchedLineAddrs map[*Address]bool
 	
 	reader *bufio.Reader
 	hasTrailingNewline bool
+	nextHasTrailingNewline bool
 	nextLine string
+	hasNext bool
 	lastLacked map[string]bool
 }
 
 func (e *engineState) printStream(w io.Writer, s string, streamID string) {
-	fmt.Fprintf(os.Stderr, "DEBUG printStream %q: hasNewline=%v lastLacked=%v text=%q\n", streamID, e.hasTrailingNewline, e.lastLacked[streamID], s)
 	if e.lastLacked[streamID] {
 		fmt.Fprint(w, "\n")
 	}
@@ -90,6 +92,7 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 		suppress:  suppress,
 		inPlace:   inPlace,
 		addrState: make(map[*Instruction]bool),
+		matchedLineAddrs: make(map[*Address]bool),
 		lastLacked: make(map[string]bool),
 		out:       globalOut,
 	}
@@ -103,6 +106,7 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 		if e.inPlace {
 			e.lineNum = 0
 			e.addrState = make(map[*Instruction]bool)
+			e.matchedLineAddrs = make(map[*Address]bool)
 		}
 
 		var r io.Reader
@@ -132,27 +136,26 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 		}
 
 		e.reader = bufio.NewReader(r)
-		
-		var hasNext bool
 
 		lineStr, _ := e.reader.ReadString('\n')
 		if len(lineStr) > 0 {
 			if strings.HasSuffix(lineStr, "\n") {
-				e.hasTrailingNewline = true
+				e.nextHasTrailingNewline = true
 				e.nextLine = lineStr[:len(lineStr)-1]
 				if strings.HasSuffix(e.nextLine, "\r") {
 					e.nextLine = e.nextLine[:len(e.nextLine)-1]
 				}
 			} else {
-				e.hasTrailingNewline = false
+				e.nextHasTrailingNewline = false
 				e.nextLine = lineStr
 			}
-			hasNext = true
+			e.hasNext = true
 		} else {
-			hasNext = false
+			e.hasNext = false
 		}
+		e.isEOF = !e.hasNext && (e.inPlace || e.fileIdx == len(e.files)-1)
 
-		if !hasNext {
+		if !e.hasNext {
 			// empty file
 			if e.inPlace && e.tmpFile != nil {
 				e.tmpFile.Close()
@@ -161,9 +164,10 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 			continue
 		}
 
-		for hasNext {
+		for e.hasNext {
 			if !e.skipRead {
 				e.patSpace = e.nextLine
+				e.hasTrailingNewline = e.nextHasTrailingNewline
 				e.lineNum++
 				e.substituted = false
 			}
@@ -172,21 +176,21 @@ func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bo
 			lineStr, _ = e.reader.ReadString('\n')
 			if len(lineStr) > 0 {
 				if strings.HasSuffix(lineStr, "\n") {
-					e.hasTrailingNewline = true
+					e.nextHasTrailingNewline = true
 					e.nextLine = lineStr[:len(lineStr)-1]
 					if strings.HasSuffix(e.nextLine, "\r") {
 						e.nextLine = e.nextLine[:len(e.nextLine)-1]
 					}
 				} else {
-					e.hasTrailingNewline = false
+					e.nextHasTrailingNewline = false
 					e.nextLine = lineStr
 				}
-				hasNext = true
-				e.isEOF = false
+				e.hasNext = true
 			} else {
-				hasNext = false
-				e.isEOF = true
+				e.hasNext = false
+				e.nextLine = ""
 			}
+			e.isEOF = !e.hasNext && (e.inPlace || e.fileIdx == len(e.files)-1)
 
 			// execute instructions
 			if err := e.execFlat(insts); err != nil {
@@ -260,7 +264,19 @@ func (e *engineState) shouldRun(inst *Instruction) bool {
 	// Address ranges
 	active := e.addrState[inst]
 	if !active {
-		if e.matchAddress(inst.Addr1) {
+		matchStart := false
+		if inst.Addr1.Type == AddrLine {
+			if e.lineNum >= inst.Addr1.Line {
+				if !e.matchedLineAddrs[inst.Addr1] {
+					e.matchedLineAddrs[inst.Addr1] = true
+					matchStart = true
+				}
+			}
+		} else {
+			matchStart = e.matchAddress(inst.Addr1)
+		}
+		
+		if matchStart {
 			active = true
 			e.addrState[inst] = true
 			// If addr2 matches right away (and it's not a +N address)
@@ -269,8 +285,8 @@ func (e *engineState) shouldRun(inst *Instruction) bool {
 			// Actually POSIX says if addr2 matches on the SAME line, it still spans at least one line.
 			if inst.Addr2.Type == AddrLine && inst.Addr2.Step > 0 {
 				// GNU extension +N
-				// we change Addr2 to be e.lineNum + step
-				inst.Addr2 = &Address{Type: AddrLine, Line: e.lineNum + inst.Addr2.Step}
+				// we change Addr2.Line to be e.lineNum + step, preserving Step
+				inst.Addr2.Line = e.lineNum + inst.Addr2.Step
 			}
 		}
 	}
@@ -278,7 +294,13 @@ func (e *engineState) shouldRun(inst *Instruction) bool {
 	result := active
 
 	if active {
-		if e.matchAddress(inst.Addr2) {
+		addr2Matched := false
+		if inst.Addr2.Type == AddrLine {
+			addr2Matched = e.lineNum >= inst.Addr2.Line
+		} else {
+			addr2Matched = e.matchAddress(inst.Addr2)
+		}
+		if addr2Matched {
 			e.addrState[inst] = false // deactivate for next line
 		}
 	}
@@ -376,24 +398,27 @@ func (e *engineState) execFlat(insts []*Instruction) error {
 			}
 			
 			e.patSpace = e.nextLine
+			e.hasTrailingNewline = e.nextHasTrailingNewline
 			e.lineNum++
 			
 			lineStr, _ := e.reader.ReadString('\n')
 			if len(lineStr) > 0 {
 				if strings.HasSuffix(lineStr, "\n") {
-					e.hasTrailingNewline = true
+					e.nextHasTrailingNewline = true
 					e.nextLine = lineStr[:len(lineStr)-1]
 					if strings.HasSuffix(e.nextLine, "\r") {
 						e.nextLine = e.nextLine[:len(e.nextLine)-1]
 					}
 				} else {
-					e.hasTrailingNewline = false
+					e.nextHasTrailingNewline = false
 					e.nextLine = lineStr
 				}
-				e.isEOF = false
+				e.hasNext = true
 			} else {
-				e.isEOF = true
+				e.hasNext = false
+				e.nextLine = ""
 			}
+			e.isEOF = !e.hasNext && (e.inPlace || e.fileIdx == len(e.files)-1)
 		case 'N':
 			if e.isEOF {
 				// GNU sed prints pattern space if N is at EOF
@@ -401,24 +426,27 @@ func (e *engineState) execFlat(insts []*Instruction) error {
 			}
 			
 			e.patSpace += "\n" + e.nextLine
+			e.hasTrailingNewline = e.nextHasTrailingNewline
 			e.lineNum++
 			
 			lineStr, _ := e.reader.ReadString('\n')
 			if len(lineStr) > 0 {
 				if strings.HasSuffix(lineStr, "\n") {
-					e.hasTrailingNewline = true
+					e.nextHasTrailingNewline = true
 					e.nextLine = lineStr[:len(lineStr)-1]
 					if strings.HasSuffix(e.nextLine, "\r") {
 						e.nextLine = e.nextLine[:len(e.nextLine)-1]
 					}
 				} else {
-					e.hasTrailingNewline = false
+					e.nextHasTrailingNewline = false
 					e.nextLine = lineStr
 				}
-				e.isEOF = false
+				e.hasNext = true
 			} else {
-				e.isEOF = true
+				e.hasNext = false
+				e.nextLine = ""
 			}
+			e.isEOF = !e.hasNext && (e.inPlace || e.fileIdx == len(e.files)-1)
 		case 'a':
 			e.pendingAppend = append(e.pendingAppend, inst.Text)
 		case 'i':
