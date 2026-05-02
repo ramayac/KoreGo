@@ -49,10 +49,11 @@ type keySpec struct {
 }
 
 type lineItem struct {
-	original string
-	keys     []string
-	numVals  []float64
-	validNum []bool
+	original  string
+	keys      []string
+	numVals   []float64
+	validNum  []bool
+	humanVals []humanVal
 }
 
 var monthOrder = map[string]int{
@@ -64,33 +65,67 @@ var monthOrder = map[string]int{
 	"nov": 11, "november": 11, "dec": 12, "december": 12,
 }
 
-func parseHuman(s string) (float64, bool) {
+var suffixRank = map[byte]int{
+	'K': 1, 'k': 2,
+	'M': 3,
+	'G': 4,
+	'T': 5,
+	'P': 6,
+	'E': 7,
+	'Z': 8,
+	'Y': 9,
+}
+
+type humanVal struct {
+	num       float64
+	hasSuffix bool
+	suffix    int // rank
+	orig      string
+}
+
+func parseHumanVal(s string) humanVal {
 	s = strings.TrimSpace(s)
 	if s == "" {
-		return 0, false
+		return humanVal{}
 	}
-	suffix := s[len(s)-1]
-	mult := 1.0
-	switch suffix {
-	case 'K', 'k':
-		mult = 1024
-		s = s[:len(s)-1]
-	case 'M', 'm':
-		mult = 1024 * 1024
-		s = s[:len(s)-1]
-	case 'G', 'g':
-		mult = 1024 * 1024 * 1024
-		s = s[:len(s)-1]
-	case 'T', 't':
-		mult = 1024 * 1024 * 1024 * 1024
-		s = s[:len(s)-1]
+	// Find where the numeric prefix ends.
+	numEnd := 0
+	dotSeen := false
+	for numEnd < len(s) {
+		c := s[numEnd]
+		if c >= '0' && c <= '9' {
+			numEnd++
+		} else if c == '.' && !dotSeen {
+			dotSeen = true
+			numEnd++
+		} else {
+			break
+		}
 	}
-	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	numStr := s[:numEnd]
+	suffixChar := byte(0)
+	if numEnd < len(s) {
+		suffixChar = s[numEnd]
+	}
+	v, err := strconv.ParseFloat(numStr, 64)
 	if err != nil {
-		// Try parsing without stripping suffix (numeric suffix).
-		return 0, false
+		return humanVal{orig: s}
 	}
-	return v * mult, true
+	if rank, ok := suffixRank[suffixChar]; ok {
+		return humanVal{num: v, hasSuffix: true, suffix: rank, orig: s}
+	}
+	return humanVal{num: v, hasSuffix: false, orig: s}
+}
+
+func parseHuman(s string) (float64, bool) {
+	hv := parseHumanVal(s)
+	if hv.hasSuffix {
+		// Encode as: num*10 + suffixRank. This keeps ordering correct.
+		// Actually we can't combine them like this for sorting because the comparison
+		// needs to know suffix vs no-suffix. Return a marker.
+		return hv.num, true
+	}
+	return hv.num, hv.hasSuffix
 }
 
 func parseMonth(s string) (int, bool) {
@@ -235,16 +270,14 @@ func parseLines(r io.Reader, keySpecs []keySpec, delimiter string, zeroTerminate
 			item.keys = make([]string, len(keySpecs))
 			item.numVals = make([]float64, len(keySpecs))
 			item.validNum = make([]bool, len(keySpecs))
+			item.humanVals = make([]humanVal, len(keySpecs))
 			for i, ks := range keySpecs {
 				key := extractKey(text, ks, delimiter)
 				item.keys[i] = key
-				if ks.numeric {
+				if ks.human {
+					item.humanVals[i] = parseHumanVal(key)
+				} else if ks.numeric {
 					if v, err := strconv.ParseFloat(strings.TrimSpace(key), 64); err == nil {
-						item.numVals[i] = v
-						item.validNum[i] = true
-					}
-				} else if ks.human {
-					if v, ok := parseHuman(key); ok {
 						item.numVals[i] = v
 						item.validNum[i] = true
 					}
@@ -275,26 +308,24 @@ func scanNUL(data []byte, atEOF bool) (advance int, token []byte, err error) {
 }
 
 func Run(items []lineItem, keySpecs []keySpec, reverse, numeric, unique, month, human bool) []string {
-	// If keySpecs are empty but global options are set, fill numeric values.
+	// If keySpecs are empty but global options are set, fill computed values.
 	if len(keySpecs) == 0 && (numeric || month || human) {
 		keySpecs = []keySpec{{numeric: numeric, reverse: reverse, month: month, human: human}}
 		for i := range items {
 			if len(items[i].numVals) == 0 {
 				items[i].numVals = make([]float64, 1)
 				items[i].validNum = make([]bool, 1)
+				items[i].humanVals = make([]humanVal, 1)
 			}
 			key := items[i].original
 			if len(items[i].keys) > 0 {
 				key = items[i].keys[0]
 			}
+			if human {
+				items[i].humanVals[0] = parseHumanVal(key)
+			}
 			if numeric {
 				if v, err := strconv.ParseFloat(strings.TrimSpace(key), 64); err == nil {
-					items[i].numVals[0] = v
-					items[i].validNum[0] = true
-				}
-			}
-			if human {
-				if v, ok := parseHuman(key); ok {
 					items[i].numVals[0] = v
 					items[i].validNum[0] = true
 				}
@@ -318,11 +349,26 @@ func Run(items []lineItem, keySpecs []keySpec, reverse, numeric, unique, month, 
 				break
 			}
 			ks := ksList[ki]
+
+			// Human sort: special comparison.
+			if ks.human && ki < len(a.humanVals) && ki < len(b.humanVals) {
+				ha := a.humanVals[ki]
+				hb := b.humanVals[ki]
+				cmp := compareHuman(ha, hb)
+				if cmp != 0 {
+					if ks.reverse {
+						return -cmp
+					}
+					return cmp
+				}
+				continue
+			}
+
 			ak := a.keys[ki]
 			bk := b.keys[ki]
 			var less bool
 			tie := false
-			if (ks.human || ks.month || ks.numeric) && a.validNum[ki] && b.validNum[ki] {
+			if (ks.month || ks.numeric) && ki < len(a.validNum) && ki < len(b.validNum) && a.validNum[ki] && b.validNum[ki] {
 				less = a.numVals[ki] < b.numVals[ki]
 				tie = a.numVals[ki] == b.numVals[ki]
 			} else if ks.numeric {
@@ -353,15 +399,9 @@ func Run(items []lineItem, keySpecs []keySpec, reverse, numeric, unique, month, 
 			return 1
 		}
 		if a.original < b.original {
-			if reverse {
-				return 1
-			}
 			return -1
 		}
 		if a.original > b.original {
-			if reverse {
-				return -1
-			}
 			return 1
 		}
 		return 0
@@ -468,9 +508,61 @@ func run(args []string, out io.Writer) int {
 			}
 			fmt.Fprint(w, line)
 		}
-		if !zeroTerm && len(sortedLines) > 0 {
+		if zeroTerm && len(sortedLines) > 0 {
+			w.Write([]byte{0})
+		} else if !zeroTerm && len(sortedLines) > 0 {
 			fmt.Fprintln(w)
 		}
+	}
+	return 0
+}
+
+func compareHuman(a, b humanVal) int {
+	// No suffix always comes BEFORE suffix.
+	if !a.hasSuffix && b.hasSuffix {
+		return -1
+	}
+	if a.hasSuffix && !b.hasSuffix {
+		return 1
+	}
+	// Both no suffix: compare numerically, tie by original string.
+	if !a.hasSuffix && !b.hasSuffix {
+		if a.num != b.num {
+			return cmpFloat(a.num, b.num)
+		}
+		if a.orig < b.orig {
+			return -1
+		}
+		if a.orig > b.orig {
+			return 1
+		}
+		return 0
+	}
+	// Both have suffix: compare suffix rank first, then numeric prefix, then original.
+	if a.suffix != b.suffix {
+		if a.suffix < b.suffix {
+			return -1
+		}
+		return 1
+	}
+	if a.num != b.num {
+		return cmpFloat(a.num, b.num)
+	}
+	if a.orig < b.orig {
+		return -1
+	}
+	if a.orig > b.orig {
+		return 1
+	}
+	return 0
+}
+
+func cmpFloat(a, b float64) int {
+	if a < b {
+		return -1
+	}
+	if a > b {
+		return 1
 	}
 	return 0
 }

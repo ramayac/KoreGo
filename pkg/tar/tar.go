@@ -215,39 +215,21 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 	var stats []TarFileStat
 
 	for _, target := range targets {
-		// Strip /../ and /./ prefix from target for member name normalization.
-		// Walk the target, resolve .. and ., compute stripped prefix.
+		// Resolve /../ and /./ in target path for member name normalization.
 		cleanTarget := filepath.Clean(target)
-		var strippedPrefix string
-		if cleanTarget != target && !strings.HasPrefix(target, "/") {
-			// Find the point where cleanTarget matches the suffix of target.
-			// Walk target removing ./ and ../ components.
-			parts := strings.Split(target, "/")
-			var resolved []string
-			prefixLen := 0
-			for _, part := range parts {
-				prefixLen += len(part) + 1 // +1 for /
-				if part == "." || part == "" {
-					continue
-				}
-				if part == ".." {
-					if len(resolved) > 0 {
-						resolved = resolved[:len(resolved)-1]
-					}
-					continue
-				}
-				resolved = append(resolved, part)
-				// Check if resolved prefix matches the clean result.
-				resolvedPath := strings.Join(resolved, "/")
-				if resolvedPath == cleanTarget || strings.HasPrefix(cleanTarget, resolvedPath+"/") {
-					// We've reached the point where the path is clean.
-					strippedPrefix = target[:prefixLen]
-					break
-				}
+		strippedPrefix := ""
+		if cleanTarget != target && !strings.HasPrefix(target, "/") && !strings.HasPrefix(cleanTarget, "..") {
+			// Find the common suffix between target and cleanTarget.
+			// WalkDir uses target as root, files are target/file.
+			// Member names should be cleanTarget/file.
+			// The stripped prefix is the difference.
+			strippedPrefix = strings.TrimSuffix(target, cleanTarget)
+			if strippedPrefix == target {
+				strippedPrefix = target[:len(target)-len(cleanTarget)]
 			}
-			// Fallback: just use cleanTarget as member prefix.
-			if strippedPrefix == "" {
-				strippedPrefix = strings.TrimSuffix(target, cleanTarget)
+			// Ensure stripped prefix ends with / for the message.
+			if !strings.HasSuffix(strippedPrefix, "/") && strippedPrefix != "" {
+				strippedPrefix += "/"
 			}
 		}
 
@@ -272,10 +254,10 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 
 			// Build member name: strip the prefix path.
 			memberName := filepath.ToSlash(file)
-			if strippedPrefix != "" && strings.HasPrefix(memberName, strippedPrefix) {
-				memberName = memberName[len(strippedPrefix):]
-				if memberName == "" {
-					memberName = "."
+			if strippedPrefix != "" {
+				if strings.HasPrefix(memberName, target) {
+					// Replace the target prefix with the clean target.
+					memberName = filepath.ToSlash(cleanTarget + memberName[len(target):])
 				}
 			}
 			header.Name = memberName
@@ -317,12 +299,7 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 
 		// Emit message about stripped prefix.
 		if strippedPrefix != "" && !isJSON {
-			// Strip trailing / from prefix for the message.
-			msgPrefix := strings.TrimSuffix(strippedPrefix, "/")
-			if msgPrefix == "" {
-				msgPrefix = strippedPrefix
-			}
-			fmt.Fprintf(os.Stderr, "tar: removing leading '%s' from member names\n", msgPrefix)
+			fmt.Fprintf(os.Stderr, "tar: removing leading '%s' from member names\n", strippedPrefix)
 		}
 	}
 

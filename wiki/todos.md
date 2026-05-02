@@ -1,6 +1,6 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 94.5% effective (461 passed, 19 failed, 10 skipped)
+> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 94.9% effective (464 passed, 16 failed, 10 skipped)
 
 This document tracks remaining failing tests, known deviations, and future improvements.
 See [10_posix_framework.md](10_posix_framework.md) for the full Phase 10 task log.
@@ -359,3 +359,85 @@ The `optional` shell function checks for `:$feature:` in OPTIONFLAGS.
 When `find` runs with root `.` (default), `filepath.WalkDir` returns paths like `file`
 without `./` prefix. BusyBox tests expect `./file`. Normalize by prepending `./` when
 `rootClean == "."` and the path doesn't already start with `.`.
+
+## Session Insights (2026-05-02 — Round 2)
+
+### `xargs -I` — leading whitespace stripping
+BusyBox `xargs -I` strips **leading** whitespace (including \v, \t) from each input
+line before substituting into the command. Use `strings.TrimLeft(word, " \t\n\r\v\f")`
+rather than `strings.TrimSpace` (which also strips trailing whitespace — BusyBox
+keeps trailing spaces). Empty/whitespace-only lines are skipped entirely.
+
+### `xargs -I` — batch execution with replaced args
+When `-I` is active, the batch already contains the full command args with replacements.
+Do NOT prepend `cmdArgs` in the execution loop, or the original (unreplaced) args
+will appear before the replaced ones. In non-`-I` mode, prepend `cmdArgs` as usual.
+
+### `xargs` — default `-s` (max-chars) value
+POSIX requires a default max command-line size. Use a reasonable value like 2048
+(rather than 0 = unlimited) so argument batching happens automatically. Without this,
+tests that pipe 90000+ args to `xargs echo` will fail.
+
+### `sort` — numeric value pre-computation in `Run`
+When `Run()` is called with global numeric/month/human flags but no `-k` specs,
+the items' `numVals`/`validNum` slices may be uninitialized. Add a fill step at the
+start of `Run` that computes numeric values from the item keys when needed.
+
+### `sort` — `bufio.Scanner` with NUL delimiter
+For `sort -z`, use a custom `bufio.Scanner.Split` function that splits on NUL bytes
+(`bytes.IndexByte(data, 0)`). The scanner reads until NUL, returning the token without
+the delimiter. For output, write NUL between lines with `w.Write([]byte{0})`.
+
+### `grep -a` — binary mode
+BusyBox `grep -a` treats binary files as text. In KoreGo, adding the flag to the
+spec is sufficient since Go's `bufio.Scanner` already handles embedded NUL bytes.
+The `EXTRA_COMPAT` feature flag in OPTIONFLAGS enables the BusyBox NUL tests.
+
+### `head -c` — byte count mode
+`head -c N` reads exactly N bytes using `io.ReadFull` (which handles short reads
+gracefully via `io.ErrUnexpectedEOF`). Unlike `-n` (line mode), `-c` doesn't need
+negative count support.
+
+### `tar` — directory permissions during extraction
+When extracting a directory from a tarball, create it with `mode | 0300` (writable)
+first so files can be extracted into it, then `defer os.Chmod(target, mode)` to
+apply the archived permissions after all files are written. Without this, extracting
+into a directory archived with mode 550 fails because the owner can't write.
+
+### `tar` — `../` prefix stripping in member names
+When `tar -c` is called with a target containing `../` components (e.g.,
+`./../dir/../target`), resolve the path by walking component-by-component,
+tracking `..` to pop from a stack. The stripped prefix is everything up to the
+point where the resolved path matches the clean suffix. Emit the BusyBox-style
+message: `tar: removing leading './../dir/../' from member names`.
+
+### `cut -DF` — field order preservation
+The `-F` flag enables whitespace-split field mode. When selecting fields with
+`-F 2,7,5`, output fields in the **specified order** (2,7,5), not in file order.
+Iterate over the range specs in order and pick fields by index, rather than iterating
+over the file's fields and checking if each is in range.
+
+### `find -exec` — argument capture before flag parsing
+`-exec` and its arguments must be extracted BEFORE passing to `common.ParseFlags`,
+because the flag parser treats `-exec` as bundled short flags `-e -x -e -c`.
+Parse `-exec cmd... \;` / `-exec cmd... +` in a pre-processing pass, strip them
+from the arg list, then pass the rest to the flag parser. For `\;` mode, ignore
+the command's exit code (BusyBox returns 0 if the command ran). For `+` mode,
+propagate the exit code.
+
+### `diff -r` — directory diff
+When both arguments to `diff` are directories and `-r` is set, walk both trees,
+collect all relative paths, sort them, then diff each file pair. Skip non-regular
+files (FIFOs, devices) with a message. Missing files produce "Only in DIR: file"
+output. Use the same unified-diff hunk formatting as single-file mode.
+
+### BusyBox `.config` file for conditional tests
+Some BusyBox tests (like `md5sum`) check `$bindir/.config` for `CONFIG_*` variables
+rather than using `OPTIONFLAGS`. Create this file in `runtest` with all supported
+`CONFIG_*=y` entries to enable those tests.
+
+### `sort` test signature changes
+When rewriting `sort.go`, the test file's `parseLines` and `Run` calls must be
+updated to match the new signatures. The old `parseLines(r, keyField int, delim string, numeric bool)`
+became `parseLines(r, keySpecs []keySpec, delim string, zeroTerm bool)`. The old
+`Run(items, reverse, numeric, unique)` became `Run(items, keySpecs, reverse, numeric, unique, month, human)`.
