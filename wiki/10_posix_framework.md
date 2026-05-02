@@ -61,6 +61,14 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 ### 10.5 - busybox test step in github action
 - [x] Add a step in github action to run the busybox test suite. Don't block the pipeline, just result of test that pass.
 
+### 10.6 - Phase A: Core Utilities & Flag Parsing Test Resolution
+- [x] Fixed `pkg/common/flags.go` to support concatenated values (e.g., `-s25`).
+- [x] Fixed `pkg/xargs/xargs.go` to handle `-e` without a parameter.
+- [x] Fixed `pkg/grep/grep.go` multiple `-e` and `-f` flags, `-f EMPTY_FILE` behavior, `-r` symlink traversal (trailing slash), and `-L` exit codes.
+- [x] Fixed `pkg/find/find.go` trailing slash canonicalization by preprocessing single-dash long flags (`-name`, `-type`).
+- [x] Fixed `pkg/sed/sed.go` missing labels validation and NUL bytes handling by removing the `0` EOF marker.
+- [x] Fixed `pkg/echo/echo.go` to support `\0NNN` octal escapes and `\xNN` hex escapes, required by BusyBox's `sed.tests` harness.
+- [x] Fixed `pkg/wc/wc.go` field formatting to align with POSIX (no leading spaces), which resolved the `tail -c +N` validation failures.
 
 ## Milestone 10
 - [ ] External test suite integrated into `make test` or `make compliance`.
