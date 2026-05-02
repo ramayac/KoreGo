@@ -213,15 +213,15 @@ func run(args []string, out io.Writer) int {
 func printCount(res WcResult, name string, showLines, showWords, showBytes, showChars bool) {
 	out := ""
 	if showLines {
-		out += fmt.Sprintf(" %7d", res.Lines)
+		out += fmt.Sprintf(" %d", res.Lines)
 	}
 	if showWords {
-		out += fmt.Sprintf(" %7d", res.Words)
+		out += fmt.Sprintf(" %d", res.Words)
 	}
 	if showChars {
-		out += fmt.Sprintf(" %7d", res.Chars)
+		out += fmt.Sprintf(" %d", res.Chars)
 	} else if showBytes {
-		out += fmt.Sprintf(" %7d", res.Bytes)
+		out += fmt.Sprintf(" %d", res.Bytes)
 	}
 	if name != "-" {
 		out += fmt.Sprintf(" %s", name)

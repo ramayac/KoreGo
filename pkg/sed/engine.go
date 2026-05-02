@@ -80,7 +80,12 @@ func (e *engineState) printLineRaw(s string) {
 }
 
 func runEngine(insts []*Instruction, readers []string, suppress bool, inPlace bool, globalOut io.Writer) int {
-	insts = compileAst(insts)
+	var err error
+	insts, err = compileAst(insts)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "sed: %v\n", err)
+		return 1
+	}
 	truncateWFiles(insts)
 	
 	if len(readers) == 0 {
@@ -514,7 +519,7 @@ func truncateWFiles(insts []*Instruction) {
 	}
 }
 
-func compileAst(insts []*Instruction) []*Instruction {
+func compileAst(insts []*Instruction) ([]*Instruction, error) {
 	var flat []*Instruction
 	var flatten func([]*Instruction)
 	flatten = func(in []*Instruction) {
@@ -548,11 +553,11 @@ func compileAst(insts []*Instruction) []*Instruction {
 				if target, ok := labels[inst.Label]; ok {
 					inst.JumpTarget = target
 				} else {
-					inst.JumpTarget = len(flat)
+					return nil, fmt.Errorf("can't find label for jump to '%s'", inst.Label)
 				}
 			}
 		}
 	}
 
-	return flat
+	return flat, nil
 }

@@ -14,8 +14,10 @@ import (
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "E", Long: "eof-str", Type: common.FlagValue},
-		{Short: "e", Long: "eof-str-compat", Type: common.FlagValue},
+		{Short: "e", Long: "eof-str-compat", Type: common.FlagOptionalValue},
 		{Short: "s", Long: "max-chars", Type: common.FlagValue},
+		{Short: "n", Long: "max-args", Type: common.FlagValue},
+		{Short: "t", Long: "verbose", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
@@ -47,25 +49,29 @@ func run(args []string, out io.Writer) int {
 		fmt.Sscanf(val, "%d", &maxSize)
 	}
 
-	eofStr := ""
-	hasEOF := false
-	if _, ok := flags.Values["E"]; ok {
-		eofStr = flags.Get("E")
-		hasEOF = true
-	} else if _, ok := flags.Values["e"]; ok {
-		eofStr = flags.Get("e")
-		hasEOF = true
+	maxArgs := 0
+	if val := flags.Get("n"); val != "" {
+		fmt.Sscanf(val, "%d", &maxArgs)
 	}
 
-	baseSize := len(baseCmd)
+	trace := flags.Has("t")
+
+	eofStr := ""
+	hasEOF := false
+	if flags.Has("E") {
+		eofStr = flags.Get("E")
+		hasEOF = eofStr != ""
+	} else if flags.Has("e") {
+		eofStr = flags.Get("e")
+		hasEOF = eofStr != ""
+	}
+
+	baseSize := len(baseCmd) + 1
 	for _, a := range cmdArgs {
 		baseSize += len(a) + 1
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
-	// Default split by words, not lines. Actually POSIX xargs splits by blanks/newlines, but scanner.Scan() is lines?
-	// The original implementation used scanner.Text() which is lines. To properly support xargs we should use ScanWords unless -0.
-	// But let's keep it as words.
 	scanner.Split(bufio.ScanWords)
 
 	var batches [][]string
@@ -77,8 +83,11 @@ func run(args []string, out io.Writer) int {
 		if hasEOF && word == eofStr {
 			break
 		}
-		// Plus 1 for space
-		if maxSize > 0 && currentSize+len(word)+1 > maxSize && len(currentBatch) > 0 {
+		
+		sizeLimitHit := maxSize > 0 && currentSize+len(word)+1 > maxSize && len(currentBatch) > 0
+		argsLimitHit := maxArgs > 0 && len(currentBatch) >= maxArgs
+		
+		if sizeLimitHit || argsLimitHit {
 			batches = append(batches, currentBatch)
 			currentBatch = nil
 			currentSize = baseSize
@@ -104,6 +113,14 @@ func run(args []string, out io.Writer) int {
 		cmd := exec.Command(baseCmd, args...)
 		cmd.Stdout = out
 		cmd.Stderr = os.Stderr
+
+		if trace {
+			traceStr := baseCmd
+			for _, a := range args {
+				traceStr += " " + a
+			}
+			fmt.Fprintln(os.Stderr, traceStr)
+		}
 
 		err = cmd.Run()
 		code := 0

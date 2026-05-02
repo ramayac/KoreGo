@@ -59,18 +59,18 @@ type Parser struct {
 	pos  int
 }
 
-func (p *Parser) peek() byte {
+func (p *Parser) peek() int {
 	if p.pos >= len(p.text) {
-		return 0
+		return -1
 	}
-	return p.text[p.pos]
+	return int(p.text[p.pos])
 }
 
-func (p *Parser) next() byte {
+func (p *Parser) next() int {
 	if p.pos >= len(p.text) {
-		return 0
+		return -1
 	}
-	c := p.text[p.pos]
+	c := int(p.text[p.pos])
 	p.pos++
 	return c
 }
@@ -95,7 +95,7 @@ func (p *Parser) parseBlock(inBlock bool) ([]*Instruction, error) {
 	var insts []*Instruction
 	for {
 		p.skipWhitespace()
-		if p.peek() == 0 {
+		if p.peek() == -1 {
 			if inBlock {
 				return nil, fmt.Errorf("unclosed {")
 			}
@@ -112,7 +112,7 @@ func (p *Parser) parseBlock(inBlock bool) ([]*Instruction, error) {
 
 		if p.peek() == '#' {
 			// comment
-			for p.peek() != '\n' && p.peek() != 0 {
+			for p.peek() != '\n' && p.peek() != -1 {
 				p.next()
 			}
 			continue
@@ -150,12 +150,12 @@ func (p *Parser) parseAddress() (*Address, error) {
 		inBracket := false
 		for {
 			c := p.peek()
-			if c == 0 || c == '\n' {
+			if c == -1 || c == '\n' {
 				return nil, fmt.Errorf("unterminated regex")
 			}
 			if c == '\\' {
 				p.next()
-				if p.peek() != 0 {
+				if p.peek() != -1 {
 					p.next()
 				}
 				continue
@@ -178,7 +178,7 @@ func (p *Parser) parseAddress() (*Address, error) {
 			return &Address{Type: AddrRegexp, Regexp: nil}, nil
 		}
 
-		re, err := compileBRE(expr, delim)
+		re, err := compileBRE(expr, byte(delim))
 		if err != nil {
 			return nil, err
 		}
@@ -225,10 +225,10 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 	}
 
 	cmd := p.next()
-	if cmd == 0 {
+	if cmd == -1 {
 		return nil, nil // end of script
 	}
-	inst.Cmd = cmd
+	inst.Cmd = byte(cmd)
 
 	switch cmd {
 	case '{':
@@ -239,7 +239,7 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		inst.Block = block
 	case 's':
 		delim := p.next()
-		if delim == 0 || delim == '\n' {
+		if delim == -1 || delim == '\n' {
 			return nil, fmt.Errorf("invalid s command")
 		}
 		// parse pattern
@@ -247,12 +247,12 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		inBracket := false
 		for {
 			c := p.peek()
-			if c == 0 || c == '\n' {
+			if c == -1 || c == '\n' {
 				return nil, fmt.Errorf("unterminated s command pattern")
 			}
 			if c == '\\' {
 				p.next()
-				if p.peek() != 0 {
+				if p.peek() != -1 {
 					p.next()
 				}
 				continue
@@ -273,12 +273,12 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		start = p.pos
 		for {
 			c := p.peek()
-			if c == 0 || c == '\n' {
+			if c == -1 || c == '\n' {
 				return nil, fmt.Errorf("unterminated s command replacement")
 			}
 			if c == '\\' {
 				p.next()
-				if p.peek() != 0 {
+				if p.peek() != -1 {
 					p.next()
 				}
 				continue
@@ -297,8 +297,8 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		for i := 0; i < len(replRaw); i++ {
 			if replRaw[i] == '\\' && i+1 < len(replRaw) {
 				next := replRaw[i+1]
-				if next == delim {
-					repl += string(delim)
+				if next == byte(delim) {
+					repl += string(byte(delim))
 				} else if next >= '0' && next <= '9' {
 					repl += "$" + string(next)
 				} else if next == '&' {
@@ -348,7 +348,7 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 					p.next()
 				}
 				wstart := p.pos
-				for p.peek() != ' ' && p.peek() != '\t' && p.peek() != '\n' && p.peek() != ';' && p.peek() != 0 {
+				for p.peek() != ' ' && p.peek() != '\t' && p.peek() != '\n' && p.peek() != ';' && p.peek() != -1 {
 					p.next()
 				}
 				inst.WFile = p.text[wstart:p.pos]
@@ -360,7 +360,7 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		if pat == "" {
 			inst.Regexp = nil
 		} else {
-			re, err := compileBRE(pat, delim)
+			re, err := compileBRE(pat, byte(delim))
 			if err != nil {
 				return nil, err
 			}
@@ -380,12 +380,12 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 		start := p.pos
 		for {
 			c := p.peek()
-			if c == 0 {
+			if c == -1 {
 				break
 			}
 			if c == '\\' {
 				p.next()
-				if p.peek() == 0 {
+				if p.peek() == -1 {
 					break
 				}
 				if p.peek() == '\n' {
@@ -426,7 +426,7 @@ func (p *Parser) parseInstruction() (*Instruction, error) {
 			p.next()
 		}
 		start := p.pos
-		for p.peek() != ' ' && p.peek() != '\t' && p.peek() != '\n' && p.peek() != ';' && p.peek() != 0 {
+		for p.peek() != ' ' && p.peek() != '\t' && p.peek() != '\n' && p.peek() != ';' && p.peek() != -1 {
 			p.next()
 		}
 		if cmd == 'r' || cmd == 'w' {
