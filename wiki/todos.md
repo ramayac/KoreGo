@@ -1,6 +1,6 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-01 | **Current BusyBox pass rate:** ~95% (all Phase C/D targets resolved)
+> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** ~99% (2 remaining tar format tests resolved)
 
 This document tracks remaining failing tests, known deviations, and future improvements.
 See [10_posix_framework.md](10_posix_framework.md) for the full Phase 10 task log.
@@ -60,7 +60,7 @@ These are known differences from GNU/BusyBox behavior that are low-priority or b
 |---------|-----------|----------|
 | `tar` | No support for `--overwrite`, pax headers, xz/bzip2 | Low |
 | `tar` | Hard links and symlink mode not fully verified | Low |
-| `tar` | `tar_with_link_with_size` and `tar_with_prefix_fields` format tests fail (symlink display) | Low |
+| `tar` | `tar_with_link_with_size` and `tar_with_prefix_fields` format tests — **FIXED** | — |
 | `gzip` | No `--keep` / `-k` flag | Low |
 | `grep` | No `-P` (Perl regex) — Go regexp ≠ PCRE | By design |
 | `awk` | Not implemented (deferred post-MVP) | Deferred |
@@ -130,3 +130,15 @@ Using `os.Open` on a symlink will silently follow it and copy the underlying fil
 
 ### `tar -X` — Repeatable flags
 The `-X` flag must be registered as repeatable (accepting multiple values). When parsing, accumulate all values from multiple `-X` occurrences into a slice. This is distinct from `-f` which takes a single value.
+
+### `tar tvf` — Verbose listing format
+BusyBox `tar tvf` uses the format:
+```
+%s %s/%s%10d %04d-%02d-%02d %02d:%02d:%02d %s[ -> linkname]
+```
+Key details:
+- **No space** between group name and size field (`%s%10d`, not `%s %10d`).
+- Size is `%10d` right-aligned (10 chars wide).
+- File type prefix comes from `Typeflag`, not from `os.FileMode()`: `l` for symlinks, `d` for dirs, `-` for regular files.
+- Symlinks display size as 0 regardless of header.Size.
+- Go's `time.Local` does **not** honor the POSIX `TZ` env var; must parse `TZ` manually (POSIX `UTC-2` = UTC+2).

@@ -8,7 +8,9 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/ramayac/korego/internal/dispatch"
 	"github.com/ramayac/korego/pkg/common"
@@ -478,6 +480,90 @@ func doExtract(archive string, useGzip, verbose, toStdout, isJSON bool, excludeP
 	return 0
 }
 
+// localTime returns t adjusted for the TZ environment variable.
+// POSIX TZ convention: "UTC-2" means 2 hours EAST of UTC (UTC+2).
+func localTime(t time.Time) time.Time {
+	tz := os.Getenv("TZ")
+	if tz == "" {
+		return t
+	}
+	// Handle POSIX "UTC±N" format.
+	if strings.HasPrefix(tz, "UTC") {
+		rest := tz[3:]
+		if rest == "" {
+			return t
+		}
+		sign := 1
+		start := 0
+		if rest[0] == '-' {
+			sign = 1 // POSIX: - means east of UTC
+			start = 1
+		} else if rest[0] == '+' {
+			sign = -1 // POSIX: + means west of UTC
+			start = 1
+		}
+		hours, err := strconv.Atoi(rest[start:])
+		if err != nil {
+			return t
+		}
+		offset := time.Duration(sign*hours) * time.Hour
+		loc := time.FixedZone(tz, int(offset.Seconds()))
+		return t.In(loc)
+	}
+	return t
+}
+
+// formatTarMode returns a BusyBox-style mode string like "drwxr-xr-x" from the tar header.
+func formatTarMode(header *tar.Header) string {
+	var tc byte
+	switch header.Typeflag {
+	case tar.TypeDir:
+		tc = 'd'
+	case tar.TypeSymlink:
+		tc = 'l'
+	case tar.TypeLink:
+		tc = 'h'
+	case tar.TypeChar:
+		tc = 'c'
+	case tar.TypeBlock:
+		tc = 'b'
+	case tar.TypeFifo:
+		tc = 'p'
+	default:
+		tc = '-'
+	}
+	mode := int64(header.Mode) & 0777
+	rwx := [9]byte{'-', '-', '-', '-', '-', '-', '-', '-', '-'}
+	if mode&0400 != 0 {
+		rwx[0] = 'r'
+	}
+	if mode&0200 != 0 {
+		rwx[1] = 'w'
+	}
+	if mode&0100 != 0 {
+		rwx[2] = 'x'
+	}
+	if mode&0040 != 0 {
+		rwx[3] = 'r'
+	}
+	if mode&0020 != 0 {
+		rwx[4] = 'w'
+	}
+	if mode&0010 != 0 {
+		rwx[5] = 'x'
+	}
+	if mode&0004 != 0 {
+		rwx[6] = 'r'
+	}
+	if mode&0002 != 0 {
+		rwx[7] = 'w'
+	}
+	if mode&0001 != 0 {
+		rwx[8] = 'x'
+	}
+	return string(tc) + string(rwx[:])
+}
+
 func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []string, out io.Writer) int {
 	var r io.Reader
 	if archive == "-" {
@@ -547,7 +633,26 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 
 		if !isJSON {
 			if verbose {
-				fmt.Fprintf(out, "%s %d %s\n", os.FileMode(header.Mode).String(), header.Size, header.Name)
+				// BusyBox tar tvf format:
+				//   %s %s/%s%10d %04d-%02d-%02d %02d:%02d:%02d %s[ -> linkname]
+				mode := formatTarMode(header)
+				size := header.Size
+				if header.Typeflag == tar.TypeSymlink {
+					size = 0
+				}
+				t := localTime(header.ModTime)
+				line := fmt.Sprintf("%s %s/%s%10d %04d-%02d-%02d %02d:%02d:%02d %s",
+					mode,
+					header.Uname, header.Gname,
+					size,
+					t.Year(), t.Month(), t.Day(),
+					t.Hour(), t.Minute(), t.Second(),
+					header.Name,
+				)
+				if header.Typeflag == tar.TypeSymlink {
+					line += " -> " + header.Linkname
+				}
+				fmt.Fprintln(out, line)
 			} else {
 				fmt.Fprintln(out, header.Name)
 			}
