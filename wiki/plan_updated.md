@@ -111,6 +111,7 @@ korego/
 | [08_hardening.md](08_hardening.md) | Production Hardening & Security | **COMPLETED** |
 | [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | **COMPLETED** |
 | [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | **IN PROGRESS** |
+| [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
 ---
 

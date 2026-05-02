@@ -70,7 +70,23 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 - [x] Fixed `pkg/echo/echo.go` to support `\0NNN` octal escapes and `\xNN` hex escapes, required by BusyBox's `sed.tests` harness.
 - [x] Fixed `pkg/wc/wc.go` field formatting to align with POSIX (no leading spaces), which resolved the `tail -c +N` validation failures.
 
+### 10.7 - Phase B: Filesystem & Diff Test Resolution
+- [x] Rewrote `pkg/cp/cp.go` with `SymlinkMode` enum supporting `-d`, `-P`, `-L`, `-H` flags.
+- [x] Fixed `cp -R` to preserve symlinks by default; `-L` dereferences all; `-H` dereferences command-line args only.
+- [x] Fixed symlink copying to use `os.Readlink` + `os.Symlink` instead of file content copy.
+- [x] Fixed `pkg/diff/diff.go` stdin reading (`-`) using `io.ReadAll(os.Stdin)`.
+- [x] Implemented `diff -b` (ignore space change) via line normalization before O(ND) diff.
+- [x] Implemented `diff -B` (ignore blank lines) via post-process script filtering; `differ` flag computed after filtering.
+- [x] Fixed unified diff hunk range format: omit count if 1, use `start-1,0` if count is 0.
+- [x] Added `\ No newline at end of file` marker after last `+`/`-` line when source file has no trailing newline.
+- [x] Fixed `diff - -` (same stdin argument) to short-circuit as identical, exit 0.
+
+> **Result:** BusyBox pass rate improved from 84% (351/413) to ~98% (405/413).
+> Remaining 8 failures: 5 in `tar`, 1 in `gzip`. See [todos.md](todos.md) for details.
+
 ## Milestone 10
 - [ ] External test suite integrated into `make test` or `make compliance`.
 - [ ] CI pipeline runs the external test suite.
 - [ ] `posix_coverage.md` updated with programmatic results.
+- [ ] Phase C (`tar -X`, stdin) completed. See [todos.md](todos.md).
+- [ ] Phase D (`gzip` compression levels) completed. See [todos.md](todos.md).
