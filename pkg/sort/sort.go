@@ -275,6 +275,39 @@ func scanNUL(data []byte, atEOF bool) (advance int, token []byte, err error) {
 }
 
 func Run(items []lineItem, keySpecs []keySpec, reverse, numeric, unique, month, human bool) []string {
+	// If keySpecs are empty but global options are set, fill numeric values.
+	if len(keySpecs) == 0 && (numeric || month || human) {
+		keySpecs = []keySpec{{numeric: numeric, reverse: reverse, month: month, human: human}}
+		for i := range items {
+			if len(items[i].numVals) == 0 {
+				items[i].numVals = make([]float64, 1)
+				items[i].validNum = make([]bool, 1)
+			}
+			key := items[i].original
+			if len(items[i].keys) > 0 {
+				key = items[i].keys[0]
+			}
+			if numeric {
+				if v, err := strconv.ParseFloat(strings.TrimSpace(key), 64); err == nil {
+					items[i].numVals[0] = v
+					items[i].validNum[0] = true
+				}
+			}
+			if human {
+				if v, ok := parseHuman(key); ok {
+					items[i].numVals[0] = v
+					items[i].validNum[0] = true
+				}
+			}
+			if month {
+				if v, ok := parseMonth(key); ok {
+					items[i].numVals[0] = float64(v)
+					items[i].validNum[0] = true
+				}
+			}
+		}
+	}
+
 	slices.SortStableFunc(items, func(a, b lineItem) int {
 		ksList := keySpecs
 		if len(ksList) == 0 {
