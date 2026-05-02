@@ -59,7 +59,7 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 - [x] Fix test/busybox_testsuite/sed.tests to pass all tests. (See [10a_sed.md](10a_sed.md) for detailed sub-tasks)
 
 ### 10.5 - busybox test step in github action
-- [ ] Add a step in github action to run the busybox test suite. Don't block the pipeline, just result of test that pass.
+- [x] Add a step in github action to run the busybox test suite. Don't block the pipeline, just result of test that pass.
 
 
 ## Milestone 10

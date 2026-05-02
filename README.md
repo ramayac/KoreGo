@@ -39,3 +39,8 @@ make testsuite
 
 ## Status
 KoreGo MVP is complete with 50+ POSIX utilities implemented.
+
+**Current Focus:**
+- Finalizing the comprehensive POSIX Testing Framework (Phase 10).
+- Integrating the BusyBox test suite into the CI pipeline.
+- `awk` implementation is deferred to a post-MVP release.
