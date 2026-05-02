@@ -1,6 +1,7 @@
 package gzip
 
 import (
+	"compress/flate"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -26,6 +27,16 @@ var spec = common.FlagSpec{
 		{Short: "k", Long: "keep", Type: common.FlagBool},
 		{Short: "f", Long: "force", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
+		// Numeric compression levels -1 through -9 (boolean-like for presence detection).
+		{Short: "1", Long: "", Type: common.FlagBool},
+		{Short: "2", Long: "", Type: common.FlagBool},
+		{Short: "3", Long: "", Type: common.FlagBool},
+		{Short: "4", Long: "", Type: common.FlagBool},
+		{Short: "5", Long: "", Type: common.FlagBool},
+		{Short: "6", Long: "", Type: common.FlagBool},
+		{Short: "7", Long: "", Type: common.FlagBool},
+		{Short: "8", Long: "", Type: common.FlagBool},
+		{Short: "9", Long: "", Type: common.FlagBool},
 	},
 }
 
@@ -50,6 +61,17 @@ func runGunzip(args []string, out io.Writer) int {
 	return execute(args, out, true)
 }
 
+// getCompressionLevel returns the compression level from flags, or flate.DefaultCompression.
+func getCompressionLevel(flags *common.ParseResult) int {
+	// Check for numeric compression level flags (highest priority last).
+	for i := 9; i >= 1; i-- {
+		if flags.Has(fmt.Sprintf("%d", i)) {
+			return i
+		}
+	}
+	return flate.DefaultCompression
+}
+
 func execute(args []string, out io.Writer, forceDecompress bool) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
@@ -62,6 +84,7 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 	keepOriginal := flags.Has("k") || toStdout
 	force := flags.Has("f")
 	decompress := forceDecompress || flags.Has("d")
+	level := getCompressionLevel(flags)
 	
 	files := flags.Positional
 
@@ -77,7 +100,13 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 			io.Copy(out, gr)
 			gr.Close()
 		} else {
-			gw := gzip.NewWriter(out)
+			gw, err := gzip.NewWriterLevel(out, level)
+			if err != nil {
+				if !isJSON {
+					fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+				}
+				return 1
+			}
 			io.Copy(gw, os.Stdin)
 			gw.Close()
 		}
@@ -88,6 +117,32 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 	var stats []GzipStat
 
 	for _, file := range files {
+		// Handle stdin/stdout via "-".
+		if file == "-" {
+			if decompress {
+				gr, err := gzip.NewReader(os.Stdin)
+				if err != nil {
+					if !isJSON {
+						fmt.Fprintf(os.Stderr, "gzip: stdin: %v\n", err)
+					}
+					return 1
+				}
+				io.Copy(out, gr)
+				gr.Close()
+			} else {
+				gw, err := gzip.NewWriterLevel(out, level)
+				if err != nil {
+					if !isJSON {
+						fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+					}
+					return 1
+				}
+				io.Copy(gw, os.Stdin)
+				gw.Close()
+			}
+			continue
+		}
+
 		inInfo, err := os.Stat(file)
 		if err != nil {
 			common.RenderError("gzip", 1, "STAT_FAIL", err.Error(), isJSON, out)
@@ -158,9 +213,13 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 				gr.Close()
 			}
 		} else {
-			gw := gzip.NewWriter(targetWriter)
-			_, processErr = io.Copy(gw, in)
-			gw.Close()
+			gw, err := gzip.NewWriterLevel(targetWriter, level)
+			if err != nil {
+				processErr = err
+			} else {
+				_, processErr = io.Copy(gw, in)
+				gw.Close()
+			}
 		}
 
 		if outFile != nil {

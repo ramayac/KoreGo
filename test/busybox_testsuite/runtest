@@ -27,7 +27,7 @@ run_applet_testcase()
 	cd ".tmpdir.$applet" || return 1
 
 #	echo "Running testcase $testcase"
-	d="$tsdir" \
+	PATH="$LINKSDIR:$bindir:$PATH" d="$tsdir" \
 		sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1 || status=$?
 	if [ $status -ne 0 ]; then
 		echo "FAIL: $testname"
@@ -98,6 +98,7 @@ fi
 # Populate a directory with links to all busybox applets
 
 LINKSDIR="$bindir/runtest-tempdir-links"
+export LINKSDIR
 
 # Comment this line out if you have put a different binary in $LINKSDIR
 # (say, a "standard" tool's binary) in order to run tests against it:
@@ -110,6 +111,8 @@ for i in $implemented; do
 	# not an applet.
 	ln -s "$bindir/korego" "$LINKSDIR/$i" 2>/dev/null
 done
+# Also create a 'busybox' symlink for old-style tests that call 'busybox' directly.
+ln -s "$bindir/korego" "$LINKSDIR/busybox" 2>/dev/null
 
 # No .config for korego
 export OPTIONFLAGS=:

@@ -73,14 +73,15 @@ func main() {
 	name := filepath.Base(os.Args[0])
 
 	// Subcommand dispatch: `korego <cmd> [args]`
-	if name == "korego" {
+	// Also handles invocation as `busybox` (BusyBox test suite compatibility).
+	if name == "korego" || name == "busybox" {
 		if len(os.Args) < 2 {
-			dispatch.PrintHelp("korego")
+			dispatch.PrintHelp(name)
 			os.Exit(0)
 		}
 		switch os.Args[1] {
 		case "--help", "-h":
-			dispatch.PrintHelp("korego")
+			dispatch.PrintHelp(name)
 			os.Exit(0)
 		case "--version":
 			fmt.Println("korego version", Version)

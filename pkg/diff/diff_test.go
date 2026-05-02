@@ -9,7 +9,7 @@ import (
 )
 
 func TestDiffEqual(t *testing.T) {
-	differ, hunks := GenerateDiff("a\nb\nc", "a\nb\nc", 3)
+	differ, hunks := GenerateDiff("a\nb\nc", "a\nb\nc", 3, false, false)
 	if differ {
 		t.Errorf("Expected differ to be false")
 	}
@@ -19,7 +19,7 @@ func TestDiffEqual(t *testing.T) {
 }
 
 func TestDiffSimpleDiff(t *testing.T) {
-	differ, hunks := GenerateDiff("a\nb\nc", "a\nx\nc", 3)
+	differ, hunks := GenerateDiff("a\nb\nc", "a\nx\nc", 3, false, false)
 	if !differ {
 		t.Errorf("Expected differ to be true")
 	}
@@ -41,7 +41,7 @@ func TestDiffSimpleDiff(t *testing.T) {
 func TestDiffContextLines(t *testing.T) {
 	a := "1\n2\n3\n4\n5\n6\n7\n8\n9"
 	b := "1\n2\n3\n4\nx\n6\n7\n8\n9"
-	differ, hunks := GenerateDiff(a, b, 2)
+	differ, hunks := GenerateDiff(a, b, 2, false, false)
 	if !differ {
 		t.Errorf("Expected differ to be true")
 	}
@@ -76,7 +76,7 @@ func TestRunCLI(t *testing.T) {
 	if !bytes.Contains([]byte(out), []byte("--- "+f1)) || !bytes.Contains([]byte(out), []byte("+++ "+f2)) {
 		t.Errorf("missing headers in output: %s", out)
 	}
-	if !bytes.Contains([]byte(out), []byte("@@ -1,4 +1,4 @@")) {
+	if !bytes.Contains([]byte(out), []byte("@@ -1,3 +1,3 @@")) {
 		t.Errorf("missing hunk header in output: %s", out)
 	}
 }

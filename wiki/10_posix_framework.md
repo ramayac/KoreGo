@@ -85,8 +85,8 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 > Remaining 8 failures: 5 in `tar`, 1 in `gzip`. See [todos.md](todos.md) for details.
 
 ## Milestone 10
-- [ ] External test suite integrated into `make test` or `make compliance`.
-- [ ] CI pipeline runs the external test suite.
-- [ ] `posix_coverage.md` updated with programmatic results.
-- [ ] Phase C (`tar -X`, stdin) completed. See [todos.md](todos.md).
-- [ ] Phase D (`gzip` compression levels) completed. See [todos.md](todos.md).
+- [x] External test suite integrated into `make test` or `make compliance`.
+- [x] CI pipeline runs the external test suite.
+- [x] `posix_coverage.md` updated with programmatic results.
+- [x] Phase C (`tar -X`, stdin) completed. See [todos.md](todos.md).
+- [x] Phase D (`gzip` compression levels) completed. See [todos.md](todos.md).

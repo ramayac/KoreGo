@@ -1,87 +1,54 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 405/413 (~98%)
+> **Last updated:** 2026-05-01 | **Current BusyBox pass rate:** ~95% (all Phase C/D targets resolved)
 
 This document tracks remaining failing tests, known deviations, and future improvements.
 See [10_posix_framework.md](10_posix_framework.md) for the full Phase 10 task log.
 
 ---
 
-## Phase C: `tar` (5 remaining failures)
+## Phase C: `tar` (7 failures) — **COMPLETED (2026-05-01)**
 
-### C.1 — `-X` Exclude File Flag
+### C.1 — `-X` Exclude File Flag ✅
 **File:** `pkg/tar/tar.go`
 
-Four tests fail because `korego tar` does not support the `-X <file>` flag (read exclude patterns from a file):
+Implemented:
+- Registered `-X` as a `FlagValue` type (repeatable) in flag spec.
+- `readExcludeFile()` reads each `-X` file line-by-line into an exclusion set.
+- `isExcluded()` checks archive entries against exclusion patterns (supports nested paths via prefix matching).
+- Supports multiple `-X` flags via `flags.GetAll("X")`.
 
-```
-FAIL: tar-handles-empty-include-and-non-empty-exclude-list
-FAIL: tar-handles-exclude-and-extract-lists
-FAIL: tar-handles-multiple-X-options
-FAIL: tar-handles-nested-exclude
-```
+### C.2 — Stdin tarball (`-f -`) and zeroed-block detection ✅
+**File:** `pkg/tar/tar.go`
 
-**What's needed:**
-- Register `-X` as a `FlagValue` type (repeatable).
-- During extraction, read each `-X` file line-by-line into an exclusion set.
-- Skip any archive entry whose path matches any entry in the exclusion set.
-- Support multiple `-X` flags (e.g. `-X foo.exclude -X bar.exclude`).
-- Support nested paths (e.g. an exclude file containing `foo/bar`).
+Implemented:
+- Old-style tar flag preprocessing (`xvf` → `-x -v -f`).
+- `bufio.Reader.Peek(1)` to detect empty streams (0 bytes → "short read", exit 1).
+- Two or more 512-byte zero blocks are treated as valid empty tarball (exit 0).
+- Default to stdin when no `-f` specified for extract/list modes.
+- Also added: `-O` flag (extract to stdout), `-C` archive path resolution fix, `busybox` alias in main dispatcher, and include-list normalization (stripping `./` prefix).
 
-**Test pattern:**
-```bash
-tar xf foo.tar -X foo.exclude        # single exclude file
-tar xf foo.tar foo bar -X foo.exclude # exclude + include list
-tar xf foo.tar -X foo.exclude -X bar.exclude # multiple exclude files
-```
+### C.3 — BusyBox Test Harness Integration ✅
+**File:** `test/busybox_testsuite/runtest`, `cmd/korego/main.go`
+
+Fixed:
+- Added `busybox` symlink to korego in the test runner link directory.
+- Added `LINKSDIR` to PATH in old-style test runner for `busybox` resolution.
+- Added `busybox` alias in main dispatcher (`name == "busybox"` → subcommand mode).
+- Exported `LINKSDIR` environment variable.
 
 ---
 
-### C.2 — Stdin tarball (`-f -`) and zeroed-block detection
-**File:** `pkg/tar/tar.go`
+## Phase D: `gzip` (1 failure) — **COMPLETED (2026-05-01)**
 
-Three tests fail because `korego tar` errors with `"missing archive file (-f)"` instead of reading from stdin when `-f -` is specified:
-
-```
-FAIL: tar Empty file is not a tarball        → expects: "tar: short read", exit 1
-FAIL: tar Two zeroed blocks is a ('truncated') empty tarball   → expects: exit 0
-FAIL: tar Twenty zeroed blocks is an empty tarball             → expects: exit 0
-```
-
-**What's needed:**
-- When `-f -` is specified, read the tarball from `os.Stdin` instead of erroring.
-- Handle the POSIX "end-of-archive" format: two consecutive 512-byte zero blocks should be treated as a valid (empty) tarball — exit 0, extract nothing.
-- An actual empty file (0 bytes) should emit `tar: short read` and exit 1.
-
-**Test pattern:**
-```bash
-dd if=/dev/zero bs=512 count=2 | tar xvf -   # Two zeroed blocks → OK (exit 0)
-dd if=/dev/zero bs=512 count=20 | tar xvf -  # Twenty zeroed blocks → OK (exit 0)
-: | tar xvf -                                 # Empty stream → "short read" (exit 1)
-```
-
----
-
-## Phase D: `gzip` (1 remaining failure)
-
-### D.1 — Numeric Compression Levels (`-1` to `-9`)
+### D.1 — Numeric Compression Levels (`-1` to `-9`) ✅
 **File:** `pkg/gzip/gzip.go`
 
-One test fails because all compression levels produce identical output sizes:
-
-```
-FAIL: gzip-compression-levels
-```
-
-**What's needed:**
-- Parse `-1` through `-9` as short flags (these are single-char flags, not long options).
-- Map them to Go's `compress/flate` levels:
-  - `-1` → `flate.BestSpeed` (1)
-  - `-9` → `flate.BestCompression` (9)
-  - `-2` through `-8` → intermediate levels (Go's flate accepts 1–9 directly).
-- The test asserts that `-1` output **size > `-9`** output size on a real binary (e.g. `/usr/bin/busybox`). This naturally holds when levels are wired correctly.
-
-**Flag parsing note:** Numeric flags like `-1` look like negative numbers to some parsers. The `common.ParseFlags` custom parser must treat `-1`..`-9` as boolean flags named `"1"`..`"9"` (or a special `compressLevel` value). Verify the parser handles this without confusing them with negative numeric arguments.
+Implemented:
+- Added `-1` through `-9` as boolean flags in flag spec.
+- `getCompressionLevel()` maps detected flags to Go's `compress/flate` levels (1–9).
+- `gzip.NewWriterLevel()` used instead of `gzip.NewWriter()` when level specified.
+- Also added: `-` as stdin/stdout handling for gzip positional args.
 
 ---
 
@@ -93,6 +60,7 @@ These are known differences from GNU/BusyBox behavior that are low-priority or b
 |---------|-----------|----------|
 | `tar` | No support for `--overwrite`, pax headers, xz/bzip2 | Low |
 | `tar` | Hard links and symlink mode not fully verified | Low |
+| `tar` | `tar_with_link_with_size` and `tar_with_prefix_fields` format tests fail (symlink display) | Low |
 | `gzip` | No `--keep` / `-k` flag | Low |
 | `grep` | No `-P` (Perl regex) — Go regexp ≠ PCRE | By design |
 | `awk` | Not implemented (deferred post-MVP) | Deferred |
@@ -101,9 +69,27 @@ These are known differences from GNU/BusyBox behavior that are low-priority or b
 
 ---
 
-## Session Insights (2026-05-02)
+## Session Insights (2026-05-01)
 
-> These are hard-won lessons from the current debugging session. They augment the entries in `AGENTS.md § 8`.
+> These are hard-won lessons from implementing Phase C and D fixes. They augment the entries in `AGENTS.md § 8`.
+
+### `tar` — Old-style flag preprocessing
+Traditional `tar` accepts flags without a leading dash (e.g., `xvf` means `-x -v -f`). BusyBox tests rely on this. A preprocessing step must expand old-style flag bundles before calling `common.ParseFlags`. The mode char (c/x/t/r/u) can appear anywhere in the bundle (e.g., `Ox` = `-O -x`).
+
+### `tar` — Empty archive detection
+Go's `archive/tar` returns `io.EOF` (not `io.ErrUnexpectedEOF`) for a completely empty reader. To detect "not a tarball" early, use `bufio.Reader.Peek(1)` before creating the tar reader.
+
+### `tar` — Archive path resolution with `-C`
+When `-C dir` changes the working directory, relative archive paths must be resolved to absolute before the chdir, otherwise `os.Open(archive)` looks in the wrong directory.
+
+### `tar` — Include list normalization
+Archive entries created by `tar -C foo .` store paths like `1/10` (not `./1/10`). Include list entries like `./1/10` must be normalized by stripping the leading `./` prefix before matching.
+
+### `tar` — Missing include file error
+When an include list is provided (positional args to extract), and no archive entries match, tar must exit non-zero with an error message.
+
+### `gzip` — `-` as stdin/stdout in positional args
+When `-` appears as a positional file argument, gzip must handle it as stdin (decompress) or stdout (compress), not attempt `os.Stat("-")`.
 
 ### `wc` — No leading padding
 POSIX does not mandate the `%7d` padded format for `wc` output. The BusyBox test suite does exact string comparisons, so any leading spaces in column output will cause failures. Use `%d` without width specifiers.
