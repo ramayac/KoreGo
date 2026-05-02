@@ -69,6 +69,147 @@ These are known differences from GNU/BusyBox behavior that are low-priority or b
 
 ---
 
+## BusyBox Skipped Tests (75 tests — feature-gated or not yet implemented)
+
+These tests are skipped in the BusyBox test suite because they require features not yet
+implemented in KoreGo. They are gated by BusyBox `CONFIG_*` options in the test files.
+
+### `cat` (4 skipped)
+| Test | Reason |
+|------|--------|
+| `cat -e` | `-e` flag (show non-printing, `$` at EOL) |
+| `cat -v` | `-v` flag (show non-printing) |
+| `cat -n` | `-n` flag already implemented; test uses `FEATURE_CATN`) |
+| `cat -b` | `-b` flag already implemented; test uses `FEATURE_CATN`) |
+
+### `cut` (1 skipped)
+| Test | Reason |
+|------|--------|
+| `cut -DF` | `-D` and `-F` flags (field delimiter output options) |
+
+### `diff` (4 skipped)
+| Test | Reason |
+|------|--------|
+| `diff diff1 diff2/` | Directory diff (compare dir vs dir) |
+| `diff diff1 diff2/subdir` | Subdirectory diff |
+| `diff dir dir2/file/-` | Complex path diff scenarios |
+| `diff of dir and fifo` | FIFO special file diff |
+| `diff of file and fifo` | FIFO special file diff |
+| `diff -rN does not read non-regular files` | `-r` (recursive) and `-N` flags |
+
+### `find` (9 skipped)
+| Test | Reason |
+|------|--------|
+| `find -exec exitcode 1–4` | `-exec` flag (execute command on matches) |
+| `find / -maxdepth 0 -name /` | `-maxdepth` flag |
+| `find // -maxdepth 0 -name /` | `-maxdepth` flag |
+| `find / -maxdepth 0 -name //` | `-maxdepth` flag |
+| `find // -maxdepth 0 -name //` | `-maxdepth` flag |
+| `find -type f` | Already implemented; gated by `FEATURE_FINDTYPE` |
+
+### `grep` (7 skipped)
+| Test | Reason |
+|------|--------|
+| `egrep is not case insensitive` | `egrep` alias handling |
+| `grep -E -o prints all matches` | `-o` flag with `-E` extended regex |
+| `grep -E supports extended regexps` | `-E` extended regex |
+| `grep handles NUL in files` | NUL byte handling in input |
+| `grep handles NUL on stdin` | NUL byte handling on stdin |
+| `grep is also egrep` | `egrep` alias handling |
+| `grep matches NUL` | NUL byte pattern matching |
+
+### `head` (1 skipped)
+| Test | Reason |
+|------|--------|
+| `head -n <negative number>` | Negative `-n` values (print all but last N lines) |
+
+### `md5sum` (2 skipped)
+| Test | Reason |
+|------|--------|
+| `md5sum` (×2) | Gated by `FEATURE_MD5_SHA1_SUM_CHECK` |
+
+### `readlink` (4 skipped)
+| Test | Reason |
+|------|--------|
+| `readlink -f on a file` | `-f` canonicalize on regular file |
+| `readlink -f on a link` | `-f` canonicalize on symlink |
+| `readlink -f on an invalid link` | `-f` canonicalize on broken symlink |
+| `readlink -f on a weird dir` | `-f` edge case |
+
+### `sort` (16 skipped)
+| Test | Reason |
+|------|--------|
+| `sort file in place` | `-o` flag (output to file) |
+| `sort -h` | Human-readable numeric sort `-h` |
+| `sort -k2,2M` | Month sort via `-M` flag |
+| `sort key doesn't strip leading blanks…` | Key definition edge cases |
+| `sort key range with multiple options` | Key range with flags |
+| `sort key range with numeric option` | `-k` with `-n` |
+| `sort key range with numeric option and global reverse` | `-k -n -r` combo |
+| `sort key range with two -k options` | Multiple `-k` flags |
+| `sort one key` | Single `-k` behavior |
+| `sort -sr …` | Stable + reverse combo |
+| `sort -s -u` | Stable + unique combo |
+| `sort -u should consider field only` | Unique with field specs |
+| `sort with ENDCHAR` | End character delimiter |
+| `sort with non-default leading delim 1–4` | Custom delimiter edge cases |
+| `sort -z outputs NUL terminated lines` | `-z` NUL-terminated lines |
+| `glibc build sort` | Edge case from glibc tests |
+| `glibc build sort unique` | Edge case from glibc tests |
+
+### `tar` (12 skipped)
+| Test | Reason |
+|------|--------|
+| `tar does not extract into symlinks` | Symlink attack protection (needs bzip2) |
+| `tar Empty file is not a tarball.tar.gz` | Gzip-compressed empty file (needs gunzip) |
+| `tar extract tgz` | `.tgz` extraction (needs gzip) |
+| `tar extract txz` | `.txz` extraction (needs xz, uudecode) |
+| `tar hardlinks and repeated files` | Hardlink creation (`FEATURE_TAR_CREATE`) |
+| `tar hardlinks mode` | Hardlink mode preservation |
+| `tar -k does not extract into symlinks` | Symlink attack with `-k` (needs bzip2) |
+| `tar --overwrite` | `--overwrite` long option |
+| `tar Pax-encoded UTF8 names and symlinks` | PAX/UTF-8 extended headers |
+| `tar strips /../ on extract` | Path traversal stripping (`FEATURE_TAR_CREATE`) |
+| `tar Symlink attack: …` | Symlink attack test (needs bzip2, uudecode) |
+| `tar Symlinks and hardlinks coexist` | Mixed symlink+hardlink (`FEATURE_TAR_CREATE`) |
+| `tar symlinks mode` | Symlink handling in archive |
+| `tar writing into read-only dir` | Permission handling (`FEATURE_TAR_CREATE`) |
+
+### `tr` (3 skipped)
+| Test | Reason |
+|------|--------|
+| `tr does not stop after [:digit:]` | Character class edge case |
+| `tr has correct xdigit sequence` | `[:xdigit:]` class ordering |
+| `tr understands [:xdigit:]` | `[:xdigit:]` class support |
+
+### `xargs` (4 skipped)
+| Test | Reason |
+|------|--------|
+| `xargs argument line too long` | Long argument line handling |
+| `xargs -I skips empty lines…` | `-I` replace-str flag |
+| `xargs -n1` | `-n1` max-args-per-call |
+| `xargs -n2` | `-n2` max-args-per-call |
+
+### `wc` (0)
+All wc new-style tests pass. (The `wc-prints-longest-line-length` old-style test uses system busybox.)
+
+---
+
+## CI vs Local Discrepancy Note
+
+The GitHub Actions CI runs the BusyBox test suite on `ubuntu-latest` where the system
+BusyBox (`/usr/bin/busybox`) is available. Old-style tests (in `test/busybox_testsuite/<applet>/`
+directories) use `busybox <applet>` calls that resolve to the **system BusyBox**, not KoreGo.
+Only new-style `.tests` files run against KoreGo. This means:
+- **CI shows 100% pass** (413 passed, 75 skipped) — old-style tests pass via system BusyBox.
+- **Locally, old-style tests may fail** if a `/tmp/busybox` symlink shadows the system BusyBox
+  and routes calls to KoreGo (which has minor behavioral differences from BusyBox).
+
+To reproduce the CI result locally: ensure no `busybox` symlink exists in `$bindir` or `$LINKSDIR`
+so the system BusyBox is used for old-style tests.
+
+---
+
 ## Session Insights (2026-05-01)
 
 > These are hard-won lessons from implementing Phase C and D fixes. They augment the entries in `AGENTS.md § 8`.
