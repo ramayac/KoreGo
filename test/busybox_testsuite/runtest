@@ -136,8 +136,21 @@ for i in $implemented; do
 	ln -s "$bindir/korego" "$LINKSDIR/$i" 2>/dev/null
 done
 
-# No .config for korego
-export OPTIONFLAGS=:
+# No .config for korego.
+# Build OPTIONFLAGS to enable tests for features KoreGo supports.
+KOREGO_FEATURES="${KOREGO_FEATURES:-}"
+OPTIONFLAGS=":"
+# cat features
+OPTIONFLAGS="${OPTIONFLAGS}FEATURE_CATV:FEATURE_CATN:"
+# find features
+OPTIONFLAGS="${OPTIONFLAGS}FEATURE_FIND_MAXDEPTH:FEATURE_FIND_TYPE:"
+# head features
+OPTIONFLAGS="${OPTIONFLAGS}FEATURE_FANCY_HEAD:"
+# Allow caller to append additional features
+for f in $KOREGO_FEATURES; do
+	OPTIONFLAGS="${OPTIONFLAGS}${f}:"
+done
+export OPTIONFLAGS
 
 status=0
 for applet in $applets; do
