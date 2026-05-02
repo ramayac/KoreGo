@@ -31,6 +31,8 @@ var spec = common.FlagSpec{
 		{Short: "b", Long: "bytes", Type: common.FlagValue},
 		{Short: "n", Long: "no-split-chars", Type: common.FlagBool},
 		{Short: "s", Long: "only-delimited", Type: common.FlagBool},
+		{Short: "D", Long: "no-suppress", Type: common.FlagBool},
+		{Short: "F", Long: "whitespace-fields", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
@@ -85,13 +87,17 @@ func inRange(idx int, specs []rangeSpec) bool {
 	return false
 }
 
-func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited bool) ([]CutLine, error) {
+func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited, noSuppress, whitespaceFields bool) ([]CutLine, error) {
 	scanner := bufio.NewScanner(r)
 	var lines []CutLine
 
 	delim := "\t"
 	if delimiter != "" {
 		delim = delimiter
+	}
+	// -F overrides -d: split on repeated whitespace.
+	if whitespaceFields {
+		delim = "" // signals whitespace-split mode
 	}
 
 	var fieldSel []rangeSpec
@@ -119,23 +125,40 @@ func Run(r io.Reader, fields, delimiter, chars, bytesList string, onlyDelimited 
 		var extracted []string
 
 		if fields != "" {
-			parts := strings.Split(text, delim)
-			// If no delimiter found, POSIX cut by default prints the whole line
-			// (unless -s is passed, but we'll ignore -s for simplicity unless required)
-			if len(parts) == 1 && !strings.Contains(text, delim) {
-				if !onlyDelimited {
+			var parts []string
+			if whitespaceFields {
+				parts = strings.Fields(text)
+			} else {
+				parts = strings.Split(text, delim)
+			}
+			// If no delimiter found and not -F mode, POSIX cut by default prints the whole line
+			// (unless -s is passed).
+			hasDelim := whitespaceFields || strings.Contains(text, delim)
+			if !hasDelim {
+				if !onlyDelimited && !noSuppress {
+					// Default: print whole line.
 					extracted = append(extracted, text)
+				} else if noSuppress {
+					// -D: don't suppress, print empty (or partial match).
+					extracted = append(extracted, "")
 				} else {
-					continue // Suppress line
+					continue // Suppress line (-s)
 				}
 			} else {
 				var selected []string
-				for i, p := range parts {
-					if inRange(i+1, fieldSel) {
-						selected = append(selected, p)
+				sep := delim
+				if whitespaceFields {
+					sep = " "
+				}
+				// Select fields in the order specified by the field list.
+				for _, spec := range fieldSel {
+					for f := spec.start; f <= spec.end && f <= len(parts); f++ {
+						if f > 0 && f <= len(parts) {
+							selected = append(selected, parts[f-1])
+						}
 					}
 				}
-				extracted = append(extracted, strings.Join(selected, delim))
+				extracted = append(extracted, strings.Join(selected, sep))
 			}
 		} else if chars != "" {
 			runes := []rune(text)
@@ -174,6 +197,14 @@ func run(args []string, out io.Writer) int {
 	chars := flags.Get("c")
 	bytesList := flags.Get("b")
 	onlyDelimited := flags.Has("s")
+	noSuppress := flags.Has("D")
+	whitespaceFields := flags.Has("F")
+
+	// When -F is used without -f, the first positional is the field list.
+	if whitespaceFields && fields == "" && len(flags.Positional) > 0 {
+		fields = flags.Positional[0]
+		flags.Positional = flags.Positional[1:]
+	}
 
 	if fields == "" && chars == "" && bytesList == "" {
 		fmt.Fprintf(os.Stderr, "cut: you must specify a list of bytes, characters, or fields\n")
@@ -201,7 +232,7 @@ func run(args []string, out io.Writer) int {
 
 	var allLines []CutLine
 	for _, r := range readers {
-		lines, err := Run(r, fields, delimiter, chars, bytesList, onlyDelimited)
+		lines, err := Run(r, fields, delimiter, chars, bytesList, onlyDelimited, noSuppress, whitespaceFields)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "cut: %v\n", err)
 			return 1

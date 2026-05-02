@@ -5,6 +5,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -44,16 +45,29 @@ type FileInfo struct {
 }
 
 func run(args []string, out io.Writer) int {
-	var parsedArgs []string
-	for _, a := range args {
-		if strings.HasPrefix(a, "-") && len(a) > 2 && a != "-exec" {
-			parsedArgs = append(parsedArgs, "-"+a)
+	var flagArgs []string
+	// Parse -exec command first, then pass remaining to flag parser.
+	var execCmd []string
+	execPlus := false
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "-exec" {
+			i++
+			for i < len(args) && args[i] != ";" && args[i] != "+" {
+				execCmd = append(execCmd, args[i])
+				i++
+			}
+			if i < len(args) && args[i] == "+" {
+				execPlus = true
+			}
+		} else if strings.HasPrefix(a, "-") && len(a) > 2 {
+			flagArgs = append(flagArgs, "-"+a)
 		} else {
-			parsedArgs = append(parsedArgs, a)
+			flagArgs = append(flagArgs, a)
 		}
 	}
 
-	flags, err := common.ParseFlags(parsedArgs, spec)
+	flags, err := common.ParseFlags(flagArgs, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "find: %v\n", err)
 		return 1
@@ -127,7 +141,6 @@ func run(args []string, out io.Writer) int {
 		}
 
 		// Normalize path: when root is ".", WalkDir returns paths without "./"
-		// (e.g., "file" instead of "./file"). Prepend "./" for BusyBox compat.
 		outPath := p
 		if rootClean == "." && p != "." && !strings.HasPrefix(p, ".") {
 			outPath = "./" + p
@@ -147,6 +160,11 @@ func run(args []string, out io.Writer) int {
 		return 1
 	}
 
+	// Execute -exec commands if present.
+	if len(execCmd) > 0 {
+		return runExec(results, execCmd, execPlus)
+	}
+
 	jsonMode := flags.Has("j")
 
 	common.Render("find", results, jsonMode, out, func() {
@@ -156,6 +174,59 @@ func run(args []string, out io.Writer) int {
 	})
 
 	return 0
+}
+
+// runExec executes a command for each matched file (or in batches with +).
+func runExec(results []FileInfo, execCmd []string, execPlus bool) int {
+	if len(results) == 0 {
+		return 0
+	}
+	maxExit := 0
+
+	if execPlus {
+		// + mode: batch all paths together in one invocation.
+		args := buildExecArgs(execCmd, results)
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			if ee, ok := err.(*exec.ExitError); ok {
+				code := ee.ExitCode()
+				if code > maxExit {
+					maxExit = code
+				}
+			} else {
+				maxExit = 1
+			}
+		}
+	} else {
+		// \; mode: one invocation per matched file.
+		// BusyBox: command exit code is ignored for \; mode.
+		for _, r := range results {
+			args := buildExecArgs(execCmd, []FileInfo{r})
+			cmd := exec.Command(args[0], args[1:]...)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			cmd.Run() // ignore exit code
+		}
+	}
+	return maxExit
+}
+
+// buildExecArgs builds the argument list with {} replaced by file paths.
+func buildExecArgs(execCmd []string, files []FileInfo) []string {
+	var args []string
+	for _, a := range execCmd {
+		if a == "{}" {
+			for _, f := range files {
+				args = append(args, f.Path)
+			}
+		} else {
+			args = append(args, a)
+		}
+	}
+	return args
 }
 
 func init() {

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/ramayac/korego/internal/dispatch"
 	"github.com/ramayac/korego/pkg/common"
@@ -17,6 +18,7 @@ var spec = common.FlagSpec{
 		{Short: "e", Long: "eof-str-compat", Type: common.FlagOptionalValue},
 		{Short: "s", Long: "max-chars", Type: common.FlagValue},
 		{Short: "n", Long: "max-args", Type: common.FlagValue},
+		{Short: "I", Long: "replace", Type: common.FlagValue},
 		{Short: "t", Long: "verbose", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
@@ -56,6 +58,8 @@ func run(args []string, out io.Writer) int {
 
 	trace := flags.Has("t")
 
+	replaceStr := flags.Get("I")
+
 	eofStr := ""
 	hasEOF := false
 	if flags.Has("E") {
@@ -72,7 +76,12 @@ func run(args []string, out io.Writer) int {
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Split(bufio.ScanWords)
+	// When -I is used, read entire lines (not words).
+	if replaceStr != "" {
+		scanner.Split(bufio.ScanLines)
+	} else {
+		scanner.Split(bufio.ScanWords)
+	}
 
 	var batches [][]string
 	var currentBatch []string
@@ -82,6 +91,16 @@ func run(args []string, out io.Writer) int {
 		word := scanner.Text()
 		if hasEOF && word == eofStr {
 			break
+		}
+
+		// -I replace-str: replace occurrences of replaceStr in cmdArgs with word.
+		if replaceStr != "" {
+			replacedArgs := make([]string, len(cmdArgs))
+			for i, a := range cmdArgs {
+				replacedArgs[i] = strings.ReplaceAll(a, replaceStr, word)
+			}
+			batches = append(batches, replacedArgs)
+			continue
 		}
 		
 		sizeLimitHit := maxSize > 0 && currentSize+len(word)+1 > maxSize && len(currentBatch) > 0

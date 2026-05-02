@@ -31,6 +31,7 @@ var spec = common.FlagSpec{
 		{Short: "z", Long: "gzip", Type: common.FlagBool},
 		{Short: "v", Long: "verbose", Type: common.FlagBool},
 		{Short: "O", Long: "to-stdout", Type: common.FlagBool},
+		{Short: "overwrite", Long: "overwrite", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 		{Short: "f", Long: "file", Type: common.FlagValue},
 		{Short: "C", Long: "directory", Type: common.FlagValue},
@@ -99,6 +100,7 @@ func run(args []string, out io.Writer) int {
 	useGzip := flags.Has("z")
 	verbose := flags.Has("v")
 	toStdout := flags.Has("O")
+	overwrite := flags.Has("overwrite")
 	isJSON := flags.Has("json")
 	file := flags.Get("f")
 	dir := flags.Get("C")
@@ -176,7 +178,7 @@ func run(args []string, out io.Writer) int {
 	if create {
 		return doCreate(file, useGzip, verbose, isJSON, flags.Positional, out)
 	} else if extract {
-		return doExtract(file, useGzip, verbose, toStdout, isJSON, excludePatterns, flags.Positional, out)
+		return doExtract(file, useGzip, verbose, toStdout, overwrite, isJSON, excludePatterns, flags.Positional, out)
 	} else if list {
 		return doList(file, useGzip, verbose, isJSON, excludePatterns, out)
 	}
@@ -213,6 +215,26 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 	var stats []TarFileStat
 
 	for _, target := range targets {
+		// Strip leading /../ and /./ components from member names.
+		normalizedTarget := target
+		strippedPrefix := ""
+		for {
+			if strings.HasPrefix(normalizedTarget, "./") {
+				strippedPrefix += "./"
+				normalizedTarget = normalizedTarget[2:]
+			} else if strings.HasPrefix(normalizedTarget, "../") {
+				strippedPrefix += "../"
+				normalizedTarget = normalizedTarget[3:]
+			} else if strings.Contains(normalizedTarget, "/../") || strings.Contains(normalizedTarget, "/./") {
+				// Has embedded ".." or "." but not at start: clean with filepath.
+				break
+			} else {
+				break
+			}
+		}
+		// Use filepath.Clean to resolve any embedded ../ or ./
+		cleaned := filepath.Clean(normalizedTarget)
+
 		err := filepath.Walk(target, func(file string, fi os.FileInfo, err error) error {
 			if err != nil {
 				return err
@@ -232,7 +254,18 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 				return err
 			}
 
-			header.Name = filepath.ToSlash(file)
+			// Build member name: strip the ../ prefix path.
+			memberName := file
+			if strippedPrefix != "" {
+				if strings.HasPrefix(memberName, target) {
+					memberName = cleaned + memberName[len(target):]
+				} else {
+					memberName = filepath.ToSlash(file)
+				}
+			} else {
+				memberName = filepath.ToSlash(file)
+			}
+			header.Name = memberName
 
 			if err := tw.WriteHeader(header); err != nil {
 				return err
@@ -267,6 +300,11 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 				fmt.Fprintf(os.Stderr, "tar: %s: %v\n", target, err)
 			}
 			return 1
+		}
+
+		// Emit message about stripped prefix.
+		if strippedPrefix != "" && !isJSON {
+			fmt.Fprintf(os.Stderr, "tar: removing leading '%s' from member names\n", strippedPrefix[:len(strippedPrefix)-1])
 		}
 	}
 
@@ -323,7 +361,7 @@ func buildIncludeSet(positional []string) map[string]bool {
 	return set
 }
 
-func doExtract(archive string, useGzip, verbose, toStdout, isJSON bool, excludePatterns, positional []string, out io.Writer) int {
+func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON bool, excludePatterns, positional []string, out io.Writer) int {
 	includeSet := buildIncludeSet(positional)
 	hasIncludeList := includeSet != nil
 	matchedAny := false
@@ -435,7 +473,13 @@ func doExtract(archive string, useGzip, verbose, toStdout, isJSON bool, excludeP
 				common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
 				return 1
 			}
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, os.FileMode(header.Mode))
+			var flag int
+			if overwrite {
+				flag = os.O_WRONLY | os.O_TRUNC
+			} else {
+				flag = os.O_CREATE | os.O_TRUNC | os.O_WRONLY
+			}
+			f, err := os.OpenFile(target, flag, os.FileMode(header.Mode))
 			if err != nil {
 				common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
 				if !isJSON {

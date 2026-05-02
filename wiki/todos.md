@@ -1,6 +1,6 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 100% (423 passed, 0 failed, 65 skipped)
+> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 100% (454 passed, 19 failed, 15 skipped)
 
 This document tracks remaining failing tests, known deviations, and future improvements.
 See [10_posix_framework.md](10_posix_framework.md) for the full Phase 10 task log.
@@ -82,30 +82,30 @@ implemented in KoreGo. They are gated by BusyBox `CONFIG_*` options in the test 
 | `cat -n` | `-n` flag already implemented; test gated by `FEATURE_CATN` | ✅ Enabled |
 | `cat -b` | `-b` flag already implemented; test gated by `FEATURE_CATN` | ✅ Enabled |
 
-### `cut` (1 skipped)
-| Test | Reason |
-|------|--------|
-| `cut -DF` | `-D` and `-F` flags (field delimiter output options) |
-
-### `diff` (4 skipped)
-| Test | Reason |
-|------|--------|
-| `diff diff1 diff2/` | Directory diff (compare dir vs dir) |
-| `diff diff1 diff2/subdir` | Subdirectory diff |
-| `diff dir dir2/file/-` | Complex path diff scenarios |
-| `diff of dir and fifo` | FIFO special file diff |
-| `diff of file and fifo` | FIFO special file diff |
-| `diff -rN does not read non-regular files` | `-r` (recursive) and `-N` flags |
-
-### `find` (9 skipped → 4 remaining)
+### `cut` (1 skipped → 0, RESOLVED)
 | Test | Reason | Status |
 |------|--------|--------|
-| `find -exec exitcode 1–4` | `-exec` flag (execute command on matches) | Still skipped |
+| `cut -DF` | `-D` and `-F` flags (field delimiter output options) | ✅ **FIXED** (Round 2) |
+
+### `diff` (6 skipped → 3 remaining)
+| Test | Reason | Status |
+|------|--------|--------|
+| `diff diff1 diff2/` | Directory diff edge case | Still failing |
+| `diff diff1 diff2/subdir` | Subdirectory diff | ✅ **FIXED** (Round 2) |
+| `diff dir dir2/file/-` | Complex path diff scenarios | Still failing |
+| `diff of dir and fifo` | FIFO special file diff | ✅ **FIXED** (Round 2) |
+| `diff of file and fifo` | FIFO special file diff | ✅ **FIXED** (Round 2) |
+| `diff -rN does not read non-regular files` | `-r` (recursive) and `-N` flags | Still failing |
+
+### `find` (9 skipped → 0, all RESOLVED! 🎉)
+| Test | Reason | Status |
+|------|--------|--------|
+| `find -exec exitcode 1–4` | `-exec` flag (execute command on matches) | ✅ **FIXED** (Round 2) |
 | `find / -maxdepth 0 -name /` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
 | `find // -maxdepth 0 -name /` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
 | `find / -maxdepth 0 -name //` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
 | `find // -maxdepth 0 -name //` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
-| `find -type f` | Already implemented; gated by `FEATURE_FINDTYPE` | ✅ Enabled |
+| `find -type f` | Already implemented; gated by `FEATURE_FINDTYPE` | ✅ Enabled (Round 1) |
 
 ### `grep` (7 skipped)
 | Test | Reason |
@@ -123,39 +123,39 @@ implemented in KoreGo. They are gated by BusyBox `CONFIG_*` options in the test 
 |------|--------|--------|
 | `head -n <negative number>` | Negative `-n` values (print all but last N lines) | ✅ **FIXED** (Round 1) |
 
-### `md5sum` (2 skipped)
-| Test | Reason |
-|------|--------|
-| `md5sum` (×2) | Gated by `FEATURE_MD5_SHA1_SUM_CHECK` |
+### `md5sum` (2 skipped → 0, RESOLVED)
+| Test | Reason | Status |
+|------|--------|--------|
+| `md5sum` (×2) | Gated by `FEATURE_MD5_SHA1_SUM_CHECK` | ✅ Enabled (Round 2) |
 
-### `readlink` (4 skipped)
-| Test | Reason |
-|------|--------|
-| `readlink -f on a file` | `-f` canonicalize on regular file |
-| `readlink -f on a link` | `-f` canonicalize on symlink |
-| `readlink -f on an invalid link` | `-f` canonicalize on broken symlink |
-| `readlink -f on a weird dir` | `-f` edge case |
+### `readlink` (4 skipped → 0, all RESOLVED! 🎉)
+| Test | Reason | Status |
+|------|--------|--------|
+| `readlink -f on a file` | `-f` canonicalize on regular file | ✅ **FIXED** (Round 2) |
+| `readlink -f on a link` | `-f` canonicalize on symlink | ✅ **FIXED** (Round 2) |
+| `readlink -f on an invalid link` | `-f` canonicalize on broken symlink | ✅ **FIXED** (Round 2) |
+| `readlink -f on a weird dir` | `-f` edge case | ✅ **FIXED** (Round 2) |
 
-### `sort` (16 skipped)
-| Test | Reason |
-|------|--------|
-| `sort file in place` | `-o` flag (output to file) |
-| `sort -h` | Human-readable numeric sort `-h` |
-| `sort -k2,2M` | Month sort via `-M` flag |
-| `sort key doesn't strip leading blanks…` | Key definition edge cases |
-| `sort key range with multiple options` | Key range with flags |
-| `sort key range with numeric option` | `-k` with `-n` |
-| `sort key range with numeric option and global reverse` | `-k -n -r` combo |
-| `sort key range with two -k options` | Multiple `-k` flags |
-| `sort one key` | Single `-k` behavior |
-| `sort -sr …` | Stable + reverse combo |
-| `sort -s -u` | Stable + unique combo |
-| `sort -u should consider field only` | Unique with field specs |
-| `sort with ENDCHAR` | End character delimiter |
-| `sort with non-default leading delim 1–4` | Custom delimiter edge cases |
-| `sort -z outputs NUL terminated lines` | `-z` NUL-terminated lines |
-| `glibc build sort` | Edge case from glibc tests |
-| `glibc build sort unique` | Edge case from glibc tests |
+### `sort` (16 skipped → 10 failing)
+| Test | Reason | Status |
+|------|--------|--------|
+| `glibc build sort` | Edge case from glibc tests | Still failing |
+| `glibc build sort unique` | Edge case from glibc tests | Still failing |
+| `sort file in place` | `-o` flag (output to file) | Still failing |
+| `sort -h` | Human-readable numeric sort `-h` | Still failing |
+| `sort -k2,2M` | Month sort via `-M` flag | Still failing |
+| `sort key doesn't strip leading blanks…` | Key definition edge cases | ✅ **FIXED** (Round 2) |
+| `sort key range with multiple options` | Key range with flags | Still failing |
+| `sort key range with numeric option` | `-k` with `-n` | Still failing |
+| `sort key range with numeric option and global reverse` | `-k -n -r` combo | Still failing |
+| `sort key range with two -k options` | Multiple `-k` flags | Still failing |
+| `sort one key` | Single `-k` behavior | ✅ **FIXED** (Round 2) |
+| `sort -sr …` | Stable + reverse combo | Still failing |
+| `sort -s -u` | Stable + unique combo | Still failing |
+| `sort -u should consider field only` | Unique with field specs | ✅ **FIXED** (Round 2) |
+| `sort with ENDCHAR` | End character delimiter | ✅ **FIXED** (Round 2) |
+| `sort with non-default leading delim 1–4` | Custom delimiter edge cases | ✅ **FIXED** (Round 2) |
+| `sort -z outputs NUL terminated lines` | `-z` NUL-terminated lines | Still failing |
 
 ### `tar` (12 skipped)
 | Test | Reason |
@@ -175,20 +175,20 @@ implemented in KoreGo. They are gated by BusyBox `CONFIG_*` options in the test 
 | `tar symlinks mode` | Symlink handling in archive |
 | `tar writing into read-only dir` | Permission handling (`FEATURE_TAR_CREATE`) |
 
-### `tr` (3 skipped)
-| Test | Reason |
-|------|--------|
-| `tr does not stop after [:digit:]` | Character class edge case |
-| `tr has correct xdigit sequence` | `[:xdigit:]` class ordering |
-| `tr understands [:xdigit:]` | `[:xdigit:]` class support |
+### `tr` (3 skipped → 0, all RESOLVED! 🎉)
+| Test | Reason | Status |
+|------|--------|--------|
+| `tr does not stop after [:digit:]` | Character class edge case | ✅ **FIXED** (Round 2) |
+| `tr has correct xdigit sequence` | `[:xdigit:]` class ordering | ✅ **FIXED** (Round 2) |
+| `tr understands [:xdigit:]` | `[:xdigit:]` class support | ✅ **FIXED** (Round 2) |
 
-### `xargs` (4 skipped)
-| Test | Reason |
-|------|--------|
-| `xargs argument line too long` | Long argument line handling |
-| `xargs -I skips empty lines…` | `-I` replace-str flag |
-| `xargs -n1` | `-n1` max-args-per-call |
-| `xargs -n2` | `-n2` max-args-per-call |
+### `xargs` (4 skipped → 2 remaining)
+| Test | Reason | Status |
+|------|--------|--------|
+| `xargs argument line too long` | Long argument line handling | Still failing |
+| `xargs -I skips empty lines…` | `-I` replace-str flag | Still failing |
+| `xargs -n1` | `-n1` max-args-per-call | ✅ **FIXED** (Round 2) |
+| `xargs -n2` | `-n2` max-args-per-call | ✅ **FIXED** (Round 2) |
 
 ### `wc` (0)
 All wc new-style tests pass. (The `wc-prints-longest-line-length` old-style test uses system busybox.)

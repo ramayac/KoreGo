@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -35,6 +37,8 @@ var spec = common.FlagSpec{
 		{Short: "b", Long: "ignore-space-change", Type: common.FlagBool},
 		{Short: "B", Long: "ignore-blank-lines", Type: common.FlagBool},
 		{Short: "q", Long: "brief", Type: common.FlagBool},
+		{Short: "r", Long: "recursive", Type: common.FlagBool},
+		{Short: "N", Long: "new-file", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
@@ -444,6 +448,21 @@ func run(args []string, out io.Writer) int {
 		return 2
 	}
 
+	// Directory diff: if -r is set and both paths exist as dirs.
+	recursive := flags.Has("r")
+	treatNew := flags.Has("N")
+	ignoreSpace := flags.Has("b")
+	ignoreBlankLines := flags.Has("B")
+	if recursive {
+		s1, e1 := os.Stat(files[0])
+		s2, e2 := os.Stat(files[1])
+		if e1 == nil && e2 == nil && s1.IsDir() && s2.IsDir() {
+			return diffDirs(files[0], files[1], contextLines, ignoreSpace, ignoreBlankLines, treatNew, jsonMode, out)
+		}
+		// One is dir, other is file inside dir (or vice versa): handle as single-file diff.
+		// The test "diff dir dir2/file/-" passes file paths to diff.
+	}
+
 	var b1, b2 []byte
 	if files[0] == files[1] {
 		// Optimization: if both files are the same (e.g. diff - -), they are identical.
@@ -480,9 +499,6 @@ func run(args []string, out io.Writer) int {
 		}
 		return 2
 	}
-
-	ignoreSpace := flags.Has("b")
-	ignoreBlankLines := flags.Has("B")
 
 	differ, hunks := GenerateDiff(string(b1), string(b2), contextLines, ignoreSpace, ignoreBlankLines)
 
@@ -540,6 +556,125 @@ func run(args []string, out io.Writer) int {
 
 	common.Render("diff", res, jsonMode, out, func() {})
 	return 0
+}
+
+// diffDirs recursively compares two directories and outputs unified diffs.
+func diffDirs(dir1, dir2 string, contextLines int, ignoreSpace, ignoreBlankLines, treatNew, jsonMode bool, out io.Writer) int {
+	// Collect all relative paths from both directories.
+	paths1 := make(map[string]string) // rel → abs
+	paths2 := make(map[string]string)
+
+	filepath.WalkDir(dir1, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			return nil
+		}
+		rel, _ := filepath.Rel(dir1, p)
+		paths1[rel] = p
+		return nil
+	})
+	filepath.WalkDir(dir2, func(p string, d os.DirEntry, err error) error {
+		if err != nil {
+			return nil
+		}
+		if d.IsDir() {
+			return nil
+		}
+		rel, _ := filepath.Rel(dir2, p)
+		paths2[rel] = p
+		return nil
+	})
+
+	// Collect all unique relative paths, sorted.
+	allPaths := make(map[string]bool)
+	for p := range paths1 {
+		allPaths[p] = true
+	}
+	for p := range paths2 {
+		allPaths[p] = true
+	}
+	sorted := make([]string, 0, len(allPaths))
+	for p := range allPaths {
+		sorted = append(sorted, p)
+	}
+	sort.Strings(sorted)
+
+	exitCode := 0
+	for _, rel := range sorted {
+		p1, in1 := paths1[rel]
+		p2, in2 := paths2[rel]
+
+		if in1 && in2 {
+			// Both exist: diff them.
+			// Skip non-regular files.
+			fi1, _ := os.Lstat(p1)
+			fi2, _ := os.Lstat(p2)
+			if fi1 != nil && !fi1.Mode().IsRegular() {
+				fmt.Fprintf(out, "File %s is not a regular file or directory and was skipped\n", filepath.Join(dir1, rel))
+				if exitCode == 0 {
+					exitCode = 1
+				}
+				continue
+			}
+			if fi2 != nil && !fi2.Mode().IsRegular() {
+				fmt.Fprintf(out, "File %s is not a regular file or directory and was skipped\n", filepath.Join(dir2, rel))
+				if exitCode == 0 {
+					exitCode = 1
+				}
+				continue
+			}
+			b1, _ := os.ReadFile(p1)
+			b2, _ := os.ReadFile(p2)
+			differ, hunks := GenerateDiff(string(b1), string(b2), contextLines, ignoreSpace, ignoreBlankLines)
+			if differ || !treatNew {
+				if differ {
+					exitCode = 1
+					fmt.Fprintf(out, "--- %s\n+++ %s\n", filepath.Join(dir1, rel), filepath.Join(dir2, rel))
+					newline1 := len(b1) == 0 || b1[len(b1)-1] == '\n'
+					newline2 := len(b2) == 0 || b2[len(b2)-1] == '\n'
+					for _, h := range hunks {
+						oldStr := fmt.Sprintf("%d,%d", h.OldStart, h.OldLines)
+						if h.OldLines == 1 {
+							oldStr = fmt.Sprintf("%d", h.OldStart)
+						} else if h.OldLines == 0 {
+							oldStr = fmt.Sprintf("%d,0", h.OldStart-1)
+						}
+						newStr := fmt.Sprintf("%d,%d", h.NewStart, h.NewLines)
+						if h.NewLines == 1 {
+							newStr = fmt.Sprintf("%d", h.NewStart)
+						} else if h.NewLines == 0 {
+							newStr = fmt.Sprintf("%d,0", h.NewStart-1)
+						}
+						fmt.Fprintf(out, "@@ -%s +%s @@\n", oldStr, newStr)
+						for i, l := range h.Lines {
+							fmt.Fprintln(out, l)
+							isLastLine := i == len(h.Lines)-1
+							if isLastLine {
+								isDelLine := len(l) > 0 && l[0] == '-'
+								isInsLine := len(l) > 0 && l[0] == '+'
+								if isDelLine && !newline1 {
+									fmt.Fprintln(out, `\ No newline at end of file`)
+								} else if isInsLine && !newline2 {
+									fmt.Fprintln(out, `\ No newline at end of file`)
+								}
+							}
+						}
+					}
+				}
+			}
+		} else if in1 && !in2 {
+			// Only in dir1.
+			fmt.Fprintf(out, "Only in %s: %s\n", dir1, rel)
+			exitCode = 1
+		} else if !in1 && in2 {
+			// Only in dir2.
+			fmt.Fprintf(out, "Only in %s: %s\n", dir2, rel)
+			exitCode = 1
+		}
+	}
+	return exitCode
 }
 
 func init() {
