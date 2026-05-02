@@ -42,6 +42,26 @@ jobs:
       - name: Smoke tests (in container)
         run: make smoke
 
+      - name: Run BusyBox Test Suite
+        continue-on-error: true
+        run: |
+          echo "Running BusyBox test suite..."
+          make testsuite > testsuite.log 2>&1 || true
+          PASS=$(grep -c "^PASS:" testsuite.log || true)
+          FAIL=$(grep -c "^FAIL:" testsuite.log || true)
+          SKIPPED=$(grep -c "^SKIPPED:" testsuite.log || true)
+          TOTAL=$((PASS + FAIL))
+          if [ $TOTAL -eq 0 ]; then
+            echo "::warning::No tests executed or output format changed."
+            cat testsuite.log
+            exit 0
+          fi
+          PERCENT=$((PASS * 100 / TOTAL))
+          echo "::notice::BusyBox Test Suite: ${PERCENT}% pass rate (${PASS} passed, ${FAIL} failed, ${SKIPPED} skipped)"
+          if [ $FAIL -gt 0 ]; then
+            echo "--- Failures ---"
+            grep "^FAIL:" testsuite.log || true
+          fi
   # ---------------------------------------------------------------------------
   # Job 2: Image size gate — must be < 20 MB
   # ---------------------------------------------------------------------------

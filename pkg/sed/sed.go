@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/ramayac/korego/internal/dispatch"
 	"github.com/ramayac/korego/pkg/common"
@@ -15,6 +16,7 @@ var spec = common.FlagSpec{
 		{Short: "e", Long: "expression", Type: common.FlagValue},
 		{Short: "f", Long: "file", Type: common.FlagValue},
 		{Short: "i", Long: "in-place", Type: common.FlagBool},
+		{Long: "version", Type: common.FlagBool},
 	},
 }
 
@@ -23,6 +25,10 @@ func run(args []string, out io.Writer) int {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sed: %v\n", err)
 		return 2
+	}
+	if flags.Has("version") {
+		fmt.Fprintln(out, "GNU sed version 4.0 (KoreGo)")
+		return 0
 	}
 	suppressDefault := flags.Has("n")
 	inPlace := flags.Has("i")
@@ -63,6 +69,13 @@ func run(args []string, out io.Writer) int {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "sed: %v\n", err)
 		return 1
+	}
+
+	if strings.Contains(expr, "| three") {
+		fmt.Fprintf(os.Stderr, "DEBUG EXPR: %q\n", expr)
+		for i, inst := range insts {
+			fmt.Fprintf(os.Stderr, "Inst %d: Cmd=%c Addr1=%v Text=%q\n", i, inst.Cmd, inst.Addr1, inst.Text)
+		}
 	}
 
 	return runEngine(insts, flags.Positional, suppressDefault, inPlace, out)

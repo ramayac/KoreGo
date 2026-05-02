@@ -110,7 +110,8 @@ korego/
 | [07_agent_features.md](07_agent_features.md) | Agent-Ready Features (sessions, shell, Tier 5) | **COMPLETED** |
 | [08_hardening.md](08_hardening.md) | Production Hardening & Security | **COMPLETED** |
 | [09_release_docs.md](09_release_docs.md) | Release Automation & Documentation | **COMPLETED** |
-| [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | **IN PROGRESS** |
+| [10_posix_framework.md](10_posix_framework.md) | POSIX Testing Framework Integration | **COMPLETED** |
+| [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
 ---
 

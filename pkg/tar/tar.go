@@ -2,6 +2,7 @@ package tar
 
 import (
 	"archive/tar"
+	"bufio"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -27,13 +28,63 @@ var spec = common.FlagSpec{
 		{Short: "t", Long: "list", Type: common.FlagBool},
 		{Short: "z", Long: "gzip", Type: common.FlagBool},
 		{Short: "v", Long: "verbose", Type: common.FlagBool},
+		{Short: "O", Long: "to-stdout", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 		{Short: "f", Long: "file", Type: common.FlagValue},
 		{Short: "C", Long: "directory", Type: common.FlagValue},
+		{Short: "X", Long: "exclude-from", Type: common.FlagValue},
 	},
 }
 
+// preprocessOldStyleFlags expands traditional tar flag bundles like "xvf" → "-x -v -f".
+func preprocessOldStyleFlags(args []string) []string {
+	if len(args) == 0 {
+		return args
+	}
+	first := args[0]
+	if first == "" || first[0] == '-' {
+		return args
+	}
+
+	// Check if first arg is a bundle of valid tar single-char flags.
+	validChars := map[byte]bool{
+		'c': true, 'x': true, 't': true, 'r': true, 'u': true,
+		'z': true, 'v': true, 'O': true, 'j': true, 'J': true,
+		'f': true, 'C': true, 'X': true,
+	}
+	isOldStyle := true
+	hasModeChar := false
+	for i := 0; i < len(first); i++ {
+		if !validChars[first[i]] {
+			isOldStyle = false
+			break
+		}
+		if first[i] == 'c' || first[i] == 'x' || first[i] == 't' || first[i] == 'r' || first[i] == 'u' {
+			hasModeChar = true
+		}
+	}
+	if !isOldStyle || !hasModeChar {
+		return args
+	}
+
+	var expanded []string
+	rest := args[1:]
+	for i := 0; i < len(first); i++ {
+		ch := first[i]
+		expanded = append(expanded, "-"+string(ch))
+		if (ch == 'f' || ch == 'C' || ch == 'X') && len(rest) > 0 {
+			expanded = append(expanded, rest[0])
+			rest = rest[1:]
+		}
+	}
+	expanded = append(expanded, rest...)
+	return expanded
+}
+
 func run(args []string, out io.Writer) int {
+	// Preprocess old-style tar flags (e.g. "xvf" → "-x -v -f").
+	args = preprocessOldStyleFlags(args)
+
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tar: %v\n", err)
@@ -45,17 +96,37 @@ func run(args []string, out io.Writer) int {
 	list := flags.Has("t")
 	useGzip := flags.Has("z")
 	verbose := flags.Has("v")
+	toStdout := flags.Has("O")
 	isJSON := flags.Has("json")
 	file := flags.Get("f")
 	dir := flags.Get("C")
 
-	if file == "" && !create {
-		// POSIX tar doesn't strictly require -f, but for our implementation it's required for now
-		common.RenderError("tar", 1, "USAGE", "missing archive file (-f)", isJSON, out)
-		if !isJSON {
-			fmt.Fprintln(os.Stderr, "tar: missing archive file (-f)")
+	// Resolve -X exclude files: collect all values from repeatable -X flags.
+	var excludePatterns []string
+	for _, xf := range flags.GetAll("X") {
+		if xf != "" {
+			patterns, err := readExcludeFile(xf)
+			if err != nil {
+				common.RenderError("tar", 1, "IO", fmt.Sprintf("%s: %v", xf, err), isJSON, out)
+				if !isJSON {
+					fmt.Fprintf(os.Stderr, "tar: %s: %v\n", xf, err)
+				}
+				return 1
+			}
+			excludePatterns = append(excludePatterns, patterns...)
 		}
-		return 1
+	}
+
+	if file == "" && !create {
+		// No -f specified: default to stdin for extract/list.
+		// Also check if there's a positional "-" meaning stdin.
+		file = "-"
+		for _, p := range flags.Positional {
+			if p == "-" {
+				file = "-"
+				break
+			}
+		}
 	}
 
 	modeCount := 0
@@ -74,6 +145,13 @@ func run(args []string, out io.Writer) int {
 			fmt.Fprintln(os.Stderr, "tar: must specify exactly one of -c, -x, or -t")
 		}
 		return 1
+	}
+
+	// Resolve archive path before chdir (relative paths break after chdir).
+	if file != "" && file != "-" {
+		if abs, err := filepath.Abs(file); err == nil {
+			file = abs
+		}
 	}
 
 	var curDir string
@@ -96,9 +174,9 @@ func run(args []string, out io.Writer) int {
 	if create {
 		return doCreate(file, useGzip, verbose, isJSON, flags.Positional, out)
 	} else if extract {
-		return doExtract(file, useGzip, verbose, isJSON, out)
+		return doExtract(file, useGzip, verbose, toStdout, isJSON, excludePatterns, flags.Positional, out)
 	} else if list {
-		return doList(file, useGzip, verbose, isJSON, out)
+		return doList(file, useGzip, verbose, isJSON, excludePatterns, out)
 	}
 
 	return 1
@@ -196,7 +274,58 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 	return 0
 }
 
-func doExtract(archive string, useGzip, verbose, isJSON bool, out io.Writer) int {
+// readExcludeFile reads a list of exclude patterns from a file, one per line.
+func readExcludeFile(path string) ([]string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	var patterns []string
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line != "" {
+			patterns = append(patterns, line)
+		}
+	}
+	return patterns, sc.Err()
+}
+
+// isExcluded checks if name matches any exclude pattern (path prefix match for dirs).
+func isExcluded(name string, excludePatterns []string) bool {
+	for _, p := range excludePatterns {
+		if p == name {
+			return true
+		}
+		// Check if name is under an excluded directory.
+		if strings.HasPrefix(name, p+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// buildIncludeSet from positional args for extract/include mode.
+func buildIncludeSet(positional []string) map[string]bool {
+	if len(positional) == 0 {
+		return nil
+	}
+	set := make(map[string]bool)
+	for _, p := range positional {
+		// Normalize: strip leading ./ and trailing /
+		p = strings.TrimPrefix(p, "./")
+		p = strings.TrimSuffix(p, "/")
+		set[p] = true
+	}
+	return set
+}
+
+func doExtract(archive string, useGzip, verbose, toStdout, isJSON bool, excludePatterns, positional []string, out io.Writer) int {
+	includeSet := buildIncludeSet(positional)
+	hasIncludeList := includeSet != nil
+	matchedAny := false
+
 	var r io.Reader
 	if archive == "-" {
 		r = os.Stdin
@@ -226,7 +355,17 @@ func doExtract(archive string, useGzip, verbose, isJSON bool, out io.Writer) int
 		r = gr
 	}
 
-	tr := tar.NewReader(r)
+	// Peek at input to detect empty streams (0 bytes = not a tarball).
+	br := bufio.NewReader(r)
+	if _, err := br.Peek(1); err == io.EOF {
+		common.RenderError("tar", 1, "IO", "short read", isJSON, out)
+		if !isJSON {
+			fmt.Fprintln(os.Stderr, "tar: short read")
+		}
+		return 1
+	}
+
+	tr := tar.NewReader(br)
 	var stats []TarFileStat
 
 	for {
@@ -241,6 +380,17 @@ func doExtract(archive string, useGzip, verbose, isJSON bool, out io.Writer) int
 			}
 			return 1
 		}
+
+		// Skip excluded files.
+		if isExcluded(header.Name, excludePatterns) {
+			continue
+		}
+
+		// If an include list is provided, only extract matching entries.
+		if includeSet != nil && !includeSet[header.Name] {
+			continue
+		}
+		matchedAny = true
 
 		// Prevent zip slip
 		target := filepath.Clean(header.Name)
@@ -260,6 +410,9 @@ func doExtract(archive string, useGzip, verbose, isJSON bool, out io.Writer) int
 
 		switch header.Typeflag {
 		case tar.TypeDir:
+			if toStdout {
+				continue
+			}
 			if err := os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
 				common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
 				if !isJSON {
@@ -268,6 +421,13 @@ func doExtract(archive string, useGzip, verbose, isJSON bool, out io.Writer) int
 				return 1
 			}
 		case tar.TypeReg:
+			if toStdout {
+				if _, err := io.Copy(out, tr); err != nil {
+					common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
+					return 1
+				}
+				continue
+			}
 			dir := filepath.Dir(target)
 			if err := os.MkdirAll(dir, 0755); err != nil {
 				common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
@@ -290,6 +450,9 @@ func doExtract(archive string, useGzip, verbose, isJSON bool, out io.Writer) int
 			// Restore timestamp
 			os.Chtimes(target, header.AccessTime, header.ModTime)
 		case tar.TypeSymlink:
+			if toStdout {
+				continue
+			}
 			dir := filepath.Dir(target)
 			os.MkdirAll(dir, 0755)
 			if err := os.Symlink(header.Linkname, target); err != nil {
@@ -298,13 +461,24 @@ func doExtract(archive string, useGzip, verbose, isJSON bool, out io.Writer) int
 		}
 	}
 
+	// If include list was provided but no files matched, return error.
+	if hasIncludeList && !matchedAny {
+		common.RenderError("tar", 1, "NOT_FOUND", "file not found in archive", isJSON, out)
+		if !isJSON {
+			for _, p := range positional {
+				fmt.Fprintf(os.Stderr, "tar: %s: Not found in archive\n", p)
+			}
+		}
+		return 1
+	}
+
 	if isJSON {
 		common.Render("tar", stats, true, out, func() {})
 	}
 	return 0
 }
 
-func doList(archive string, useGzip, verbose, isJSON bool, out io.Writer) int {
+func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []string, out io.Writer) int {
 	var r io.Reader
 	if archive == "-" {
 		r = os.Stdin
@@ -334,7 +508,17 @@ func doList(archive string, useGzip, verbose, isJSON bool, out io.Writer) int {
 		r = gr
 	}
 
-	tr := tar.NewReader(r)
+	// Peek at input to detect empty streams (0 bytes = not a tarball).
+	br := bufio.NewReader(r)
+	if _, err := br.Peek(1); err == io.EOF {
+		common.RenderError("tar", 1, "IO", "short read", isJSON, out)
+		if !isJSON {
+			fmt.Fprintln(os.Stderr, "tar: short read")
+		}
+		return 1
+	}
+
+	tr := tar.NewReader(br)
 	var stats []TarFileStat
 
 	for {
@@ -348,6 +532,11 @@ func doList(archive string, useGzip, verbose, isJSON bool, out io.Writer) int {
 				fmt.Fprintf(os.Stderr, "tar: %v\n", err)
 			}
 			return 1
+		}
+
+		// Skip excluded files.
+		if isExcluded(header.Name, excludePatterns) {
+			continue
 		}
 
 		stats = append(stats, TarFileStat{

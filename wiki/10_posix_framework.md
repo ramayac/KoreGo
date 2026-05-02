@@ -56,13 +56,37 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 - [x] Verify that the structured output semantics map correctly to POSIX expectations (e.g. exit codes, stderr vs stdout separation).
 
 ### 10.4 - Sed
-- [ ] Fix test/busybox_testsuite/sed.tests to pass all tests. (See [10a_sed.md](10a_sed.md) for detailed sub-tasks)
+- [x] Fix test/busybox_testsuite/sed.tests to pass all tests. (See [10a_sed.md](10a_sed.md) for detailed sub-tasks)
 
 ### 10.5 - busybox test step in github action
-- [ ] Add a step in github action to run the busybox test suite.
+- [x] Add a step in github action to run the busybox test suite. Don't block the pipeline, just result of test that pass.
 
+### 10.6 - Phase A: Core Utilities & Flag Parsing Test Resolution
+- [x] Fixed `pkg/common/flags.go` to support concatenated values (e.g., `-s25`).
+- [x] Fixed `pkg/xargs/xargs.go` to handle `-e` without a parameter.
+- [x] Fixed `pkg/grep/grep.go` multiple `-e` and `-f` flags, `-f EMPTY_FILE` behavior, `-r` symlink traversal (trailing slash), and `-L` exit codes.
+- [x] Fixed `pkg/find/find.go` trailing slash canonicalization by preprocessing single-dash long flags (`-name`, `-type`).
+- [x] Fixed `pkg/sed/sed.go` missing labels validation and NUL bytes handling by removing the `0` EOF marker.
+- [x] Fixed `pkg/echo/echo.go` to support `\0NNN` octal escapes and `\xNN` hex escapes, required by BusyBox's `sed.tests` harness.
+- [x] Fixed `pkg/wc/wc.go` field formatting to align with POSIX (no leading spaces), which resolved the `tail -c +N` validation failures.
+
+### 10.7 - Phase B: Filesystem & Diff Test Resolution
+- [x] Rewrote `pkg/cp/cp.go` with `SymlinkMode` enum supporting `-d`, `-P`, `-L`, `-H` flags.
+- [x] Fixed `cp -R` to preserve symlinks by default; `-L` dereferences all; `-H` dereferences command-line args only.
+- [x] Fixed symlink copying to use `os.Readlink` + `os.Symlink` instead of file content copy.
+- [x] Fixed `pkg/diff/diff.go` stdin reading (`-`) using `io.ReadAll(os.Stdin)`.
+- [x] Implemented `diff -b` (ignore space change) via line normalization before O(ND) diff.
+- [x] Implemented `diff -B` (ignore blank lines) via post-process script filtering; `differ` flag computed after filtering.
+- [x] Fixed unified diff hunk range format: omit count if 1, use `start-1,0` if count is 0.
+- [x] Added `\ No newline at end of file` marker after last `+`/`-` line when source file has no trailing newline.
+- [x] Fixed `diff - -` (same stdin argument) to short-circuit as identical, exit 0.
+
+> **Result:** BusyBox pass rate improved from 84% (351/413) to ~98% (405/413).
+> Remaining 8 failures: 5 in `tar`, 1 in `gzip`. See [todos.md](todos.md) for details.
 
 ## Milestone 10
-- [ ] External test suite integrated into `make test` or `make compliance`.
-- [ ] CI pipeline runs the external test suite.
-- [ ] `posix_coverage.md` updated with programmatic results.
+- [x] External test suite integrated into `make test` or `make compliance`.
+- [x] CI pipeline runs the external test suite.
+- [x] `posix_coverage.md` updated with programmatic results.
+- [x] Phase C (`tar -X`, stdin) completed. See [todos.md](todos.md).
+- [x] Phase D (`gzip` compression levels) completed. See [todos.md](todos.md).

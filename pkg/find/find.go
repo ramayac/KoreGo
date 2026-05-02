@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/ramayac/korego/internal/dispatch"
@@ -28,7 +29,16 @@ type FileInfo struct {
 }
 
 func run(args []string, out io.Writer) int {
-	flags, err := common.ParseFlags(args, spec)
+	var parsedArgs []string
+	for _, a := range args {
+		if strings.HasPrefix(a, "-") && len(a) > 2 && a != "-exec" {
+			parsedArgs = append(parsedArgs, "-"+a)
+		} else {
+			parsedArgs = append(parsedArgs, a)
+		}
+	}
+
+	flags, err := common.ParseFlags(parsedArgs, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "find: %v\n", err)
 		return 1

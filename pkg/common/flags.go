@@ -10,8 +10,9 @@ import (
 type FlagType int
 
 const (
-	FlagBool  FlagType = iota // -l, --all
-	FlagValue                 // --key=value
+	FlagBool          FlagType = iota // -l, --all
+	FlagValue                         // --key=value
+	FlagOptionalValue                 // --key[=value], -e[eof-str]
 )
 
 // FlagDef describes a single accepted flag.
@@ -123,21 +124,27 @@ func ParseFlags(args []string, spec FlagSpec) (*ParseResult, error) {
 				return nil, &FlagError{ExitCode: 2, Msg: fmt.Sprintf("unknown flag: --%s", name)}
 			}
 			// Canonicalise: store under both short and long.
-			if def.Type == FlagValue {
+			if def.Type == FlagValue || def.Type == FlagOptionalValue {
 				if !hasEq {
-					// --key value form: consume next arg.
-					if i+1 >= len(args) {
-						return nil, &FlagError{ExitCode: 2, Msg: fmt.Sprintf("flag --%s requires a value", name)}
+					if def.Type == FlagOptionalValue {
+						value = ""
+					} else {
+						// --key value form: consume next arg.
+						if i+1 >= len(args) {
+							return nil, &FlagError{ExitCode: 2, Msg: fmt.Sprintf("flag --%s requires a value", name)}
+						}
+						i++
+						value = args[i]
 					}
-					i++
-					value = args[i]
 				}
 				if def.Short != "" {
 					res.Values[def.Short] = value
 					res.ValuesList[def.Short] = append(res.ValuesList[def.Short], value)
+					res.Bools[def.Short] = true
 				}
 				res.Values[name] = value
 				res.ValuesList[name] = append(res.ValuesList[name], value)
+				res.Bools[name] = true
 			} else {
 				if def.Short != "" {
 					res.Bools[def.Short] = true
@@ -159,7 +166,7 @@ func ParseFlags(args []string, spec FlagSpec) (*ParseResult, error) {
 				if !ok {
 					return nil, &FlagError{ExitCode: 2, Msg: fmt.Sprintf("unknown flag: -%s", key)}
 				}
-				if def.Type == FlagValue {
+				if def.Type == FlagValue || def.Type == FlagOptionalValue {
 					// Remainder of the cluster is the value, or next arg.
 					remainder := chars[ci+1:]
 					if remainder != "" {
@@ -170,16 +177,29 @@ func ParseFlags(args []string, spec FlagSpec) (*ParseResult, error) {
 							res.ValuesList[def.Long] = append(res.ValuesList[def.Long], remainder)
 						}
 					} else {
-						if i+1 >= len(args) {
-							return nil, &FlagError{ExitCode: 2, Msg: fmt.Sprintf("flag -%s requires a value", key)}
+						if def.Type == FlagOptionalValue {
+							res.Values[key] = ""
+							res.ValuesList[key] = append(res.ValuesList[key], "")
+							if def.Long != "" {
+								res.Values[def.Long] = ""
+								res.ValuesList[def.Long] = append(res.ValuesList[def.Long], "")
+							}
+						} else {
+							if i+1 >= len(args) {
+								return nil, &FlagError{ExitCode: 2, Msg: fmt.Sprintf("flag -%s requires a value", key)}
+							}
+							i++
+							res.Values[key] = args[i]
+							res.ValuesList[key] = append(res.ValuesList[key], args[i])
+							if def.Long != "" {
+								res.Values[def.Long] = args[i]
+								res.ValuesList[def.Long] = append(res.ValuesList[def.Long], args[i])
+							}
 						}
-						i++
-						res.Values[key] = args[i]
-						res.ValuesList[key] = append(res.ValuesList[key], args[i])
-						if def.Long != "" {
-							res.Values[def.Long] = args[i]
-							res.ValuesList[def.Long] = append(res.ValuesList[def.Long], args[i])
-						}
+					}
+					res.Bools[key] = true
+					if def.Long != "" {
+						res.Bools[def.Long] = true
 					}
 					break // value flags always consume the rest of the cluster.
 				}

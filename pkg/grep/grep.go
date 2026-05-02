@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -73,13 +74,17 @@ func Run(r io.Reader, filename string, re *regexp.Regexp, fixedPatterns []string
 					}
 				}
 			}
-		} else {
+		} else if re != nil {
 			if lineRegexp {
 				matchFound = re.MatchString(text)
 			} else {
 				locs := re.FindAllString(text, -1)
+				for _, loc := range locs {
+					if loc != "" {
+						substrings = append(substrings, loc)
+					}
+				}
 				matchFound = len(locs) > 0
-				substrings = locs
 			}
 		}
 
@@ -107,22 +112,22 @@ func run(args []string, out io.Writer) int {
 		return 2
 	}
 
-	var pattern string
 	var paths []string
-
-	if ePat := flags.Get("e"); ePat != "" {
-		pattern = ePat
-		paths = flags.Positional
-	} else if len(flags.Positional) > 0 {
-		pattern = flags.Positional[0]
-		paths = flags.Positional[1:]
-	}
+	var patterns []string
+	ePats := flags.GetAll("e")
+	fPats := flags.GetAll("f")
 
 	quiet := flags.Has("q")
 	suppressErrors := flags.Has("s")
-	filePattern := flags.Get("f")
 
-	if pattern == "" && filePattern == "" {
+	if len(ePats) > 0 || len(fPats) > 0 {
+		paths = flags.Positional
+	} else if len(flags.Positional) > 0 {
+		ePats = append(ePats, flags.Positional[0])
+		paths = flags.Positional[1:]
+	}
+
+	if len(ePats) == 0 && len(fPats) == 0 {
 		if !suppressErrors {
 			fmt.Fprintln(os.Stderr, "grep: missing pattern")
 		}
@@ -139,21 +144,23 @@ func run(args []string, out io.Writer) int {
 	wordRegexp := flags.Has("w")
 	lineRegexp := flags.Has("x")
 
-	var patterns []string
-	if pattern != "" {
-		patterns = append(patterns, strings.Split(pattern, "\n")...)
+	for _, p := range ePats {
+		patterns = append(patterns, strings.Split(p, "\n")...)
 	}
-	if filePattern != "" {
+
+	for _, fp := range fPats {
 		var b []byte
 		var err error
-		if filePattern == "-" {
+		if fp == "-" {
 			b, err = io.ReadAll(os.Stdin)
 		} else {
-			b, err = os.ReadFile(filePattern)
+			b, err = os.ReadFile(fp)
 		}
 		
 		if err == nil {
-			patterns = append(patterns, strings.Split(strings.TrimSuffix(string(b), "\n"), "\n")...)
+			if len(b) > 0 {
+				patterns = append(patterns, strings.Split(strings.TrimSuffix(string(b), "\n"), "\n")...)
+			}
 		} else if !suppressErrors {
 			fmt.Fprintf(os.Stderr, "grep: %v\n", err)
 			return 2
@@ -163,6 +170,7 @@ func run(args []string, out io.Writer) int {
 	var re *regexp.Regexp
 	var fixedPatterns []string
 
+	var pattern string
 	if fixed {
 		if ignoreCase || wordRegexp {
 			var reParts []string
@@ -183,12 +191,16 @@ func run(args []string, out io.Writer) int {
 		}
 	}
 
-	if !fixed {
-		if len(patterns) > 0 && pattern == "" {
-			pattern = strings.Join(patterns, "|")
-		}
+	if len(patterns) == 0 {
+		// match nothing, re remains nil
+	} else if !fixed {
+		pattern = strings.Join(patterns, "|")
 		if wordRegexp && !strings.Contains(pattern, "\\b") {
-			pattern = "\\b(" + pattern + ")\\b"
+			if pattern == "^" || pattern == "$" {
+				pattern = `a^`
+			} else {
+				pattern = "\\b(" + pattern + ")\\b"
+			}
 		}
 		if lineRegexp {
 			pattern = "^(" + pattern + ")$"
@@ -208,21 +220,52 @@ func run(args []string, out io.Writer) int {
 	}
 
 	var readers []string
+	var exitCode int = 1
 	if len(paths) == 0 {
 		readers = append(readers, "-")
+	} else if flags.Has("r") {
+		for _, root := range paths {
+			stat, err := os.Stat(root)
+			if err != nil {
+				if !suppressErrors {
+					fmt.Fprintf(os.Stderr, "grep: %s: %v\n", root, err)
+				}
+				exitCode = 2
+				continue
+			}
+			if stat.IsDir() {
+				walkRoot := root
+				if info, err := os.Lstat(root); err == nil && info.Mode()&os.ModeSymlink != 0 {
+					if !strings.HasSuffix(walkRoot, "/") {
+						walkRoot += "/"
+					}
+				}
+				filepath.Walk(walkRoot, func(p string, info os.FileInfo, err error) error {
+					if err != nil { return nil }
+					if !info.IsDir() {
+						readers = append(readers, p)
+					}
+					return nil
+				})
+			} else {
+				readers = append(readers, root)
+			}
+		}
 	} else {
 		readers = paths
 	}
 
 	var allMatches []GrepMatch
-	exitCode := 1 // POSIX grep returns 1 if no lines were selected
+	// exitCode is already declared
+
+	printPrefix := len(paths) > 1 || flags.Has("r") || len(readers) > 1
 
 	for _, path := range readers {
 		var r io.Reader
 		var fname string
 		if path == "-" {
 			r = os.Stdin
-			fname = "standard input"
+			fname = "(standard input)"
 		} else {
 			f, err := os.Open(path)
 			if err != nil {
@@ -245,15 +288,6 @@ func run(args []string, out io.Writer) int {
 			exitCode = 2
 		}
 
-		if len(matches) > 0 {
-			if exitCode != 2 {
-				exitCode = 0
-			}
-			if quiet {
-				return 0
-			}
-		}
-
 		if jsonMode {
 			allMatches = append(allMatches, matches...)
 			continue
@@ -269,13 +303,20 @@ func run(args []string, out io.Writer) int {
 		if flags.Has("L") {
 			if len(matches) == 0 {
 				fmt.Println(fname)
+				if exitCode != 2 { exitCode = 0 }
+				if quiet { return 0 }
 			}
 			continue
 		}
 
+		if len(matches) > 0 {
+			if exitCode != 2 { exitCode = 0 }
+			if quiet { return 0 }
+		}
+
 		if countMode {
 			prefix := ""
-			if len(readers) > 1 {
+			if printPrefix {
 				prefix = fname + ":"
 			}
 			fmt.Printf("%s%d\n", prefix, len(matches))
@@ -284,7 +325,7 @@ func run(args []string, out io.Writer) int {
 
 		for _, m := range matches {
 			prefix := ""
-			if len(readers) > 1 {
+			if printPrefix {
 				prefix = fname + ":"
 			}
 			if lineNum {
