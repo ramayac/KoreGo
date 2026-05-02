@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,7 +19,21 @@ var spec = common.FlagSpec{
 		{Short: "j", Long: "json", Type: common.FlagBool},
 		{Short: "n", Long: "name", Type: common.FlagValue},
 		{Short: "t", Long: "type", Type: common.FlagValue},
+		{Short: "d", Long: "maxdepth", Type: common.FlagValue},
 	},
+}
+
+// getMaxDepth extracts the -maxdepth N value, returning -1 if not set (unlimited).
+func getMaxDepth(flags *common.ParseResult) int {
+	dStr := flags.Get("d")
+	if dStr == "" {
+		return -1
+	}
+	d, err := strconv.Atoi(dStr)
+	if err != nil || d < 0 {
+		return -1
+	}
+	return d
 }
 
 type FileInfo struct {
@@ -51,6 +66,10 @@ func run(args []string, out io.Writer) int {
 
 	namePattern := flags.Get("n")
 	typeFilter := flags.Get("t")
+	maxDepth := getMaxDepth(flags)
+
+	// Normalize root for depth counting.
+	rootClean := filepath.Clean(root)
 
 	var results []FileInfo
 
@@ -58,6 +77,27 @@ func run(args []string, out io.Writer) int {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "find: %s: %v\n", p, err)
 			return nil
+		}
+
+		// Compute depth relative to root.
+		if maxDepth >= 0 {
+			depth := 0
+			if p != rootClean {
+				rel := p
+				if strings.HasPrefix(rel, rootClean+"/") || rel == rootClean {
+					rel = rel[len(rootClean):]
+				}
+				rel = strings.TrimLeft(rel, "/")
+				if rel != "" {
+					depth = strings.Count(rel, string(filepath.Separator)) + 1
+				}
+			}
+			if depth > maxDepth {
+				if d.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
 		}
 
 		if namePattern != "" {
@@ -86,8 +126,15 @@ func run(args []string, out io.Writer) int {
 			mtime = info.ModTime().Format(time.RFC3339)
 		}
 
+		// Normalize path: when root is ".", WalkDir returns paths without "./"
+		// (e.g., "file" instead of "./file"). Prepend "./" for BusyBox compat.
+		outPath := p
+		if rootClean == "." && p != "." && !strings.HasPrefix(p, ".") {
+			outPath = "./" + p
+		}
+
 		results = append(results, FileInfo{
-			Path:  p,
+			Path:  outPath,
 			Type:  tStr,
 			Size:  size,
 			Mtime: mtime,

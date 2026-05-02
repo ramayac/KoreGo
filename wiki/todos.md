@@ -1,6 +1,6 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** ~99% (2 remaining tar format tests resolved)
+> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 100% (423 passed, 0 failed, 65 skipped)
 
 This document tracks remaining failing tests, known deviations, and future improvements.
 See [10_posix_framework.md](10_posix_framework.md) for the full Phase 10 task log.
@@ -74,13 +74,13 @@ These are known differences from GNU/BusyBox behavior that are low-priority or b
 These tests are skipped in the BusyBox test suite because they require features not yet
 implemented in KoreGo. They are gated by BusyBox `CONFIG_*` options in the test files.
 
-### `cat` (4 skipped)
-| Test | Reason |
-|------|--------|
-| `cat -e` | `-e` flag (show non-printing, `$` at EOL) |
-| `cat -v` | `-v` flag (show non-printing) |
-| `cat -n` | `-n` flag already implemented; test uses `FEATURE_CATN`) |
-| `cat -b` | `-b` flag already implemented; test uses `FEATURE_CATN`) |
+### `cat` (4 skipped → 0, all RESOLVED)
+| Test | Reason | Status |
+|------|--------|--------|
+| `cat -e` | `-e` flag (show non-printing, `$` at EOL) | ✅ **FIXED** (Round 1) |
+| `cat -v` | `-v` flag (show non-printing) | ✅ **FIXED** (Round 1) |
+| `cat -n` | `-n` flag already implemented; test gated by `FEATURE_CATN` | ✅ Enabled |
+| `cat -b` | `-b` flag already implemented; test gated by `FEATURE_CATN` | ✅ Enabled |
 
 ### `cut` (1 skipped)
 | Test | Reason |
@@ -97,15 +97,15 @@ implemented in KoreGo. They are gated by BusyBox `CONFIG_*` options in the test 
 | `diff of file and fifo` | FIFO special file diff |
 | `diff -rN does not read non-regular files` | `-r` (recursive) and `-N` flags |
 
-### `find` (9 skipped)
-| Test | Reason |
-|------|--------|
-| `find -exec exitcode 1–4` | `-exec` flag (execute command on matches) |
-| `find / -maxdepth 0 -name /` | `-maxdepth` flag |
-| `find // -maxdepth 0 -name /` | `-maxdepth` flag |
-| `find / -maxdepth 0 -name //` | `-maxdepth` flag |
-| `find // -maxdepth 0 -name //` | `-maxdepth` flag |
-| `find -type f` | Already implemented; gated by `FEATURE_FINDTYPE` |
+### `find` (9 skipped → 4 remaining)
+| Test | Reason | Status |
+|------|--------|--------|
+| `find -exec exitcode 1–4` | `-exec` flag (execute command on matches) | Still skipped |
+| `find / -maxdepth 0 -name /` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
+| `find // -maxdepth 0 -name /` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
+| `find / -maxdepth 0 -name //` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
+| `find // -maxdepth 0 -name //` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
+| `find -type f` | Already implemented; gated by `FEATURE_FINDTYPE` | ✅ Enabled |
 
 ### `grep` (7 skipped)
 | Test | Reason |
@@ -118,10 +118,10 @@ implemented in KoreGo. They are gated by BusyBox `CONFIG_*` options in the test 
 | `grep is also egrep` | `egrep` alias handling |
 | `grep matches NUL` | NUL byte pattern matching |
 
-### `head` (1 skipped)
-| Test | Reason |
-|------|--------|
-| `head -n <negative number>` | Negative `-n` values (print all but last N lines) |
+### `head` (1 skipped → 0, RESOLVED)
+| Test | Reason | Status |
+|------|--------|--------|
+| `head -n <negative number>` | Negative `-n` values (print all but last N lines) | ✅ **FIXED** (Round 1) |
 
 ### `md5sum` (2 skipped)
 | Test | Reason |
@@ -283,3 +283,14 @@ Key details:
 - File type prefix comes from `Typeflag`, not from `os.FileMode()`: `l` for symlinks, `d` for dirs, `-` for regular files.
 - Symlinks display size as 0 regardless of header.Size.
 - Go's `time.Local` does **not** honor the POSIX `TZ` env var; must parse `TZ` manually (POSIX `UTC-2` = UTC+2).
+
+### BusyBox test suite — optional feature gates
+The BusyBox test suite gates tests behind `optional FEATURE_*` directives, controlled by
+the `OPTIONFLAGS` env var (colon-separated). In `runtest`, setting
+`OPTIONFLAGS=:FEATURE_CATV:FEATURE_FIND_MAXDEPTH:...` enables previously-skipped tests.
+The `optional` shell function checks for `:$feature:` in OPTIONFLAGS.
+
+### `find` — Path normalization for `.` root
+When `find` runs with root `.` (default), `filepath.WalkDir` returns paths like `file`
+without `./` prefix. BusyBox tests expect `./file`. Normalize by prepending `./` when
+`rootClean == "."` and the path doesn't already start with `.`.

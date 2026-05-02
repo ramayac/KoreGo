@@ -23,8 +23,45 @@ var spec = common.FlagSpec{
 		{Short: "n", Long: "number", Type: common.FlagBool},
 		{Short: "b", Long: "number-nonblank", Type: common.FlagBool},
 		{Short: "s", Long: "squeeze-blank", Type: common.FlagBool},
+		{Short: "e", Type: common.FlagBool},
+		{Short: "v", Long: "show-nonprinting", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
+}
+
+// visByte converts a single byte to its visible representation for cat -v.
+// Tab and newline pass through unchanged. Other control chars become ^X.
+// DEL (0x7F) becomes ^?. High bytes (>=0x80) get M- prefix.
+func visByte(b byte) string {
+	switch {
+	case b == '\t' || b == '\n':
+		return string(b)
+	case b < 0x20:
+		return "^" + string(b+0x40)
+	case b == 0x7F:
+		return "^?"
+	case b >= 0x80:
+		b &^= 0x80
+		inner := visByte(b)
+		if inner[0] == '^' {
+			return "M-" + inner
+		}
+		return "M-" + string(b)
+	default:
+		return string(b)
+	}
+}
+
+// visLine applies cat -v transformation to a line and appends $ if showEnd is true.
+func visLine(line string, showEnd bool) string {
+	var buf strings.Builder
+	for i := 0; i < len(line); i++ {
+		buf.WriteString(visByte(line[i]))
+	}
+	if showEnd {
+		buf.WriteByte('$')
+	}
+	return buf.String()
 }
 
 // Run reads from r and writes processed lines to w.
@@ -70,6 +107,8 @@ func run(args []string, out io.Writer) int {
 	numberAll := flags.Has("n")
 	numberNonBlank := flags.Has("b")
 	squeezeBlank := flags.Has("s")
+	showNonPrinting := flags.Has("v")
+	showEnds := flags.Has("e")
 
 	// Collect readers: files or stdin.
 	var readers []io.Reader
@@ -104,7 +143,7 @@ func run(args []string, out io.Writer) int {
 		return 0
 	}
 
-	if !numberAll && !numberNonBlank && !squeezeBlank {
+	if !numberAll && !numberNonBlank && !squeezeBlank && !showNonPrinting && !showEnds {
 		for _, r := range readers {
 			if _, err := io.Copy(os.Stdout, r); err != nil {
 				fmt.Fprintf(os.Stderr, "cat: %v\n", err)
@@ -114,11 +153,42 @@ func run(args []string, out io.Writer) int {
 		return 0
 	}
 
+	// cat -v / -e: per-character vis processing.
+	if showNonPrinting || showEnds {
+		return runVis(readers, showEnds || showNonPrinting, showEnds, jsonMode, out)
+	}
+
 	for _, r := range readers {
 		if _, err := Run(r, os.Stdout, numberAll, numberNonBlank, squeezeBlank); err != nil {
 			fmt.Fprintf(os.Stderr, "cat: %v\n", err)
 			return 1
 		}
+	}
+	return 0
+}
+
+// runVis handles cat -v and/or cat -e: per-line vis transformation.
+func runVis(readers []io.Reader, doVis, showEnds, jsonMode bool, out io.Writer) int {
+	var allLines []string
+	for _, r := range readers {
+		scanner := bufio.NewScanner(r)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if doVis {
+				line = visLine(line, showEnds)
+			} else if showEnds {
+				line += "$"
+			}
+			fmt.Fprintln(out, line)
+			allLines = append(allLines, line)
+		}
+		if err := scanner.Err(); err != nil {
+			fmt.Fprintf(os.Stderr, "cat: %v\n", err)
+			return 1
+		}
+	}
+	if jsonMode {
+		common.Render("cat", CatResult{Lines: allLines, LineCount: len(allLines)}, true, out, func() {})
 	}
 	return 0
 }
