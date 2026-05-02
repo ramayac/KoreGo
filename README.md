@@ -40,6 +40,8 @@ make testsuite
 ## Status
 KoreGo MVP is complete with 50+ POSIX utilities implemented.
 
+**BusyBox Test Suite:** 464 passed, 16 failed, 10 skipped (94.9% pass rate of 488 tests)
+
 **Current Focus:**
 - Finalizing the comprehensive POSIX Testing Framework (Phase 10).
 - Integrating the BusyBox test suite into the CI pipeline.

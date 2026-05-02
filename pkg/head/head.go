@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/ramayac/korego/internal/dispatch"
 	"github.com/ramayac/korego/pkg/common"
@@ -21,6 +22,7 @@ type HeadResult struct {
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "n", Long: "lines", Type: common.FlagValue},
+		{Short: "c", Long: "bytes", Type: common.FlagValue},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
@@ -52,13 +54,33 @@ func run(args []string, out io.Writer) int {
 	}
 	jsonMode := flags.Has("j")
 	linesCount := 10
-	if nStr := flags.Get("n"); nStr != "" {
-		n, err := strconv.Atoi(nStr)
+	byteCount := -1
+	negativeCount := false
+	if cStr := flags.Get("c"); cStr != "" {
+		n, err := strconv.Atoi(cStr)
 		if err != nil || n < 0 {
-			fmt.Fprintf(os.Stderr, "head: illegal line count -- %s\n", nStr)
+			fmt.Fprintf(os.Stderr, "head: illegal byte count -- %s\n", cStr)
 			return 2
 		}
-		linesCount = n
+		byteCount = n
+		linesCount = 0 // -c overrides -n
+	} else if nStr := flags.Get("n"); nStr != "" {
+		if strings.HasPrefix(nStr, "-") {
+			n, err := strconv.Atoi(nStr[1:])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "head: illegal line count -- %s\n", nStr)
+				return 2
+			}
+			linesCount = n
+			negativeCount = true
+		} else {
+			n, err := strconv.Atoi(nStr)
+			if err != nil || n < 0 {
+				fmt.Fprintf(os.Stderr, "head: illegal line count -- %s\n", nStr)
+				return 2
+			}
+			linesCount = n
+		}
 	}
 
 	var readers []io.Reader
@@ -106,9 +128,17 @@ func run(args []string, out io.Writer) int {
 			w = io.Discard
 		}
 
-		lines, err := Run(r, w, linesCount)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "head: %v\n", err)
+		var lines []string
+		var errR error
+		if byteCount >= 0 {
+			lines, errR = runBytes(r, w, byteCount)
+		} else if negativeCount {
+			lines, errR = runNegative(r, w, linesCount)
+		} else {
+			lines, errR = Run(r, w, linesCount)
+		}
+		if errR != nil {
+			fmt.Fprintf(os.Stderr, "head: %v\n", errR)
 			exitCode = 1
 		}
 		if jsonMode {
@@ -121,6 +151,41 @@ func run(args []string, out io.Writer) int {
 	}
 
 	return exitCode
+}
+
+// runNegative prints all lines except the last skipLast lines.
+func runNegative(r io.Reader, w io.Writer, skipLast int) ([]string, error) {
+	scanner := bufio.NewScanner(r)
+	var all []string
+	for scanner.Scan() {
+		all = append(all, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return all, err
+	}
+	limit := len(all) - skipLast
+	if limit < 0 {
+		limit = 0
+	}
+	var lines []string
+	for i := 0; i < limit; i++ {
+		fmt.Fprintln(w, all[i])
+		lines = append(lines, all[i])
+	}
+	return lines, nil
+}
+
+// runBytes reads up to n bytes from r and writes to w.
+func runBytes(r io.Reader, w io.Writer, n int) ([]string, error) {
+	buf := make([]byte, n)
+	total, err := io.ReadFull(r, buf)
+	if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
+		return nil, err
+	}
+	if total > 0 {
+		w.Write(buf[:total])
+	}
+	return nil, nil
 }
 
 func init() {

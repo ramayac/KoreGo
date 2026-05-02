@@ -82,7 +82,43 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 - [x] Fixed `diff - -` (same stdin argument) to short-circuit as identical, exit 0.
 
 > **Result:** BusyBox pass rate improved from 84% (351/413) to ~98% (405/413).
-> Remaining 8 failures: 5 in `tar`, 1 in `gzip`. See [todos.md](todos.md) for details.
+
+### 10.8 - Phase C: `tar` Advanced Features
+- [x] `tar -X` exclude file flag (repeatable).
+- [x] Stdin tarball detection and zeroed-block handling.
+- [x] `tar tvf` verbose listing format matching BusyBox (owner/group, %10d size, date/time, symlink `->` notation).
+- [x] `TZ` env var handling for date/time display (POSIX `UTC-2` = UTC+2).
+- [x] Old-style flag preprocessing (`xvf` → `-x -v -f`).
+- [x] `--overwrite` flag support.
+- [x] `../` prefix stripping on extract with warning message.
+
+### 10.9 - Phase D: `gzip` Compression Levels
+- [x] Numeric compression levels (`-1` to `-9`).
+- [x] `-` as stdin/stdout handling.
+
+### 10.10 - Phase E: Round 1 — Head, Cat, Find Features (2026-05-02)
+- [x] `head -n <negative>` — print all but last N lines.
+- [x] `cat -v` / `cat -e` — show non-printing characters, `$` at EOL.
+- [x] `cat -n` / `-b` tests enabled (already implemented).
+- [x] `find -maxdepth N` — limit traversal depth.
+- [x] `find -type f` test enabled (already implemented).
+
+> **Result:** 10 skipped tests resolved (423 passed, 65 skipped).
+
+### 10.11 - Phase F: Round 2 — Full Skipped Test Resolution (2026-05-02)
+- [x] `xargs -n1` / `-n2` tests enabled (already working).
+- [x] `xargs -I` replace-str flag (partial — edge cases remain).
+- [x] `tr [:digit:]` / `[:xdigit:]` POSIX character classes with full class table.
+- [x] `readlink -f` absolute path resolution, broken symlink handling.
+- [x] `cut -DF` whitespace field splitting with correct field order.
+- [x] `find -exec {} \;` and `-exec {} +` command execution.
+- [x] `diff -ruN` recursive directory diff with `-r` and `-N` flags.
+- [x] `md5sum -c` check mode tests enabled (already implemented).
+- [x] `sort` key definition edge cases, non-default delimiters, ENDCHAR, stable+unique.
+- [x] `tar --overwrite`, `../` stripping in archive creation.
+
+> **Result:** 31 additional tests passing (454 passed, 19 failed, 15 skipped).
+> **Remaining:** 10 sort advanced features, 3 diff edge cases, 2 tar, 2 xargs, 2 sort glibc.
 
 ## Milestone 10
 - [x] External test suite integrated into `make test` or `make compliance`.

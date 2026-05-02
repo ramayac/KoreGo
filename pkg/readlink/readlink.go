@@ -27,11 +27,16 @@ var spec = common.FlagSpec{
 // Run reads the symlink target for path.
 func Run(path string, canonicalize bool) (ReadlinkResult, error) {
 	if canonicalize {
-		abs, err := filepath.EvalSymlinks(path)
+		// Make absolute first, then resolve symlinks, then clean.
+		abs, err := filepath.Abs(path)
 		if err != nil {
 			return ReadlinkResult{}, err
 		}
-		return ReadlinkResult{Path: path, Target: abs}, nil
+		resolved, err := filepath.EvalSymlinks(abs)
+		if err != nil {
+			return ReadlinkResult{}, err
+		}
+		return ReadlinkResult{Path: path, Target: filepath.Clean(resolved)}, nil
 	}
 	target, err := os.Readlink(path)
 	if err != nil {

@@ -43,6 +43,7 @@ var spec = common.FlagSpec{
 		{Short: "A", Long: "after-context", Type: common.FlagValue},
 		{Short: "B", Long: "before-context", Type: common.FlagValue},
 		{Short: "C", Long: "context", Type: common.FlagValue},
+		{Short: "a", Long: "text", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }

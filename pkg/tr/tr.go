@@ -21,10 +21,40 @@ var spec = common.FlagSpec{
 	},
 }
 
-// expandSet expands a set string like a-z into a map of runes.
+// charClasses maps POSIX character class names to their rune sets.
+var charClasses = map[string][]rune{
+	"[:digit:]":  []rune("0123456789"),
+	"[:xdigit:]": []rune("0123456789ABCDEFabcdef"),
+	"[:alpha:]":  []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"),
+	"[:alnum:]":  []rune("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"),
+	"[:lower:]":  []rune("abcdefghijklmnopqrstuvwxyz"),
+	"[:upper:]":  []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+	"[:space:]":  []rune(" \t\n\r\f\v"),
+	"[:blank:]":  []rune(" \t"),
+	"[:punct:]":  []rune("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"),
+	"[:print:]":  []rune(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"),
+	"[:graph:]":  []rune("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"),
+	"[:cntrl:]":  buildCntrl(),
+}
+
+func buildCntrl() []rune {
+	var r []rune
+	for i := 0; i < 32; i++ {
+		r = append(r, rune(i))
+	}
+	r = append(r, 127)
+	return r
+}
+
+// expandSet expands a set string like a-z, [:digit:] into a map of runes.
 func expandSet(s string) map[rune]bool {
 	set := make(map[rune]bool)
-	runes := []rune(s)
+	// First, expand character classes like [:digit:].
+	expanded := s
+	for name, runes := range charClasses {
+		expanded = strings.ReplaceAll(expanded, name, string(runes))
+	}
+	runes := []rune(expanded)
 	for i := 0; i < len(runes); i++ {
 		if i+2 < len(runes) && runes[i+1] == '-' {
 			for r := runes[i]; r <= runes[i+2]; r++ {
@@ -40,8 +70,13 @@ func expandSet(s string) map[rune]bool {
 
 // expandSetList expands a set into a slice of runes.
 func expandSetList(s string) []rune {
+	// First, expand character classes like [:digit:].
+	expanded := s
+	for name, runes := range charClasses {
+		expanded = strings.ReplaceAll(expanded, name, string(runes))
+	}
 	var list []rune
-	runes := []rune(s)
+	runes := []rune(expanded)
 	for i := 0; i < len(runes); i++ {
 		if i+2 < len(runes) && runes[i+1] == '-' {
 			for r := runes[i]; r <= runes[i+2]; r++ {

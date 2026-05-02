@@ -7,7 +7,7 @@ import (
 
 func TestCutFields(t *testing.T) {
 	in := "a:b:c\n1:2:3\n"
-	lines, _ := Run(strings.NewReader(in), "1,3", ":", "", "", false)
+	lines, _ := Run(strings.NewReader(in), "1,3", ":", "", "", false, false, false)
 	if len(lines) != 2 {
 		t.Fatalf("expected 2 lines")
 	}
@@ -18,7 +18,7 @@ func TestCutFields(t *testing.T) {
 
 func TestCutChars(t *testing.T) {
 	in := "abcdef\n"
-	lines, _ := Run(strings.NewReader(in), "", "", "1-3,5", "", false)
+	lines, _ := Run(strings.NewReader(in), "", "", "1-3,5", "", false, false, false)
 	if lines[0].Fields[0] != "abce" {
 		t.Errorf("got %v", lines[0].Fields[0])
 	}
@@ -26,7 +26,7 @@ func TestCutChars(t *testing.T) {
 
 func TestCutBytes(t *testing.T) {
 	in := "hello\n"
-	lines, _ := Run(strings.NewReader(in), "", "", "", "2", false)
+	lines, _ := Run(strings.NewReader(in), "", "", "", "2", false, false, false)
 	if lines[0].Fields[0] != "e" {
 		t.Errorf("got %v", lines[0].Fields[0])
 	}
