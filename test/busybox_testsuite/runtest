@@ -26,9 +26,33 @@ run_applet_testcase()
 	mkdir -p ".tmpdir.$applet"
 	cd ".tmpdir.$applet" || return 1
 
+	# For tar/gzip/gunzip old-style tests, create a local 'busybox' -> korego
+	# symlink so 'busybox tar' etc. routes to korego instead of system busybox.
+	# Also prepend LINKSDIR for tar so archive creation uses korego tar too.
+	case "$applet" in
+		tar)
+			ln -s "$bindir/korego" busybox 2>/dev/null
+			;;
+		gzip|gunzip)
+			ln -s "$bindir/korego" busybox 2>/dev/null
+			;;
+	esac
+
 #	echo "Running testcase $testcase"
-	PATH="$LINKSDIR:$bindir:$PATH" d="$tsdir" \
-		sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1 || status=$?
+	case "$applet" in
+		tar)
+			PATH=".:$LINKSDIR:$PATH" d="$tsdir" \
+				sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1 || status=$?
+			;;
+		gzip|gunzip)
+			PATH=".:$PATH" d="$tsdir" \
+				sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1 || status=$?
+			;;
+		*)
+			d="$tsdir" \
+				sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1 || status=$?
+			;;
+	esac
 	if [ $status -ne 0 ]; then
 		echo "FAIL: $testname"
 		if [ x"$VERBOSE" != x ]; then
@@ -111,8 +135,6 @@ for i in $implemented; do
 	# not an applet.
 	ln -s "$bindir/korego" "$LINKSDIR/$i" 2>/dev/null
 done
-# Also create a 'busybox' symlink for old-style tests that call 'busybox' directly.
-ln -s "$bindir/korego" "$LINKSDIR/busybox" 2>/dev/null
 
 # No .config for korego
 export OPTIONFLAGS=:
