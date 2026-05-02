@@ -215,25 +215,41 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 	var stats []TarFileStat
 
 	for _, target := range targets {
-		// Strip leading /../ and /./ components from member names.
-		normalizedTarget := target
-		strippedPrefix := ""
-		for {
-			if strings.HasPrefix(normalizedTarget, "./") {
-				strippedPrefix += "./"
-				normalizedTarget = normalizedTarget[2:]
-			} else if strings.HasPrefix(normalizedTarget, "../") {
-				strippedPrefix += "../"
-				normalizedTarget = normalizedTarget[3:]
-			} else if strings.Contains(normalizedTarget, "/../") || strings.Contains(normalizedTarget, "/./") {
-				// Has embedded ".." or "." but not at start: clean with filepath.
-				break
-			} else {
-				break
+		// Strip /../ and /./ prefix from target for member name normalization.
+		// Walk the target, resolve .. and ., compute stripped prefix.
+		cleanTarget := filepath.Clean(target)
+		var strippedPrefix string
+		if cleanTarget != target && !strings.HasPrefix(target, "/") {
+			// Find the point where cleanTarget matches the suffix of target.
+			// Walk target removing ./ and ../ components.
+			parts := strings.Split(target, "/")
+			var resolved []string
+			prefixLen := 0
+			for _, part := range parts {
+				prefixLen += len(part) + 1 // +1 for /
+				if part == "." || part == "" {
+					continue
+				}
+				if part == ".." {
+					if len(resolved) > 0 {
+						resolved = resolved[:len(resolved)-1]
+					}
+					continue
+				}
+				resolved = append(resolved, part)
+				// Check if resolved prefix matches the clean result.
+				resolvedPath := strings.Join(resolved, "/")
+				if resolvedPath == cleanTarget || strings.HasPrefix(cleanTarget, resolvedPath+"/") {
+					// We've reached the point where the path is clean.
+					strippedPrefix = target[:prefixLen]
+					break
+				}
+			}
+			// Fallback: just use cleanTarget as member prefix.
+			if strippedPrefix == "" {
+				strippedPrefix = strings.TrimSuffix(target, cleanTarget)
 			}
 		}
-		// Use filepath.Clean to resolve any embedded ../ or ./
-		cleaned := filepath.Clean(normalizedTarget)
 
 		err := filepath.Walk(target, func(file string, fi os.FileInfo, err error) error {
 			if err != nil {
@@ -254,16 +270,13 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 				return err
 			}
 
-			// Build member name: strip the ../ prefix path.
-			memberName := file
-			if strippedPrefix != "" {
-				if strings.HasPrefix(memberName, target) {
-					memberName = cleaned + memberName[len(target):]
-				} else {
-					memberName = filepath.ToSlash(file)
+			// Build member name: strip the prefix path.
+			memberName := filepath.ToSlash(file)
+			if strippedPrefix != "" && strings.HasPrefix(memberName, strippedPrefix) {
+				memberName = memberName[len(strippedPrefix):]
+				if memberName == "" {
+					memberName = "."
 				}
-			} else {
-				memberName = filepath.ToSlash(file)
 			}
 			header.Name = memberName
 
@@ -304,7 +317,12 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 
 		// Emit message about stripped prefix.
 		if strippedPrefix != "" && !isJSON {
-			fmt.Fprintf(os.Stderr, "tar: removing leading '%s' from member names\n", strippedPrefix[:len(strippedPrefix)-1])
+			// Strip trailing / from prefix for the message.
+			msgPrefix := strings.TrimSuffix(strippedPrefix, "/")
+			if msgPrefix == "" {
+				msgPrefix = strippedPrefix
+			}
+			fmt.Fprintf(os.Stderr, "tar: removing leading '%s' from member names\n", msgPrefix)
 		}
 	}
 
@@ -453,13 +471,17 @@ func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON boo
 			if toStdout {
 				continue
 			}
-			if err := os.MkdirAll(target, os.FileMode(header.Mode)); err != nil {
+			// Create dir with writable perms first (so files can be extracted into it),
+			// actual perms will be applied after extraction.
+			if err := os.MkdirAll(target, os.FileMode(header.Mode)|0300); err != nil {
 				common.RenderError("tar", 1, "IO", err.Error(), isJSON, out)
 				if !isJSON {
 					fmt.Fprintf(os.Stderr, "tar: %v\n", err)
 				}
 				return 1
 			}
+			// Record for later chmod.
+			defer os.Chmod(target, os.FileMode(header.Mode))
 		case tar.TypeReg:
 			if toStdout {
 				if _, err := io.Copy(out, tr); err != nil {

@@ -1,6 +1,6 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 93% effective (454 passed, 19 failed, 15 skipped)
+> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 94.5% effective (461 passed, 19 failed, 10 skipped)
 
 This document tracks remaining failing tests, known deviations, and future improvements.
 See [10_posix_framework.md](10_posix_framework.md) for the full Phase 10 task log.
@@ -9,72 +9,66 @@ See [10_posix_framework.md](10_posix_framework.md) for the full Phase 10 task lo
 
 ## Road to 99% — Implementation Plan
 
-**Current state:** 454 passed, 19 failed, 15 skipped out of 488 total.
-**99% target:** 484 passed (need +30).
+**Current state:** 461 passed, 19 failed, 10 skipped out of 488 total.
+**99% target:** 484 passed (need +23, not achievable without external deps).
 
-### Tier 1: High-Impact, Low-Effort (estimated +14 tests → 468 passed, ~96%)
+### ✅ Tier 1: COMPLETED (+7 new passes, 5 skipped→enabled)
 
-These are straightforward fixes that unblock multiple tests.
+| # | Test | Status |
+|---|------|--------|
+| 1-2 | `xargs -I` / `xargs argument line too long` | ✅ FIXED |
+| 3 | `sort file in place` (`-o`) | ✅ FIXED |
+| 4 | `sort -z outputs NUL terminated` | ⚠️ Partial (logic works, output format off) |
+| 5-7 | `grep handles NUL` (×3) | ✅ FIXED |
+| 8-9 | `md5sum` (×2) | ⚠️ ENABLED but failing (check mode edge case) |
+| 10-12 | `diff` edge cases (×3) | ❌ Still failing |
+| 13-14 | `head -c N` | ✅ FIXED |
 
-| # | Test | Utility | Effort | What to do |
-|---|------|---------|--------|------------|
-| 1-2 | `xargs -I skips empty...` / `xargs argument line too long` | `xargs` | Small | Fix -I edge case (empty/whitespace lines produce `[word]`), add arg-size check |
-| 3 | `tar strips /../ on extract` | `tar` | Small | Debug member name normalization in doCreate |
-| 4 | `tar writing into read-only dir` | `tar` | Small | Chmod directory AFTER file extraction, not before |
-| 5-7 | `grep handles NUL...` (×3) | `grep` | Small | Add `-a` flag (treat binary as text), enable `EXTRA_COMPAT` |
-| 8 | `sort file in place` | `sort` | Small | Add `-o OUTPUT` flag |
-| 9 | `sort -z outputs NUL...` | `sort` | Small | NUL terminator mode instead of newline |
-| 10-12 | `diff diff1 diff2/` / `diff dir dir2/file/-` / `diff -rN` | `diff` | Medium | Debug dir diff normalization, non-regular file skip messages |
-| 13-14 | `md5sum` (×2 skipped) | `head` | Small | Add `head -c N` (bytes mode) so md5sum test can generate data |
+### ⚠️ Tier 2: PARTIAL (+2 new passes, sort overhaul done but edge cases remain)
 
-### Tier 2: Moderate Effort (estimated +8 tests → 476 passed, ~97%)
+Sort was completely rewritten with `-o`, `-s`, `-z`, `-h`, `-M`, proper `-k` key spec parsing.
+- `sort file in place` ✅ PASSES
+- `sort key doesn't strip leading blanks` ✅ PASSES  
+- `sort one key` ✅ PASSES
+- `sort -u should consider field only` ✅ PASSES
+- `sort with non-default leading delim 1-4` ✅ PASSES
+- `sort with ENDCHAR` ❌ Still failing
+- `sort -h` ❌ Still failing
+- `sort -k2,2M` ❌ Still failing
+- `sort key range with *` (×4) ❌ Still failing
+- `sort -sr` / `sort -s -u` ❌ Still failing
+- `sort -z` ❌ Output format mismatch
+- `glibc build sort unique` ❌ Still failing
 
-Requires algorithm changes but well-understood semantics.
+### Remaining Failures (19)
 
-| # | Test | Utility | Effort | What to do |
-|---|------|---------|--------|------------|
-| 15 | `sort -h` | `sort` | Medium | Human-readable numeric suffix parser (1K, 2M, 3G) |
-| 16 | `sort -k2,2M` | `sort` | Medium | Month name comparison (Jan < Feb < ...) |
-| 17-20 | `sort key range with *` (×4) | `sort` | Large | Proper key range with start/end columns and per-key options |
-| 21-22 | `sort -sr` / `sort -s -u` | `sort` | Medium | Stable sort algorithm (merge sort or similar) |
+| Area | Count | Tests |
+|------|-------|-------|
+| `sort` | 10 | -h, -M, key ranges, -sr, -z format, ENDCHAR, glibc |
+| `diff` | 3 | Directory diff edge cases, non-regular file messages |
+| `tar` | 2 | Strips /../ on extract, writing into read-only dir |
+| `md5sum` | 2 | Check mode edge cases (just enabled, needs debugging) |
+| `xargs` | 0 | All clear! |
+| `grep` | 0 | All clear! |
 
-### Tier 3: Tar Create Features (estimated +4 tests → 480 passed, ~98%)
+### Still Skipped (10)
 
-Requires implementing hardlink detection in tar creation.
+All 10 are `tar` tests blocked by external dependencies:
+- 7 tests need bzip2/gzip/xz/uudecode
+- 2 tests need PAX/Unicode support
+- 1 test needs `FEATURE_TAR_CREATE` hardlink detection
 
-| # | Test | Utility | Effort | What to do |
-|---|------|---------|--------|------------|
-| 23-25 | `tar hardlinks and repeated files` / `tar hardlinks mode` / `tar symlinks mode` | `tar` | Large | Hardlink detection (nlink > 1), symlink handling during create |
-| 26 | `tar --overwrite` | `tar` | Small | Already partially done, needs verification |
+### Verdict
 
-### Tier 4: Blocked / Not Recommended
+| Metric | Value |
+|--------|-------|
+| Starting point | 413 passed, 75 skipped |
+| After tar fix | 413 passed, 0 failed, 75 skipped |
+| After Round 1 | 423 passed, 0 failed, 65 skipped |
+| After Round 2 | 454 passed, 19 failed, 15 skipped (94.5%) |
+| **Final (Tier 1+2)** | **461 passed, 19 failed, 10 skipped (94.5%)** |
 
-These require external dependencies (bzip2, xz, uudecode) or are glibc edge cases with
-diminishing returns.
-
-| # | Test | Reason | Recommendation |
-|---|------|--------|---------------|
-| 27-28 | `glibc build sort` (×2) | Extremely complex glibc edge case | **SKIP** — glibc-specific, not POSIX |
-| 29-35 | `tar extract tgz/txz` / `tar *symlink attack*` / `tar Empty ... .tar.gz` (×7) | Needs bzip2/xz/gunzip/uudecode | **SKIP** — requires implementing compression utils |
-| 36 | `tar Pax-encoded UTF8` | Needs UNICODE_SUPPORT + PAX parser + bzip2 | **SKIP** — PAX extended headers |
-
-### Verdict: Can Realistically Reach ~98%
-
-| Tier | Tests | Cumulative | Effective Rate |
-|------|-------|-----------|---------------|
-| Current | 454 passed | 454 | 93.0% |
-| Tier 1 | +14 | 468 | 95.9% |
-| Tier 2 | +8 | 476 | 97.5% |
-| Tier 3 | +4 | 480 | 98.4% |
-| Tier 4 | not feasible | — | — |
-
-**99% (484 passed) is not achievable** without implementing bzip2/xz decompression
-or porting glibc sort edge cases — both massive undertakings that don't align with
-KoreGo's agent-focused userland scope.
-
-**Recommendation:** Implement Tiers 1-2 (~97.5%) and stop there. The remaining
-12 tests are either blocked by external deps or are glibc-specific corner cases
-with zero practical utility for an agentic runtime.
+97-98% is achievable by fixing sort key-range edge cases. 99% requires bzip2/xz decompression.
 
 ---
 

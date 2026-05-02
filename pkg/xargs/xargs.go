@@ -46,7 +46,7 @@ func run(args []string, out io.Writer) int {
 		cmdArgs = flags.Positional[1:]
 	}
 
-	maxSize := 0
+	maxSize := 2048 // default max command line size
 	if val := flags.Get("s"); val != "" {
 		fmt.Sscanf(val, "%d", &maxSize)
 	}
@@ -94,7 +94,13 @@ func run(args []string, out io.Writer) int {
 		}
 
 		// -I replace-str: replace occurrences of replaceStr in cmdArgs with word.
+		// Empty lines and whitespace-only lines are SKIPPED in -I mode.
+		// Leading whitespace is stripped from each line.
 		if replaceStr != "" {
+			word = strings.TrimLeft(word, " \t\n\r\v\f")
+			if word == "" {
+				continue
+			}
 			replacedArgs := make([]string, len(cmdArgs))
 			for i, a := range cmdArgs {
 				replacedArgs[i] = strings.ReplaceAll(a, replaceStr, word)
@@ -126,8 +132,14 @@ func run(args []string, out io.Writer) int {
 	var results []ExecResult
 
 	for _, batch := range batches {
-		args := append([]string{}, cmdArgs...)
-		args = append(args, batch...)
+		var args []string
+		if replaceStr != "" {
+			// In -I mode, batch already contains the full replaced args.
+			args = batch
+		} else {
+			args = append([]string{}, cmdArgs...)
+			args = append(args, batch...)
+		}
 
 		cmd := exec.Command(baseCmd, args...)
 		cmd.Stdout = out

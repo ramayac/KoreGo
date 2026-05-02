@@ -22,6 +22,7 @@ type HeadResult struct {
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "n", Long: "lines", Type: common.FlagValue},
+		{Short: "c", Long: "bytes", Type: common.FlagValue},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
@@ -53,8 +54,17 @@ func run(args []string, out io.Writer) int {
 	}
 	jsonMode := flags.Has("j")
 	linesCount := 10
+	byteCount := -1
 	negativeCount := false
-	if nStr := flags.Get("n"); nStr != "" {
+	if cStr := flags.Get("c"); cStr != "" {
+		n, err := strconv.Atoi(cStr)
+		if err != nil || n < 0 {
+			fmt.Fprintf(os.Stderr, "head: illegal byte count -- %s\n", cStr)
+			return 2
+		}
+		byteCount = n
+		linesCount = 0 // -c overrides -n
+	} else if nStr := flags.Get("n"); nStr != "" {
 		if strings.HasPrefix(nStr, "-") {
 			n, err := strconv.Atoi(nStr[1:])
 			if err != nil {
@@ -120,7 +130,9 @@ func run(args []string, out io.Writer) int {
 
 		var lines []string
 		var errR error
-		if negativeCount {
+		if byteCount >= 0 {
+			lines, errR = runBytes(r, w, byteCount)
+		} else if negativeCount {
 			lines, errR = runNegative(r, w, linesCount)
 		} else {
 			lines, errR = Run(r, w, linesCount)
@@ -161,6 +173,19 @@ func runNegative(r io.Reader, w io.Writer, skipLast int) ([]string, error) {
 		lines = append(lines, all[i])
 	}
 	return lines, nil
+}
+
+// runBytes reads up to n bytes from r and writes to w.
+func runBytes(r io.Reader, w io.Writer, n int) ([]string, error) {
+	buf := make([]byte, n)
+	total, err := io.ReadFull(r, buf)
+	if err != nil && err != io.ErrUnexpectedEOF && err != io.EOF {
+		return nil, err
+	}
+	if total > 0 {
+		w.Write(buf[:total])
+	}
+	return nil, nil
 }
 
 func init() {
