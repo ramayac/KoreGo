@@ -1,6 +1,6 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 94.9% effective (464 passed, 16 failed, 10 skipped)
+> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 97.9% effective (479 passed, 1 failed, 10 skipped)
 
 This document tracks remaining failing tests, known deviations, and future improvements.
 See [10_posix_framework.md](10_posix_framework.md) for the full Phase 10 task log.
@@ -9,45 +9,55 @@ See [10_posix_framework.md](10_posix_framework.md) for the full Phase 10 task lo
 
 ## Road to 99% — Implementation Plan
 
-**Current state:** 461 passed, 19 failed, 10 skipped out of 488 total.
-**99% target:** 484 passed (need +23, not achievable without external deps).
+**Current state:** 479 passed, 1 failed, 10 skipped out of 490 total.
+**99% target:** 485 passed (need +6, requires external deps for ~5).
 
-### ✅ Tier 1: COMPLETED (+7 new passes, 5 skipped→enabled)
+### ✅ Tier 1: COMPLETED
 
 | # | Test | Status |
 |---|------|--------|
 | 1-2 | `xargs -I` / `xargs argument line too long` | ✅ FIXED |
 | 3 | `sort file in place` (`-o`) | ✅ FIXED |
-| 4 | `sort -z outputs NUL terminated` | ⚠️ Partial (logic works, output format off) |
+| 4 | `sort -z outputs NUL terminated` | ✅ FIXED |
 | 5-7 | `grep handles NUL` (×3) | ✅ FIXED |
-| 8-9 | `md5sum` (×2) | ⚠️ ENABLED but failing (check mode edge case) |
-| 10-12 | `diff` edge cases (×3) | ❌ Still failing |
+| 8-9 | `md5sum` (×2) | ✅ FIXED (empty checksum file edge case) |
+| 10-12 | `diff` edge cases (×3) | ✅ FIXED (dir diff, path normalization, -rN) |
 | 13-14 | `head -c N` | ✅ FIXED |
 
-### ⚠️ Tier 2: PARTIAL (+2 new passes, sort overhaul done but edge cases remain)
+### ✅ Tier 2: COMPLETED (Sort + Diff + Tar overhaul)
 
-Sort was completely rewritten with `-o`, `-s`, `-z`, `-h`, `-M`, proper `-k` key spec parsing.
+Sort was completely rewritten with `-o`, `-s`, `-z`, `-h`, `-M`, proper `-k` key spec parsing, numeric prefix parsing, global-vs-per-key reverse semantics, and stable tiebreaker handling.
 - `sort file in place` ✅ PASSES
-- `sort key doesn't strip leading blanks` ✅ PASSES  
+- `sort key doesn't strip leading blanks` ✅ PASSES
 - `sort one key` ✅ PASSES
 - `sort -u should consider field only` ✅ PASSES
 - `sort with non-default leading delim 1-4` ✅ PASSES
-- `sort with ENDCHAR` ❌ Still failing
-- `sort -h` ❌ Still failing
-- `sort -k2,2M` ❌ Still failing
-- `sort key range with *` (×4) ❌ Still failing
-- `sort -sr` / `sort -s -u` ❌ Still failing
-- `sort -z` ❌ Output format mismatch
-- `glibc build sort unique` ❌ Still failing
+- `sort with ENDCHAR` ✅ FIXED (startChar default to 1 when endChar set)
+- `sort -h` ✅ PASSES
+- `sort -k2,2M` ✅ FIXED (month sort)
+- `sort key range with *` (×4) ✅ FIXED (key spec parsing + numeric prefix)
+- `sort -sr` / `sort -s -u` ✅ FIXED (stable tiebreaker)
+- `sort -z` ✅ FIXED (NUL terminator output)
+- `glibc build sort unique` ✅ FIXED (multi-key unique dedup)
 
-### Remaining Failures (19)
+Diff directory fixes:
+- Directory diff with raw path preservation ✅ FIXED
+- `-rN` non-regular file messages ✅ FIXED
+- Dir+file path resolution ✅ FIXED
+
+Tar fixes:
+- `../` member name stripping ✅ FIXED
+- Directory trailing `/` in verbose listing ✅ FIXED
+- md5sum/sha256sum `-c EMPTY` exit code ✅ FIXED
+
+### Remaining Failures (1)
 
 | Area | Count | Tests |
 |------|-------|-------|
-| `sort` | 10 | -h, -M, key ranges, -sr, -z format, ENDCHAR, glibc |
-| `diff` | 3 | Directory diff edge cases, non-regular file messages |
-| `tar` | 2 | Strips /../ on extract, writing into read-only dir |
-| `md5sum` | 2 | Check mode edge cases (just enabled, needs debugging) |
+| `tar` | 1 | `writing into read-only dir` — umask-dependent (expects 644, gets 664 with umask 002) |
+| `sort` | 0 | All clear! 🎉 |
+| `diff` | 0 | All clear! 🎉 |
+| `md5sum` | 0 | All clear! 🎉 |
 | `xargs` | 0 | All clear! |
 | `grep` | 0 | All clear! |
 
@@ -66,9 +76,13 @@ All 10 are `tar` tests blocked by external dependencies:
 | After tar fix | 413 passed, 0 failed, 75 skipped |
 | After Round 1 | 423 passed, 0 failed, 65 skipped |
 | After Round 2 | 454 passed, 19 failed, 15 skipped (94.5%) |
-| **Final (Tier 1+2)** | **461 passed, 19 failed, 10 skipped (94.5%)** |
+| After Tier 1 | 461 passed, 19 failed, 10 skipped (94.5%) |
+| **After Tier 2 (2026-05-02)** | **479 passed, 1 failed, 10 skipped (97.9%)** |
 
-97-98% is achievable by fixing sort key-range edge cases. 99% requires bzip2/xz decompression.
+98%+ is achievable. 99% requires bzip2/xz decompression support for remaining tar tests.
+
+The single remaining failure (`tar writing into read-only dir`) is a umask-dependent test that
+passes with umask 022 but fails with umask 002 due to expected file permissions (644 vs 664).
 
 ---
 
@@ -117,6 +131,49 @@ Implemented:
 
 ---
 
+## Phase E: Sort & Diff & Tar fixes — **COMPLETED (2026-05-02)**
+
+### E.1 — Sort key spec parsing ✅
+**File:** `pkg/sort/sort.go`
+
+Implemented:
+- Rewrote `parseKeySpec` to correctly parse `-k start,end[flags]` format.
+- `IndexAny(rest, "nrMhb")` was finding flag chars before the `,` separator.
+- New logic: find `,` first, then parse start and end field specs separately.
+- Added `parseNumericPrefix` function (like C's strtod) for multi-field numeric keys.
+- Global `-r` only reverses tiebreaker when key has numeric flag; per-key `r` reverses everything.
+- `-s` stable disables last-resort full-line comparison.
+- `-u` unique compares all keys (using `slices.Equal`), not just the first.
+- ENDCHAR fix: default startChar to 1 when endChar is set but startChar is 0.
+- Non-numeric values sort before numeric values in `-n` mode.
+
+### E.2 — Diff directory fixes ✅
+**File:** `pkg/diff/diff.go`
+
+Implemented:
+- `diffDirs` now preserves raw path arguments in diff headers (using `joinPreserving`).
+- Dir+file path resolution: when one arg is a dir and the other a file, construct the file path inside the dir.
+- `-rN` mode: check non-regular files BEFORE checking existence in either dir.
+- Missing files with `-N` are treated as empty for diff purposes.
+
+### E.3 — Tar `../` stripping ✅
+**File:** `pkg/tar/tar.go`
+
+Implemented:
+- `resolveTarPath` function walks components left to right, maintaining a stack.
+- `..` pops from stack; first empty-stack `..` forward-cancels next regular component.
+- Subsequent empty-stack `..` are just added to strip prefix without forward-canceling.
+- Walk uses resolved path instead of original target.
+- Directory entries show trailing `/` in verbose listing (`doCreate`, `doExtract`, `doList`).
+
+### E.4 — md5sum/sha256sum `-c` empty file ✅
+**File:** `pkg/md5sum/md5sum.go`, `pkg/sha256sum/sha256sum.go`
+
+Implemented:
+- When checksum file has no valid checksum lines, exit with code 1 and print error.
+
+---
+
 ## Known Deviations / Future Work
 
 These are known differences from GNU/BusyBox behavior that are low-priority or by design:
@@ -126,6 +183,7 @@ These are known differences from GNU/BusyBox behavior that are low-priority or b
 | `tar` | No support for `--overwrite`, pax headers, xz/bzip2 | Low |
 | `tar` | Hard links and symlink mode not fully verified | Low |
 | `tar` | `tar_with_link_with_size` and `tar_with_prefix_fields` format tests — **FIXED** | — |
+| `tar` | `writing into read-only dir` — umask-dependent (644 vs 664) | Low |
 | `gzip` | No `--keep` / `-k` flag | Low |
 | `grep` | No `-P` (Perl regex) — Go regexp ≠ PCRE | By design |
 | `awk` | Not implemented (deferred post-MVP) | Deferred |
@@ -134,129 +192,23 @@ These are known differences from GNU/BusyBox behavior that are low-priority or b
 
 ---
 
-## BusyBox Skipped Tests (75 tests — feature-gated or not yet implemented)
+## BusyBox Skipped Tests (10 tests — external dependency gated)
 
-These tests are skipped in the BusyBox test suite because they require features not yet
-implemented in KoreGo. They are gated by BusyBox `CONFIG_*` options in the test files.
+These tests are skipped because they require external compression tools or features
+not yet implemented in KoreGo.
 
-### `cat` (4 skipped → 0, all RESOLVED)
-| Test | Reason | Status |
-|------|--------|--------|
-| `cat -e` | `-e` flag (show non-printing, `$` at EOL) | ✅ **FIXED** (Round 1) |
-| `cat -v` | `-v` flag (show non-printing) | ✅ **FIXED** (Round 1) |
-| `cat -n` | `-n` flag already implemented; test gated by `FEATURE_CATN` | ✅ Enabled |
-| `cat -b` | `-b` flag already implemented; test gated by `FEATURE_CATN` | ✅ Enabled |
-
-### `cut` (1 skipped → 0, RESOLVED)
-| Test | Reason | Status |
-|------|--------|--------|
-| `cut -DF` | `-D` and `-F` flags (field delimiter output options) | ✅ **FIXED** (Round 2) |
-
-### `diff` (6 skipped → 3 remaining)
-| Test | Reason | Status |
-|------|--------|--------|
-| `diff diff1 diff2/` | Directory diff edge case | Still failing |
-| `diff diff1 diff2/subdir` | Subdirectory diff | ✅ **FIXED** (Round 2) |
-| `diff dir dir2/file/-` | Complex path diff scenarios | Still failing |
-| `diff of dir and fifo` | FIFO special file diff | ✅ **FIXED** (Round 2) |
-| `diff of file and fifo` | FIFO special file diff | ✅ **FIXED** (Round 2) |
-| `diff -rN does not read non-regular files` | `-r` (recursive) and `-N` flags | Still failing |
-
-### `find` (9 skipped → 0, all RESOLVED! 🎉)
-| Test | Reason | Status |
-|------|--------|--------|
-| `find -exec exitcode 1–4` | `-exec` flag (execute command on matches) | ✅ **FIXED** (Round 2) |
-| `find / -maxdepth 0 -name /` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
-| `find // -maxdepth 0 -name /` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
-| `find / -maxdepth 0 -name //` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
-| `find // -maxdepth 0 -name //` | `-maxdepth` flag | ✅ **FIXED** (Round 1) |
-| `find -type f` | Already implemented; gated by `FEATURE_FINDTYPE` | ✅ Enabled (Round 1) |
-
-### `grep` (7 skipped)
 | Test | Reason |
 |------|--------|
-| `egrep is not case insensitive` | `egrep` alias handling |
-| `grep -E -o prints all matches` | `-o` flag with `-E` extended regex |
-| `grep -E supports extended regexps` | `-E` extended regex |
-| `grep handles NUL in files` | NUL byte handling in input |
-| `grep handles NUL on stdin` | NUL byte handling on stdin |
-| `grep is also egrep` | `egrep` alias handling |
-| `grep matches NUL` | NUL byte pattern matching |
-
-### `head` (1 skipped → 0, RESOLVED)
-| Test | Reason | Status |
-|------|--------|--------|
-| `head -n <negative number>` | Negative `-n` values (print all but last N lines) | ✅ **FIXED** (Round 1) |
-
-### `md5sum` (2 skipped → 0, RESOLVED)
-| Test | Reason | Status |
-|------|--------|--------|
-| `md5sum` (×2) | Gated by `FEATURE_MD5_SHA1_SUM_CHECK` | ✅ Enabled (Round 2) |
-
-### `readlink` (4 skipped → 0, all RESOLVED! 🎉)
-| Test | Reason | Status |
-|------|--------|--------|
-| `readlink -f on a file` | `-f` canonicalize on regular file | ✅ **FIXED** (Round 2) |
-| `readlink -f on a link` | `-f` canonicalize on symlink | ✅ **FIXED** (Round 2) |
-| `readlink -f on an invalid link` | `-f` canonicalize on broken symlink | ✅ **FIXED** (Round 2) |
-| `readlink -f on a weird dir` | `-f` edge case | ✅ **FIXED** (Round 2) |
-
-### `sort` (16 skipped → 10 failing)
-| Test | Reason | Status |
-|------|--------|--------|
-| `glibc build sort` | Edge case from glibc tests | Still failing |
-| `glibc build sort unique` | Edge case from glibc tests | Still failing |
-| `sort file in place` | `-o` flag (output to file) | Still failing |
-| `sort -h` | Human-readable numeric sort `-h` | Still failing |
-| `sort -k2,2M` | Month sort via `-M` flag | Still failing |
-| `sort key doesn't strip leading blanks…` | Key definition edge cases | ✅ **FIXED** (Round 2) |
-| `sort key range with multiple options` | Key range with flags | Still failing |
-| `sort key range with numeric option` | `-k` with `-n` | Still failing |
-| `sort key range with numeric option and global reverse` | `-k -n -r` combo | Still failing |
-| `sort key range with two -k options` | Multiple `-k` flags | Still failing |
-| `sort one key` | Single `-k` behavior | ✅ **FIXED** (Round 2) |
-| `sort -sr …` | Stable + reverse combo | Still failing |
-| `sort -s -u` | Stable + unique combo | Still failing |
-| `sort -u should consider field only` | Unique with field specs | ✅ **FIXED** (Round 2) |
-| `sort with ENDCHAR` | End character delimiter | ✅ **FIXED** (Round 2) |
-| `sort with non-default leading delim 1–4` | Custom delimiter edge cases | ✅ **FIXED** (Round 2) |
-| `sort -z outputs NUL terminated lines` | `-z` NUL-terminated lines | Still failing |
-
-### `tar` (12 skipped)
-| Test | Reason |
-|------|--------|
-| `tar does not extract into symlinks` | Symlink attack protection (needs bzip2) |
-| `tar Empty file is not a tarball.tar.gz` | Gzip-compressed empty file (needs gunzip) |
-| `tar extract tgz` | `.tgz` extraction (needs gzip) |
-| `tar extract txz` | `.txz` extraction (needs xz, uudecode) |
+| `tar Empty file is not a tarball.tar.gz` | Needs gunzip integration |
 | `tar hardlinks and repeated files` | Hardlink creation (`FEATURE_TAR_CREATE`) |
 | `tar hardlinks mode` | Hardlink mode preservation |
-| `tar -k does not extract into symlinks` | Symlink attack with `-k` (needs bzip2) |
-| `tar --overwrite` | `--overwrite` long option |
-| `tar Pax-encoded UTF8 names and symlinks` | PAX/UTF-8 extended headers |
-| `tar strips /../ on extract` | Path traversal stripping (`FEATURE_TAR_CREATE`) |
-| `tar Symlink attack: …` | Symlink attack test (needs bzip2, uudecode) |
-| `tar Symlinks and hardlinks coexist` | Mixed symlink+hardlink (`FEATURE_TAR_CREATE`) |
 | `tar symlinks mode` | Symlink handling in archive |
-| `tar writing into read-only dir` | Permission handling (`FEATURE_TAR_CREATE`) |
-
-### `tr` (3 skipped → 0, all RESOLVED! 🎉)
-| Test | Reason | Status |
-|------|--------|--------|
-| `tr does not stop after [:digit:]` | Character class edge case | ✅ **FIXED** (Round 2) |
-| `tr has correct xdigit sequence` | `[:xdigit:]` class ordering | ✅ **FIXED** (Round 2) |
-| `tr understands [:xdigit:]` | `[:xdigit:]` class support | ✅ **FIXED** (Round 2) |
-
-### `xargs` (4 skipped → 2 remaining)
-| Test | Reason | Status |
-|------|--------|--------|
-| `xargs argument line too long` | Long argument line handling | Still failing |
-| `xargs -I skips empty lines…` | `-I` replace-str flag | Still failing |
-| `xargs -n1` | `-n1` max-args-per-call | ✅ **FIXED** (Round 2) |
-| `xargs -n2` | `-n2` max-args-per-call | ✅ **FIXED** (Round 2) |
-
-### `wc` (0)
-All wc new-style tests pass. (The `wc-prints-longest-line-length` old-style test uses system busybox.)
+| `tar extract tgz` | `.tgz` extraction (needs gzip) |
+| `tar extract txz` | `.txz` extraction (needs xz, uudecode) |
+| `tar does not extract into symlinks` | Symlink attack protection (needs bzip2) |
+| `tar -k does not extract into symlinks` | Symlink attack with `-k` (needs bzip2) |
+| `tar Pax-encoded UTF8 names and symlinks` | PAX/UTF-8 extended headers |
+| `tar Symlink attack: …` | Symlink attack test (needs bzip2, uudecode) |
 
 ---
 
@@ -275,169 +227,40 @@ so the system BusyBox is used for old-style tests.
 
 ---
 
-## Session Insights (2026-05-01)
-
-> These are hard-won lessons from implementing Phase C and D fixes. They augment the entries in `AGENTS.md § 8`.
-
-### `tar` — Old-style flag preprocessing
-Traditional `tar` accepts flags without a leading dash (e.g., `xvf` means `-x -v -f`). BusyBox tests rely on this. A preprocessing step must expand old-style flag bundles before calling `common.ParseFlags`. The mode char (c/x/t/r/u) can appear anywhere in the bundle (e.g., `Ox` = `-O -x`).
-
-### `tar` — Empty archive detection
-Go's `archive/tar` returns `io.EOF` (not `io.ErrUnexpectedEOF`) for a completely empty reader. To detect "not a tarball" early, use `bufio.Reader.Peek(1)` before creating the tar reader.
-
-### `tar` — Archive path resolution with `-C`
-When `-C dir` changes the working directory, relative archive paths must be resolved to absolute before the chdir, otherwise `os.Open(archive)` looks in the wrong directory.
-
-### `tar` — Include list normalization
-Archive entries created by `tar -C foo .` store paths like `1/10` (not `./1/10`). Include list entries like `./1/10` must be normalized by stripping the leading `./` prefix before matching.
-
-### `tar` — Missing include file error
-When an include list is provided (positional args to extract), and no archive entries match, tar must exit non-zero with an error message.
-
-### `gzip` — `-` as stdin/stdout in positional args
-When `-` appears as a positional file argument, gzip must handle it as stdin (decompress) or stdout (compress), not attempt `os.Stat("-")`.
-
-### `wc` — No leading padding
-POSIX does not mandate the `%7d` padded format for `wc` output. The BusyBox test suite does exact string comparisons, so any leading spaces in column output will cause failures. Use `%d` without width specifiers.
-
-### `diff` — Unified hunk range edge cases
-The POSIX unified diff hunk header format has these rules (also followed by GNU diff):
-- **Count of 1:** omit the `,count` — write `@@ -5 +5 @@` not `@@ -5,1 +5,1 @@`
-- **Count of 0:** write `start-1,0` — e.g. `@@ -3,0 +3,0 @@` for an insert-only hunk after line 3
-- **No newline marker:** emit `\ No newline at end of file` on its own line immediately after the last `+` or `-` line of the last hunk if the source/dest file has no trailing newline.
-
-### `diff -B` — Correct `differ` flag logic
-When `-B` (ignore blank line changes) is active, a file is only considered to "differ" if there are non-blank-line changes remaining after filtering. The `differ` boolean must be computed **after** `filterBlankLineChanges()` runs, not before. Failing to do this causes `diff -qB` to report "Files differ" even when the only change is blank lines.
-
-### `diff` — Stdin (`-`) argument
-`os.ReadFile("-")` tries to open a file literally named `-` and fails. When a file argument is `-`, use `io.ReadAll(os.Stdin)` instead. Both file arguments can independently be `-`, but if both are `-` and they are the same string, the files are identical — short-circuit to exit 0.
-
-### `cp` — Symlink mode semantics
-GNU `cp` symlink flag semantics (from highest to lowest precedence):
-
-| Flag | Mode | Command-line symlinks | Internal (recursive) symlinks |
-|------|----|---------------------|-------------------------------|
-| `-L` | `SymlinkFollow` | Dereference | Dereference |
-| `-H` | `SymlinkFollowArgs` | Dereference | Preserve |
-| `-P` / `-d` | `SymlinkPreserve` | Preserve | Preserve |
-| *(default, no `-R`)* | `SymlinkFollow` | Dereference | N/A |
-| *(default, with `-R`)* | `SymlinkPreserve` | Preserve | Preserve |
-
-Key insight: **all positional source arguments are "command-line arguments"** for the purpose of `-H`. Mark every source as `isArg=true`, not just the first one.
-
-### `cp` — Copying a symlink as a symlink
-When preserving symlinks (mode is `SymlinkPreserve`), do **not** call `os.Open` on the symlink. Instead:
-1. `os.Lstat` to confirm it's a symlink.
-2. `os.Readlink` to get the target string.
-3. `os.Remove` the destination (if it exists).
-4. `os.Symlink(target, dst)` to create the new symlink.
-
-Using `os.Open` on a symlink will silently follow it and copy the underlying file contents, not the symlink itself.
-
-### `tar -X` — Repeatable flags
-The `-X` flag must be registered as repeatable (accepting multiple values). When parsing, accumulate all values from multiple `-X` occurrences into a slice. This is distinct from `-f` which takes a single value.
-
-### `tar tvf` — Verbose listing format
-BusyBox `tar tvf` uses the format:
-```
-%s %s/%s%10d %04d-%02d-%02d %02d:%02d:%02d %s[ -> linkname]
-```
-Key details:
-- **No space** between group name and size field (`%s%10d`, not `%s %10d`).
-- Size is `%10d` right-aligned (10 chars wide).
-- File type prefix comes from `Typeflag`, not from `os.FileMode()`: `l` for symlinks, `d` for dirs, `-` for regular files.
-- Symlinks display size as 0 regardless of header.Size.
-- Go's `time.Local` does **not** honor the POSIX `TZ` env var; must parse `TZ` manually (POSIX `UTC-2` = UTC+2).
-
-### BusyBox test suite — optional feature gates
-The BusyBox test suite gates tests behind `optional FEATURE_*` directives, controlled by
-the `OPTIONFLAGS` env var (colon-separated). In `runtest`, setting
-`OPTIONFLAGS=:FEATURE_CATV:FEATURE_FIND_MAXDEPTH:...` enables previously-skipped tests.
-The `optional` shell function checks for `:$feature:` in OPTIONFLAGS.
-
-### `find` — Path normalization for `.` root
-When `find` runs with root `.` (default), `filepath.WalkDir` returns paths like `file`
-without `./` prefix. BusyBox tests expect `./file`. Normalize by prepending `./` when
-`rootClean == "."` and the path doesn't already start with `.`.
-
 ## Session Insights (2026-05-02 — Round 2)
 
-### `xargs -I` — leading whitespace stripping
-BusyBox `xargs -I` strips **leading** whitespace (including \v, \t) from each input
-line before substituting into the command. Use `strings.TrimLeft(word, " \t\n\r\v\f")`
-rather than `strings.TrimSpace` (which also strips trailing whitespace — BusyBox
-keeps trailing spaces). Empty/whitespace-only lines are skipped entirely.
+### `sort` — `-k` key spec parsing
+The `parseKeySpec` function must find the `,` separator between start and end fields BEFORE searching for flag characters (`nrMhb`). Otherwise `"2,3n"` is parsed as start field `"2,3"` instead of start=2, end=3 with flag `n`.
 
-### `xargs -I` — batch execution with replaced args
-When `-I` is active, the batch already contains the full command args with replacements.
-Do NOT prepend `cmdArgs` in the execution loop, or the original (unreplaced) args
-will appear before the replaced ones. In non-`-I` mode, prepend `cmdArgs` as usual.
+### `sort` — numeric prefix parsing for multi-field keys
+When `-k M,Nn` is used with multi-field keys (e.g., `1\t010`), Go's `strconv.ParseFloat` fails because of embedded delimiters. Use a custom `parseNumericPrefix` function that extracts only the leading numeric prefix (like C's `strtod`), stopping at the first non-numeric character.
 
-### `xargs` — default `-s` (max-chars) value
-POSIX requires a default max command-line size. Use a reasonable value like 2048
-(rather than 0 = unlimited) so argument batching happens automatically. Without this,
-tests that pipe 90000+ args to `xargs echo` will fail.
+### `sort` — global `-r` vs per-key `r` semantics
+Global `-r` with `-k M,Nn` only reverses the tiebreaker (last-resort full-line comparison), NOT the numeric key comparison. Per-key `r` (in `-k M,Nnr`) reverses the entire key comparison, including numeric. This distinction is crucial for BusyBox compatibility.
 
-### `sort` — numeric value pre-computation in `Run`
-When `Run()` is called with global numeric/month/human flags but no `-k` specs,
-the items' `numVals`/`validNum` slices may be uninitialized. Add a fill step at the
-start of `Run` that computes numeric values from the item keys when needed.
+### `sort` — `-u` unique with multiple keys
+When `-u` is active, uniqueness should be determined by comparing ALL sort keys (using `slices.Equal`), not just the first key. This affects tests like `glibc build sort unique`.
 
-### `sort` — `bufio.Scanner` with NUL delimiter
-For `sort -z`, use a custom `bufio.Scanner.Split` function that splits on NUL bytes
-(`bytes.IndexByte(data, 0)`). The scanner reads until NUL, returning the token without
-the delimiter. For output, write NUL between lines with `w.Write([]byte{0})`.
+### `sort` — `-s` stable disables last-resort comparison
+When `-s` is set, items with equal keys must preserve their original relative order without falling back to full-line comparison.
 
-### `grep -a` — binary mode
-BusyBox `grep -a` treats binary files as text. In KoreGo, adding the flag to the
-spec is sufficient since Go's `bufio.Scanner` already handles embedded NUL bytes.
-The `EXTRA_COMPAT` feature flag in OPTIONFLAGS enables the BusyBox NUL tests.
+### `sort` — ENDCHAR default
+When `-k start,end.char` specifies an end character but no start character, the start character defaults to 1 (beginning of field). The previous code skipped character trimming entirely when `startChar == 0`.
 
-### `head -c` — byte count mode
-`head -c N` reads exactly N bytes using `io.ReadFull` (which handles short reads
-gracefully via `io.ErrUnexpectedEOF`). Unlike `-n` (line mode), `-c` doesn't need
-negative count support.
+### `sort` — Non-numeric values sort BEFORE numeric in `-n` mode
+In BusyBox, when using `-n` (numeric sort), non-numeric values sort before all numeric values. The previous code had this reversed.
 
-### `tar` — directory permissions during extraction
-When extracting a directory from a tarball, create it with `mode | 0300` (writable)
-first so files can be extracted into it, then `defer os.Chmod(target, mode)` to
-apply the archived permissions after all files are written. Without this, extracting
-into a directory archived with mode 550 fails because the owner can't write.
+### `diff` — raw path preservation in directory diff headers
+When paths like `././//diff1` are passed to `diff -ur`, BusyBox preserves them in the output header. Use a `joinPreserving` function that doesn't clean the path, instead concatenating dir+"/"+rel with careful trailing-slash handling.
 
-### `tar` — `../` prefix stripping in member names
-When `tar -c` is called with a target containing `../` components (e.g.,
-`./../dir/../target`), resolve the path by walking component-by-component,
-tracking `..` to pop from a stack. The stripped prefix is everything up to the
-point where the resolved path matches the clean suffix. Emit the BusyBox-style
-message: `tar: removing leading './../dir/../' from member names`.
+### `diff` — dir+file path resolution
+When `-r` is set and one arg is a directory while the other is a file, look for the file's basename inside the directory: `dir + "/" + filepath.Base(file)`.
 
-### `cut -DF` — field order preservation
-The `-F` flag enables whitespace-split field mode. When selecting fields with
-`-F 2,7,5`, output fields in the **specified order** (2,7,5), not in file order.
-Iterate over the range specs in order and pick fields by index, rather than iterating
-over the file's fields and checking if each is in range.
+### `diff` — `-rN` non-regular file handling
+With `-N`, missing files are treated as present (empty). Check for non-regular files BEFORE existence checks to emit the correct "is not a regular file" message rather than "Only in".
 
-### `find -exec` — argument capture before flag parsing
-`-exec` and its arguments must be extracted BEFORE passing to `common.ParseFlags`,
-because the flag parser treats `-exec` as bundled short flags `-e -x -e -c`.
-Parse `-exec cmd... \;` / `-exec cmd... +` in a pre-processing pass, strip them
-from the arg list, then pass the rest to the flag parser. For `\;` mode, ignore
-the command's exit code (BusyBox returns 0 if the command ran). For `+` mode,
-propagate the exit code.
+### `tar` — `../` component stripping
+Walk path components left to right with a stack. `..` pops from stack. First empty-stack `..` forward-cancels the next regular component. Subsequent empty-stack `..` are just added to the strip prefix. Walk the resolved path, not the original.
 
-### `diff -r` — directory diff
-When both arguments to `diff` are directories and `-r` is set, walk both trees,
-collect all relative paths, sort them, then diff each file pair. Skip non-regular
-files (FIFOs, devices) with a message. Missing files produce "Only in DIR: file"
-output. Use the same unified-diff hunk formatting as single-file mode.
-
-### BusyBox `.config` file for conditional tests
-Some BusyBox tests (like `md5sum`) check `$bindir/.config` for `CONFIG_*` variables
-rather than using `OPTIONFLAGS`. Create this file in `runtest` with all supported
-`CONFIG_*=y` entries to enable those tests.
-
-### `sort` test signature changes
-When rewriting `sort.go`, the test file's `parseLines` and `Run` calls must be
-updated to match the new signatures. The old `parseLines(r, keyField int, delim string, numeric bool)`
-became `parseLines(r, keySpecs []keySpec, delim string, zeroTerm bool)`. The old
-`Run(items, reverse, numeric, unique)` became `Run(items, keySpecs, reverse, numeric, unique, month, human)`.
+### `md5sum` — empty checksum file
+When `-c EMPTY` is called on an empty checksum file, GNU md5sum exits with code 1 and prints "no properly formatted checksum lines found". Track whether any valid lines were processed.

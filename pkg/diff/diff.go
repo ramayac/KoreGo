@@ -459,8 +459,13 @@ func run(args []string, out io.Writer) int {
 		if e1 == nil && e2 == nil && s1.IsDir() && s2.IsDir() {
 			return diffDirs(files[0], files[1], contextLines, ignoreSpace, ignoreBlankLines, treatNew, jsonMode, out)
 		}
-		// One is dir, other is file inside dir (or vice versa): handle as single-file diff.
-		// The test "diff dir dir2/file/-" passes file paths to diff.
+		// One is dir, other is file: look for file's basename inside the dir.
+		// E.g., "diff -ur dir1 dir2/subdir/-" → diff "dir1/-" vs "dir2/subdir/-"
+		if e1 == nil && s1.IsDir() && e2 == nil && !s2.IsDir() {
+			files[0] = files[0] + "/" + filepath.Base(files[1])
+		} else if e1 == nil && !s1.IsDir() && e2 == nil && s2.IsDir() {
+			files[1] = files[1] + "/" + filepath.Base(files[0])
+		}
 	}
 
 	var b1, b2 []byte
@@ -558,6 +563,14 @@ func run(args []string, out io.Writer) int {
 	return 0
 }
 
+// joinPreserving preserves the raw dir string, only adding a separator if needed.
+func joinPreserving(dir, rel string) string {
+	if strings.HasSuffix(dir, "/") {
+		return dir + rel
+	}
+	return dir + "/" + rel
+}
+
 // diffDirs recursively compares two directories and outputs unified diffs.
 func diffDirs(dir1, dir2 string, contextLines int, ignoreSpace, ignoreBlankLines, treatNew, jsonMode bool, out io.Writer) int {
 	// Collect all relative paths from both directories.
@@ -606,20 +619,55 @@ func diffDirs(dir1, dir2 string, contextLines int, ignoreSpace, ignoreBlankLines
 		p1, in1 := paths1[rel]
 		p2, in2 := paths2[rel]
 
+		// With -N, treat missing files as present (empty).
+		// Check for non-regular files BEFORE checking existence.
+		if in1 && !in2 {
+			fi1, _ := os.Lstat(p1)
+			if fi1 != nil && !fi1.Mode().IsRegular() {
+				if treatNew {
+					fmt.Fprintf(out, "File %s is not a regular file or directory and was skipped\n", joinPreserving(dir1, rel))
+					if exitCode == 0 {
+						exitCode = 1
+					}
+					continue
+				} else {
+					fmt.Fprintf(out, "Only in %s: %s\n", dir1, rel)
+					exitCode = 1
+					continue
+				}
+			}
+		}
+		if !in1 && in2 {
+			fi2, _ := os.Lstat(p2)
+			if fi2 != nil && !fi2.Mode().IsRegular() {
+				if treatNew {
+					fmt.Fprintf(out, "File %s is not a regular file or directory and was skipped\n", joinPreserving(dir2, rel))
+					if exitCode == 0 {
+						exitCode = 1
+					}
+					continue
+				} else {
+					fmt.Fprintf(out, "Only in %s: %s\n", dir2, rel)
+					exitCode = 1
+					continue
+				}
+			}
+		}
+
 		if in1 && in2 {
 			// Both exist: diff them.
 			// Skip non-regular files.
 			fi1, _ := os.Lstat(p1)
 			fi2, _ := os.Lstat(p2)
 			if fi1 != nil && !fi1.Mode().IsRegular() {
-				fmt.Fprintf(out, "File %s is not a regular file or directory and was skipped\n", filepath.Join(dir1, rel))
+				fmt.Fprintf(out, "File %s is not a regular file or directory and was skipped\n", joinPreserving(dir1, rel))
 				if exitCode == 0 {
 					exitCode = 1
 				}
 				continue
 			}
 			if fi2 != nil && !fi2.Mode().IsRegular() {
-				fmt.Fprintf(out, "File %s is not a regular file or directory and was skipped\n", filepath.Join(dir2, rel))
+				fmt.Fprintf(out, "File %s is not a regular file or directory and was skipped\n", joinPreserving(dir2, rel))
 				if exitCode == 0 {
 					exitCode = 1
 				}
@@ -631,7 +679,7 @@ func diffDirs(dir1, dir2 string, contextLines int, ignoreSpace, ignoreBlankLines
 			if differ || !treatNew {
 				if differ {
 					exitCode = 1
-					fmt.Fprintf(out, "--- %s\n+++ %s\n", filepath.Join(dir1, rel), filepath.Join(dir2, rel))
+					fmt.Fprintf(out, "--- %s\n+++ %s\n", joinPreserving(dir1, rel), joinPreserving(dir2, rel))
 					newline1 := len(b1) == 0 || b1[len(b1)-1] == '\n'
 					newline2 := len(b2) == 0 || b2[len(b2)-1] == '\n'
 					for _, h := range hunks {
@@ -665,13 +713,95 @@ func diffDirs(dir1, dir2 string, contextLines int, ignoreSpace, ignoreBlankLines
 				}
 			}
 		} else if in1 && !in2 {
-			// Only in dir1.
-			fmt.Fprintf(out, "Only in %s: %s\n", dir1, rel)
-			exitCode = 1
+			if treatNew {
+				// -N: treat missing file as empty, diff against empty.
+				b1, _ := os.ReadFile(p1)
+				differ, hunks := GenerateDiff(string(b1), "", contextLines, ignoreSpace, ignoreBlankLines)
+				if differ || !treatNew {
+					if differ {
+						exitCode = 1
+					}
+					fmt.Fprintf(out, "--- %s\n+++ %s\n", joinPreserving(dir1, rel), joinPreserving(dir2, rel))
+					newline1 := len(b1) == 0 || b1[len(b1)-1] == '\n'
+					newline2 := true
+					for _, h := range hunks {
+						oldStr := fmt.Sprintf("%d,%d", h.OldStart, h.OldLines)
+						if h.OldLines == 1 {
+							oldStr = fmt.Sprintf("%d", h.OldStart)
+						} else if h.OldLines == 0 {
+							oldStr = fmt.Sprintf("%d,0", h.OldStart-1)
+						}
+						newStr := fmt.Sprintf("%d,%d", h.NewStart, h.NewLines)
+						if h.NewLines == 1 {
+							newStr = fmt.Sprintf("%d", h.NewStart)
+						} else if h.NewLines == 0 {
+							newStr = fmt.Sprintf("%d,0", h.NewStart-1)
+						}
+						fmt.Fprintf(out, "@@ -%s +%s @@\n", oldStr, newStr)
+						for i, l := range h.Lines {
+							fmt.Fprintln(out, l)
+							isLastLine := i == len(h.Lines)-1
+							if isLastLine {
+								isDelLine := len(l) > 0 && l[0] == '-'
+								isInsLine := len(l) > 0 && l[0] == '+'
+								if isDelLine && !newline1 {
+									fmt.Fprintln(out, `\ No newline at end of file`)
+								} else if isInsLine && !newline2 {
+									fmt.Fprintln(out, `\ No newline at end of file`)
+								}
+							}
+						}
+					}
+				}
+			} else {
+				fmt.Fprintf(out, "Only in %s: %s\n", dir1, rel)
+				exitCode = 1
+			}
 		} else if !in1 && in2 {
-			// Only in dir2.
-			fmt.Fprintf(out, "Only in %s: %s\n", dir2, rel)
-			exitCode = 1
+			if treatNew {
+				// -N: treat missing file as empty, diff against empty.
+				b2, _ := os.ReadFile(p2)
+				differ, hunks := GenerateDiff("", string(b2), contextLines, ignoreSpace, ignoreBlankLines)
+				if differ || !treatNew {
+					if differ {
+						exitCode = 1
+					}
+					fmt.Fprintf(out, "--- %s\n+++ %s\n", joinPreserving(dir1, rel), joinPreserving(dir2, rel))
+					newline1 := true
+					newline2 := len(b2) == 0 || b2[len(b2)-1] == '\n'
+					for _, h := range hunks {
+						oldStr := fmt.Sprintf("%d,%d", h.OldStart, h.OldLines)
+						if h.OldLines == 1 {
+							oldStr = fmt.Sprintf("%d", h.OldStart)
+						} else if h.OldLines == 0 {
+							oldStr = fmt.Sprintf("%d,0", h.OldStart-1)
+						}
+						newStr := fmt.Sprintf("%d,%d", h.NewStart, h.NewLines)
+						if h.NewLines == 1 {
+							newStr = fmt.Sprintf("%d", h.NewStart)
+						} else if h.NewLines == 0 {
+							newStr = fmt.Sprintf("%d,0", h.NewStart-1)
+						}
+						fmt.Fprintf(out, "@@ -%s +%s @@\n", oldStr, newStr)
+						for i, l := range h.Lines {
+							fmt.Fprintln(out, l)
+							isLastLine := i == len(h.Lines)-1
+							if isLastLine {
+								isDelLine := len(l) > 0 && l[0] == '-'
+								isInsLine := len(l) > 0 && l[0] == '+'
+								if isDelLine && !newline1 {
+									fmt.Fprintln(out, `\ No newline at end of file`)
+								} else if isInsLine && !newline2 {
+									fmt.Fprintln(out, `\ No newline at end of file`)
+								}
+							}
+						}
+					}
+				}
+			} else {
+				fmt.Fprintf(out, "Only in %s: %s\n", dir2, rel)
+				exitCode = 1
+			}
 		}
 	}
 	return exitCode
