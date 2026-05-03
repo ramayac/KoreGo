@@ -1,12 +1,13 @@
 # KoreGo
 
-KoreGo is a 100% Go-native, POSIX-compliant userland designed to run inside a Docker `FROM scratch` container. It serves as a modern replacement for GNU Coreutils CLI tools by compiling down to a single multicall binary (like BusyBox).
+A 100% Go-native, POSIX-compliant userland tailored for Docker FROM `scratch` containers and Agentic Runtimes.
+Compiled into a single multicall binary (like BusyBox), KoreGo serves as a modern, machine-first replacement for GNU Coreutils.
 
-KoreGo is designed for **Agentic Runtimes**:
-- Every utility supports structured machine-readable output via a `--json` flag.
-- A persistent JSON-RPC 2.0 daemon avoids continuous process-spawning overhead.
-- A fully sandboxed shell interpreter (`mvdan.cc/sh`) enables portable scripting.
-- **>90% compatible with the BusyBox test suite** — 479 passed, 1 failed, 10 skipped (97.9% effective pass rate out of 490 tests).
+Key Features:  
+ - Machine-Readable by Default: Every utility supports structured output via a --json flag.
+ - Low-Overhead Execution: A persistent JSON-RPC 2.0 daemon eliminates continuous process-spawning overhead.
+ - Portable Scripting: Includes a fully sandboxed shell interpreter (mvdan.cc/sh).
+ - High Compatibility: Achieves a 97.9% pass rate against the BusyBox test suite (479 passed, 1 failed, 10 skipped).
 
 ## Quickstart
 
