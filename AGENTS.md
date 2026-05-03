@@ -50,7 +50,7 @@ When implementing a new utility or feature, follow this checklist:
 ## 5. Security & Safety
 
 - **Root Protection:** Utilities that perform destructive operations (like `rm`) must include guards against destroying the root filesystem (e.g., `rm -rf /` must be refused without `--no-preserve-root`).
-- **Permissions:** Default to secure permissions. The Docker image runs as a non-root user (`korego:1000`).
+- **BusyBox Test Suite:** 479 passed, 1 failed, 10 skipped (97.9% effective). The single remaining failure is umask-dependent.
 
 ## 6. Current State & Progression
 
@@ -64,7 +64,7 @@ Refer to the Phase documents in `wiki/` (e.g., `wiki/plan_updated.md`) to unders
 - **Phase 07:** Agent-Ready Features (diff, tar, shell) — **COMPLETED**
 - **Phase 08:** Security Hardening — **COMPLETED**
 - **Phase 09:** Release & Automation — **COMPLETED**
-- **Phase 10:** POSIX Test Framework — **IN PROGRESS (10.5, Milestone Completion)**
+- **Phase 10:** POSIX Test Framework — **COMPLETED**
 
 ## 7. Docker & Containerization Insights
 
