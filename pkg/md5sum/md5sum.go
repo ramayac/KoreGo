@@ -128,11 +128,13 @@ func runCheck(files []string, jsonMode bool, out io.Writer) int {
 		defer f.Close()
 
 		scanner := bufio.NewScanner(f)
+		hadLines := false
 		for scanner.Scan() {
 			line := scanner.Text()
 			if line == "" || strings.HasPrefix(line, "#") {
 				continue
 			}
+			hadLines = true
 
 			parts := strings.SplitN(line, "  ", 2)
 			if len(parts) != 2 {
@@ -171,6 +173,10 @@ func runCheck(files []string, jsonMode bool, out io.Writer) int {
 				results = append(results, CheckResult{File: targetFile, Status: "FAILED"})
 				exitCode = 1
 			}
+		}
+		if !hadLines {
+			fmt.Fprintf(os.Stderr, "md5sum: %s: no properly formatted checksum lines found\n", checksumFile)
+			exitCode = 1
 		}
 	}
 

@@ -186,6 +186,60 @@ func run(args []string, out io.Writer) int {
 	return 1
 }
 
+// resolveTarPath resolves /../ and /./ in a tar target path for member name normalization.
+// It walks components left to right, maintaining a stack. ".." pops from stack;
+// if stack is empty, the first such ".." forward-cancels the next regular component.
+// Returns the resolved path and the stripped prefix (with trailing /).
+func resolveTarPath(target string) (resolved string, strippedPrefix string) {
+	parts := strings.Split(target, "/")
+	var stack []string
+	var stripParts []string
+	firstEmptyPop := true // first time .. sees an empty stack
+	skipNext := false
+
+	for _, p := range parts {
+		if p == "" || p == "." {
+			stripParts = append(stripParts, p)
+			continue
+		}
+		if p == ".." {
+			if len(stack) > 0 {
+				popped := stack[len(stack)-1]
+				stack = stack[:len(stack)-1]
+				stripParts = append(stripParts, popped)
+			} else if firstEmptyPop {
+				skipNext = true
+				firstEmptyPop = false
+			}
+			stripParts = append(stripParts, p)
+			continue
+		}
+		// Regular component
+		if skipNext {
+			stripParts = append(stripParts, p)
+			skipNext = false
+			continue
+		}
+		stack = append(stack, p)
+	}
+
+	resolved = strings.Join(stack, "/")
+	// Build strip prefix from strip parts.
+	if len(stripParts) > 0 {
+		for _, s := range stripParts {
+			strippedPrefix += s + "/"
+		}
+		// Preserve trailing / only if the original target had one.
+		if !strings.HasSuffix(target, "/") && len(target) > 0 {
+			strippedPrefix = strings.TrimRight(strippedPrefix, "/")
+			if strippedPrefix != "" {
+				strippedPrefix += "/"
+			}
+		}
+	}
+	return
+}
+
 func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, out io.Writer) int {
 	var w io.Writer
 	if archive == "-" {
@@ -216,24 +270,14 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 
 	for _, target := range targets {
 		// Resolve /../ and /./ in target path for member name normalization.
-		cleanTarget := filepath.Clean(target)
-		strippedPrefix := ""
-		if cleanTarget != target && !strings.HasPrefix(target, "/") && !strings.HasPrefix(cleanTarget, "..") {
-			// Find the common suffix between target and cleanTarget.
-			// WalkDir uses target as root, files are target/file.
-			// Member names should be cleanTarget/file.
-			// The stripped prefix is the difference.
-			strippedPrefix = strings.TrimSuffix(target, cleanTarget)
-			if strippedPrefix == target {
-				strippedPrefix = target[:len(target)-len(cleanTarget)]
-			}
-			// Ensure stripped prefix ends with / for the message.
-			if !strings.HasSuffix(strippedPrefix, "/") && strippedPrefix != "" {
-				strippedPrefix += "/"
-			}
+		// Walk component by component, popping from stack on .. and
+		// forward-canceling the next regular component when stack is empty.
+		resolved, strippedPrefix := resolveTarPath(target)
+		if resolved == "" {
+			resolved = "."
 		}
 
-		err := filepath.Walk(target, func(file string, fi os.FileInfo, err error) error {
+		err := filepath.Walk(resolved, func(file string, fi os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -252,14 +296,8 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 				return err
 			}
 
-			// Build member name: strip the prefix path.
+			// Build member name: use the path as walked from resolved base.
 			memberName := filepath.ToSlash(file)
-			if strippedPrefix != "" {
-				if strings.HasPrefix(memberName, target) {
-					// Replace the target prefix with the clean target.
-					memberName = filepath.ToSlash(cleanTarget + memberName[len(target):])
-				}
-			}
 			header.Name = memberName
 
 			if err := tw.WriteHeader(header); err != nil {
@@ -273,7 +311,11 @@ func doCreate(archive string, useGzip, verbose, isJSON bool, targets []string, o
 			})
 
 			if verbose && !isJSON {
-				fmt.Fprintln(out, header.Name)
+				name := header.Name
+				if fi.IsDir() && !strings.HasSuffix(name, "/") {
+					name += "/"
+				}
+				fmt.Fprintln(out, name)
 			}
 
 			if !fi.Mode().IsRegular() {
@@ -434,7 +476,11 @@ func doExtract(archive string, useGzip, verbose, toStdout, overwrite, isJSON boo
 		}
 
 		if verbose && !isJSON {
-			fmt.Fprintln(out, header.Name)
+			name := header.Name
+			if header.Typeflag == tar.TypeDir && !strings.HasSuffix(name, "/") {
+				name += "/"
+			}
+			fmt.Fprintln(out, name)
 		}
 
 		stats = append(stats, TarFileStat{
@@ -675,6 +721,10 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 		})
 
 		if !isJSON {
+			name := header.Name
+			if header.Typeflag == tar.TypeDir && !strings.HasSuffix(name, "/") {
+				name += "/"
+			}
 			if verbose {
 				// BusyBox tar tvf format:
 				//   %s %s/%s%10d %04d-%02d-%02d %02d:%02d:%02d %s[ -> linkname]
@@ -690,14 +740,14 @@ func doList(archive string, useGzip, verbose, isJSON bool, excludePatterns []str
 					size,
 					t.Year(), t.Month(), t.Day(),
 					t.Hour(), t.Minute(), t.Second(),
-					header.Name,
+					name,
 				)
 				if header.Typeflag == tar.TypeSymlink {
 					line += " -> " + header.Linkname
 				}
 				fmt.Fprintln(out, line)
 			} else {
-				fmt.Fprintln(out, header.Name)
+				fmt.Fprintln(out, name)
 			}
 		}
 	}
