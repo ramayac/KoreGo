@@ -2,10 +2,11 @@
 
 KoreGo is a 100% Go-native, POSIX-compliant userland designed to run inside a Docker `FROM scratch` container. It serves as a modern replacement for GNU Coreutils CLI tools by compiling down to a single multicall binary (like BusyBox).
 
-Crucially, KoreGo is designed for **Agentic Runtimes**:
+KoreGo is designed for **Agentic Runtimes**:
 - Every utility supports structured machine-readable output via a `--json` flag.
-- It features a persistent JSON-RPC 2.0 daemon to avoid continuous process-spawning overhead.
-- Includes a fully sandboxed shell interpreter (`mvdan.cc/sh`).
+- A persistent JSON-RPC 2.0 daemon avoids continuous process-spawning overhead.
+- A fully sandboxed shell interpreter (`mvdan.cc/sh`) enables portable scripting.
+- **>90% compatible with the BusyBox test suite** — 479 passed, 1 failed, 10 skipped (97.9% effective pass rate out of 490 tests).
 
 ## Quickstart
 
@@ -38,11 +39,19 @@ make testsuite
 - [POSIX Coverage](wiki/posix_coverage.md)
 
 ## Status
-KoreGo MVP is complete with 50+ POSIX utilities implemented.
 
-**BusyBox Test Suite:** 464 passed, 16 failed, 10 skipped (94.9% pass rate of 488 tests)
+KoreGo MVP is complete with **49 POSIX utilities implemented** (100% of target scope).
 
-**Current Focus:**
-- Finalizing the comprehensive POSIX Testing Framework (Phase 10).
-- Integrating the BusyBox test suite into the CI pipeline.
-- `awk` implementation is deferred to a post-MVP release.
+**BusyBox Test Suite:** 479 passed, 1 failed, 10 skipped (97.9% effective pass rate out of 490 tests)
+
+| Utility | Status | Notes |
+|---------|--------|-------|
+| Core & Env (10) | ✅ | echo, env, pwd, true, false, whoami, hostname, basename, dirname, printenv |
+| Filesystem (11) | ✅ | ls, cat, mkdir, rmdir, rm, cp, mv, touch, ln, stat, readlink |
+| Text (10) | ✅ | head, tail, wc, sort, uniq, tr, cut, tee, grep, sed |
+| System (13) | ✅ | ps, kill, sleep, date, id, groups, chmod, chown, chgrp, df, du, find, xargs |
+| Agent (5) | ✅ | diff, tar, gzip, printf, expr, sha256sum, md5sum |
+
+**All Phases Complete (00–10).** The single remaining test failure (`tar writing into read-only dir`) is umask-dependent and passes with umask 022. All 10 skipped tests require external compression tools (bzip2, xz) or PAX extended header support.
+
+`awk` is deferred to a post-MVP release (see [POSIX FAQ](wiki/posix_faq.md)).

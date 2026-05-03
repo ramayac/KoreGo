@@ -1,9 +1,32 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-02 | **Current BusyBox pass rate:** 97.9% effective (479 passed, 1 failed, 10 skipped)
+> **Last updated:** 2026-05-02 | **BusyBox pass rate:** 97.9% effective (479 passed, 1 failed, 10 skipped out of 490)
 
-This document tracks remaining failing tests, known deviations, and future improvements.
-See [10_posix_framework.md](10_posix_framework.md) for the full Phase 10 task log.
+This is the living document tracking the final remaining test failures, known deviations,
+and future improvements. See [10_posix_framework.md](10_posix_framework.md) for the full
+Phase 10 implementation log.
+
+---
+
+## Final Summary
+
+All planned implementation phases (00–10) are complete. The BusyBox test suite
+is integrated into CI and runs on every push to `main`.
+
+**Final numbers:**
+
+| Metric | Value |
+|--------|-------|
+| Tests running | 490 |
+| Passed | 479 |
+| Failed | 1 (umask-dependent, passes with umask 022) |
+| Skipped | 10 (all external-dependency-gated: bzip2/xz/uudecode/pax) |
+| **Effective pass rate** | **97.9%** |
+| Target utilities implemented | 49/49 (100%) |
+
+99% requires bzip2/xz decompression support for the remaining 10 tar tests.
+The single remaining failure (`tar writing into read-only dir`) is umask-dependent
+(expected 644, gets 664 with umask 002).
 
 ---
 
@@ -180,15 +203,11 @@ These are known differences from GNU/BusyBox behavior that are low-priority or b
 
 | Utility | Deviation | Priority |
 |---------|-----------|----------|
-| `tar` | No support for `--overwrite`, pax headers, xz/bzip2 | Low |
-| `tar` | Hard links and symlink mode not fully verified | Low |
-| `tar` | `tar_with_link_with_size` and `tar_with_prefix_fields` format tests — **FIXED** | — |
-| `tar` | `writing into read-only dir` — umask-dependent (644 vs 664) | Low |
-| `gzip` | No `--keep` / `-k` flag | Low |
+| `tar` | `writing into read-only dir` — umask-dependent (644 vs 664, passes with umask 022) | Low |
+| `tar` | No pax headers, xz/bzip2 decompression (10 skipped tests) | Low |
 | `grep` | No `-P` (Perl regex) — Go regexp ≠ PCRE | By design |
 | `awk` | Not implemented (deferred post-MVP) | Deferred |
 | `patch` | Not implemented | Deferred |
-| `xargs` | `-n1`, `-n2`, `-I` not passing (skipped in suite) | Medium |
 
 ---
 

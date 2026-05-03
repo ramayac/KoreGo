@@ -120,9 +120,15 @@ Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline b
 > **Result:** 31 additional tests passing (454 passed, 19 failed, 15 skipped).
 > **Remaining:** 10 sort advanced features, 3 diff edge cases, 2 tar, 2 xargs, 2 sort glibc.
 
-## Milestone 10
+## Milestone 10 — ✅ COMPLETE (2026-05-02)
 - [x] External test suite integrated into `make test` or `make compliance`.
 - [x] CI pipeline runs the external test suite.
 - [x] `posix_coverage.md` updated with programmatic results.
 - [x] Phase C (`tar -X`, stdin) completed. See [todos.md](todos.md).
 - [x] Phase D (`gzip` compression levels) completed. See [todos.md](todos.md).
+- [x] Phase E (`head -n <negative>`, `cat -v/-e`, `find -maxdepth`) completed.
+- [x] Phase F (Round 2 — full skipped test resolution) completed.
+- [x] Tier 1 (xargs -I, sort -o/-z, grep NUL, md5sum, diff edge cases, head -c) completed.
+- [x] Tier 2 (sort rewrite, diff dir fixes, tar ../ stripping, md5sum empty file) completed.
+
+**Final Result:** 479 passed, 1 failed (umask-dependent), 10 skipped (external deps). 97.9% effective pass rate.
