@@ -1,6 +1,8 @@
 # Phase 11 — Post-MVP Priorities
 
-> **Status:** Planning | **Depends on:** All Phases 00–10 complete
+> **Status:** Complete (11.1–11.3) | **Depends on:** All Phases 00–10 complete
+> 
+> Lessons learned, insights, and gotchas are documented in [11_lessons_learned.md](11_lessons_learned.md).
 
 ---
 

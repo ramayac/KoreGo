@@ -50,13 +50,14 @@ echo "PASS: grep"
 - [ ] `pkg/rmdir` — test empty dir removal, non-empty rejection
 - [ ] `pkg/yes` — test output pattern, `-n` limit (if implemented)
 - [ ] `pkg/daemon` — test daemon startup, socket creation, graceful shutdown
-- [ ] Enforce a minimum coverage gate in CI (suggest 70% per package)
+- [ ] Enforce a minimum coverage gate in CI (suggest 70% per package if possible, with both positive and negative tests)
 
 ---
 
 ## 11a.3 — Shell Interpreter Security Model
 
 **Current state:** `internal/shell/interpreter.go` wraps `mvdan.cc/sh` with a 30s timeout and memory limit (per `wiki/07_agent_features.md`), but there are no tests for these limits and no documentation of the security boundaries.
+This timeout is configurable via `KOREGO_SHELL_TIMEOUT`, but it's not clear to users what the default is or why it exists. Additionally, if the shell is intended to be safe for untrusted input, that should be explicitly stated and tested.
 
 ### Tasks
 
