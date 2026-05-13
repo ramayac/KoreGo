@@ -1,6 +1,7 @@
 package posixjson_test
 
 import (
+	"context"
 	"encoding/json"
 	"net"
 	"os"
@@ -26,7 +27,7 @@ func startDaemon(t *testing.T) string {
 	
 	// Start daemon in background
 	go func() {
-		err := daemon.RunDaemon(socketPath, 2)
+		err := daemon.RunDaemon(socketPath, 2, "")
 		if err != nil {
 			t.Logf("daemon exited: %v", err)
 		}
@@ -96,7 +97,7 @@ func TestStructuredOutputSemantics(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var result ResultWrapper
-			err := c.Call(tt.method, tt.params, &result)
+			err := c.Call(context.Background(), tt.method, tt.params, &result)
 			
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)

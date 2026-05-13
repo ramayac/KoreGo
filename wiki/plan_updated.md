@@ -116,6 +116,7 @@ korego/
 | [07a_awk.md](07a_awk.md) | Awk Deferral Analysis | **DEFERRED** |
 | [posix_coverage.md](posix_coverage.md) | POSIX Compliance Matrix (49 utilities) | **COMPLETED** |
 | [posix_faq.md](posix_faq.md) | POSIX Compliance FAQ | **COMPLETED** |
+| [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 Lessons Learned, Insights & Gotchas | **COMPLETED** |
 
 ---
 

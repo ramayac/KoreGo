@@ -1,55 +1,219 @@
-# JSON-RPC API
+# RPC Client API
 
-The KoreGo daemon implements a standard JSON-RPC 2.0 interface. It listens on a Unix socket (default: `/tmp/korego.sock`).
+Go client library for the KoreGo daemon. Import path: `github.com/ramayac/korego/pkg/client`.
 
-## Request Format
+## Quick Start
 
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "korego.ls",
-  "params": {
-    "sessionId": "abc123def",
-    "path": "/",
-    "flags": ["-l", "-a"]
-  },
-  "id": 1
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "github.com/ramayac/korego/pkg/client"
+)
+
+func main() {
+    c, _ := client.New("/var/run/korego.sock", client.WithPoolSize(4))
+    defer c.Close()
+    ctx := context.Background()
+
+    ping, _ := c.Ping(ctx)
+    fmt.Printf("daemon version: %s\n", ping.Version)
+
+    result, _ := c.Ls(ctx, "/var/log", []string{"-l"})
+    for _, f := range result.Files {
+        fmt.Printf("%s (%d bytes)\n", f.Name, f.Size)
+    }
 }
 ```
 
-## Response Format
+## Connection Lifecycle
 
-```json
-{
-  "jsonrpc": "2.0",
-  "result": { ... structured data ... },
-  "id": 1
-}
+```go
+c, err := client.New("/tmp/korego.sock",
+    client.WithPoolSize(4),
+    client.WithTimeout(30*time.Second),
+    client.WithMaxRetries(2),
+)
+defer c.Close()
 ```
 
-## Methods Catalog
+Connections are pooled and reused. The pool grows up to `poolSize` concurrent connections.
+
+## Core Methods
+
+### Call — generic JSON-RPC
+
+```go
+var result MyType
+err := c.Call(ctx, "korego.ls", params, &result)
+```
+
+### CallRaw — returns raw JSON
+
+```go
+raw, err := c.CallRaw(ctx, "korego.someMethod", params)
+```
+
+### Batch — multiple requests in one round-trip
+
+```go
+reqs := []client.BatchRequest{
+    {Method: "korego.echo", Params: map[string]string{"text": "a"}},
+    {Method: "korego.echo", Params: map[string]string{"text": "b"}},
+}
+resps, err := c.Batch(ctx, reqs)
+```
+
+### Notify — fire-and-forget (no response)
+
+```go
+err := c.Notify(ctx, "korego.true", nil)
+```
+
+## Typed Utility Helpers
+
+### File Inspection
+
+```go
+c.Ls(ctx, "/tmp", []string{"-l"})
+c.Cat(ctx, "/etc/hosts")
+c.Stat(ctx, "/etc/passwd")
+c.Find(ctx, "/etc", []string{"-name", "*.conf"})
+c.Wc(ctx, "/etc/hosts")
+```
+
+### Text Processing
+
+```go
+c.Grep(ctx, "pattern", []string{"file.txt"})
+c.Head(ctx, "/var/log/syslog", 20)
+c.Tail(ctx, "/var/log/syslog", 50)
+c.Sort(ctx, []string{"-r"})
+c.Cut(ctx, []string{"-d:", "-f1,3"})
+c.Uniq(ctx, []string{"-c"})
+```
+
+### File Operations
+
+```go
+c.Cp(ctx, "/src/file", "/dst/file")
+c.Mv(ctx, "/src/file", "/dst/file")
+c.Ln(ctx, "/target", "/link", true) // symbolic
+c.Rm(ctx, []string{"/tmp/foo"}, false, false)
+c.Rmdir(ctx, "/empty/dir")
+c.Mkdir(ctx, "/new/dir", true) // mkdir -p
+c.Touch(ctx, []string{"/tmp/a", "/tmp/b"})
+c.Chmod(ctx, "0644", []string{"/tmp/f"})
+c.Chown(ctx, "root", []string{"/tmp/f"})
+c.Chgrp(ctx, "staff", []string{"/tmp/f"})
+```
+
+### System Info
+
+```go
+c.Date(ctx)
+c.Uname(ctx)
+c.Whoami(ctx)
+c.ID(ctx)
+c.Hostname(ctx)
+c.Pwd(ctx)
+c.Df(ctx, "/")
+c.Du(ctx, "/tmp")
+c.Ps(ctx)
+```
+
+### Environment
+
+```go
+c.Env(ctx, []string{"-i", "FOO=bar"}, nil)
+c.Printenv(ctx, "HOME")
+```
+
+### Text Output
+
+```go
+c.Echo(ctx, "hello world")
+c.Printf(ctx, "hello %s", "world")
+c.Basename(ctx, "/etc/hosts")
+c.Dirname(ctx, "/etc/hosts")
+c.Readlink(ctx, "/proc/self/exe")
+```
+
+### Hash & Archive
+
+```go
+c.Md5sum(ctx, []string{"file.txt"}, false)
+c.Sha256sum(ctx, []string{"file.txt"}, false)
+c.Gzip(ctx, []string{"-c", "file.txt"})
+c.Tar(ctx, []string{"-tf", "archive.tar"})
+```
+
+### Process & Execution
+
+```go
+c.Kill(ctx, "SIGTERM", []int{1234})
+c.Expr(ctx, []string{"1", "+", "1"})
+c.Test(ctx, []string{"-f", "/etc/hosts"})
+c.Xargs(ctx, "echo", []string{})
+```
+
+### Diff
+
+```go
+c.Diff(ctx, "/etc/hosts", "/etc/host.conf")
+```
 
 ### Session Management
-- `korego.session.create`: Creates a new persistent shell/environment session.
-- `korego.session.list`: Lists active sessions.
-- `korego.session.setCwd`: Changes the working directory for a session.
-- `korego.session.destroy`: Terminates a session.
 
-### Execution
-- `korego.shell.exec`: Evaluates a shell script string within a session.
-  - **Params:** `{"script": "echo hello > file.txt"}`
+```go
+s, _ := c.SessionCreate(ctx)
+c.SessionSetCwd(ctx, s.SessionID, "/etc")
+c.SessionList(ctx)
+c.SessionDestroy(ctx, s.SessionID)
+```
 
-### Utilities
-Every utility implemented in `pkg/` is available as `korego.<utility>`.
-- `korego.cat`
-- `korego.ls`
-- `korego.grep`
-- `korego.rm`
-- ...
+### Shell Execution
 
-## Error Codes
-- `-32700`: Parse error (invalid JSON)
-- `-32600`: Invalid Request
-- `-32601`: Method not found
-- `-32602`: Invalid params (or invalid sessionId)
-- `-32000`: Server error / Execution error
+```go
+c.ShellExec(ctx, sessionID, "echo hello && ls -la")
+```
+
+### Ping
+
+```go
+c.Ping(ctx)
+```
+
+## Context Propagation
+
+All methods accept `context.Context`:
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+result, err := c.Ls(ctx, "/tmp", nil)
+```
+
+## Retry Behavior
+
+Transient errors (connection refused, broken pipe, timeout, EOF) retry with exponential backoff:
+
+- Attempt 0: immediate
+- Attempt 1: 100ms
+- Attempt 2: 200ms
+
+Non-retryable errors (RPC errors, invalid params) return immediately.
+
+## Error Handling
+
+RPC errors include standard JSON-RPC 2.0 codes:
+
+| Code | Meaning |
+|------|---------|
+| -32700 | Parse error |
+| -32600 | Invalid Request |
+| -32601 | Method not found |
+| -32602 | Invalid params (includes path traversal) |
+| -32000 | Server error / rate limited |
