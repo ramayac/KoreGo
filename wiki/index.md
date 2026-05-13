@@ -26,6 +26,8 @@
 - [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Phase 11 — Post-MVP Priorities
 - [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 — Lessons Learned, Insights & Gotchas
 - [11a_lower_priority.md](11a_lower_priority.md) | Phase 11a — Lower Priority Improvements
+- [12_road_to_gold.md](12_road_to_gold.md) | Phase 12 — Road to Gold (gap analysis & tasks to reach Gold/Platinum rating)
+- [13_code_audit.md](13_code_audit.md) | Phase 13 — Code Audit: Validated gap analysis with code-level evidence, including 2 gaps not in wiki (macOS build breakage, hardcoded shell timeout)
 
 ## Reference
 
