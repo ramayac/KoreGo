@@ -10,45 +10,45 @@ Implement the 10 text processing utilities. These are critical for agentic pipel
 
 ## Utilities
 
-### 04.1 — `head` / `tail`
+### 04.1 — `head` / `tail` ([pkg/head/](../pkg/head/), [pkg/tail/](../pkg/tail/))
 
 - `head -n 10`, `tail -n 10`, `tail -f` (follow)
 - `--json` → `{"lines":[...], "lineCount": N}`
 
-### 04.2 — `wc`
+### 04.2 — `wc` ([pkg/wc/](../pkg/wc/))
 
 - Flags: `-l` (lines), `-w` (words), `-c` (bytes), `-m` (chars)
 - `--json` → `{"lines":N, "words":N, "bytes":N, "chars":N}`
 - Multiple files: per-file + total
 
-### 04.3 — `sort`
+### 04.3 — `sort` ([pkg/sort/](../pkg/sort/))
 
 - Flags: `-r` (reverse), `-n` (numeric), `-u` (unique), `-k` (key field), `-t` (delimiter)
 - `--json` → `{"lines":[...], "count":N}`
 
-### 04.4 — `uniq`
+### 04.4 — `uniq` ([pkg/uniq/](../pkg/uniq/))
 
 - Flags: `-c` (count), `-d` (duplicates only), `-u` (unique only), `-i` (case insensitive)
 - `--json` → `[{"line":"text", "count":N}]`
 
-### 04.5 — `tr`
+### 04.5 — `tr` ([pkg/tr/](../pkg/tr/))
 
 - `tr 'a-z' 'A-Z'` — character translation
 - Flags: `-d` (delete), `-s` (squeeze), `-c` (complement)
 - No `--json` (streaming character transform)
 
-### 04.6 — `cut`
+### 04.6 — `cut` ([pkg/cut/](../pkg/cut/))
 
 - Flags: `-f` (fields), `-d` (delimiter), `-c` (characters), `-b` (bytes)
 - `--json` → `{"lines":[{"fields":["a","b","c"]}]}`
 
-### 04.7 — `tee`
+### 04.7 — `tee` ([pkg/tee/](../pkg/tee/))
 
 - Read stdin, write to stdout AND files
 - Flags: `-a` (append)
 - No `--json` (passthrough tool)
 
-### 04.8 — `grep`
+### 04.8 — `grep` ([pkg/grep/](../pkg/grep/))
 
 **Second most complex utility.**
 
@@ -56,7 +56,7 @@ Implement the 10 text processing utilities. These are critical for agentic pipel
 - `--json` → `[{"file":"f", "line":N, "text":"match", "matches":["substr"]}]`
 - **Known risk:** Go `regexp` uses RE2 (no backreferences). Document difference from POSIX BRE/ERE.
 
-### 04.9 — `sed`
+### 04.9 — `sed` ([pkg/sed/](../pkg/sed/))
 
 **Most complex text utility.** Implement incrementally:
 1. First: `s/pattern/replacement/flags` (substitute)

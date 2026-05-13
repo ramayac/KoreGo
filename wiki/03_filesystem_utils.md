@@ -12,7 +12,7 @@ Implement the 13 core filesystem utilities with full POSIX flag compatibility an
 
 ## Utilities
 
-### 03.1 — `ls` (`pkg/ls/`)
+### 03.1 — `ls` ([pkg/ls/](../pkg/ls/))
 
 **Most complex utility in the project.** Get it right and everything else follows.
 
@@ -32,7 +32,7 @@ Implement the 13 core filesystem utilities with full POSIX flag compatibility an
 - [x] Exit code 2 on "no such file"
 - [x] Compare output against `/bin/ls` for same directory
 
-### 03.2 — `cat` (`pkg/cat/`)
+### 03.2 — `cat` ([pkg/cat/](../pkg/cat/))
 
 Streaming reader. Flags: `-n` (number lines), `-b` (number non-blank), `-s` (squeeze blank).
 
@@ -44,58 +44,58 @@ Must handle stdin (`cat -` or `cat` with no args) and pipes.
 - [x] `cat file1 file2` concatenates
 - [x] `cat nonexistent` exits 1 with error to stderr
 
-### 03.3 — `mkdir`
+### 03.3 — `mkdir` ([pkg/mkdir/](../pkg/mkdir/))
 
 - [x] `-p` creates parents
 - [x] `-m 0755` sets permissions
 - [x] `--json` → `{"created": ["/path/a", "/path/b"]}`
 - [x] Exit 1 if exists (without `-p`)
 
-### 03.4 — `rmdir`
+### 03.4 — `rmdir` ([pkg/rmdir/](../pkg/rmdir/))
 
 - [x] Removes empty directories only
 - [x] `-p` removes parents
 - [x] Exit 1 if not empty
 
-### 03.5 — `rm`
+### 03.5 — `rm` ([pkg/rm/](../pkg/rm/))
 
 - [x] `-r` recursive, `-f` force, `-v` verbose
 - [x] **Safety: `rm -rf /` REFUSED** without `--no-preserve-root`
 - [x] `--json` → `{"removed": [...], "errors": [...]}`
 
-### 03.6 — `cp`
+### 03.6 — `cp` ([pkg/cp/](../pkg/cp/))
 
 - [x] `-r` recursive, `-p` preserve permissions/timestamps
 - [x] `-i` interactive (prompt before overwrite)
 - [x] `--json` → `{"copied": [{"from":"...", "to":"..."}]}`
 
-### 03.7 — `mv`
+### 03.7 — `mv` ([pkg/mv/](../pkg/mv/))
 
 - [x] Rename or move, `-f` force, `-i` interactive
 - [x] Cross-device move: copy + delete fallback
 - [x] `--json` → `{"moved": [{"from":"...", "to":"..."}]}`
 
-### 03.8 — `touch`
+### 03.8 — `touch` ([pkg/touch/](../pkg/touch/))
 
 - [x] Creates file or updates mtime
 - [x] `-t` specific timestamp, `-r ref` reference file's time
 
-### 03.9 — `ln`
+### 03.9 — `ln` ([pkg/ln/](../pkg/ln/))
 
 - [x] Hard link by default, `-s` for symbolic
 - [x] `-f` force (remove existing)
 
-### 03.10 — `stat`
+### 03.10 — `stat` ([pkg/stat/](../pkg/stat/))
 
 - [x] Full file info display
 - [x] `--json` returns comprehensive struct (mode, size, uid, gid, atime, mtime, ctime, inode, links, blocks)
 
-### 03.11 — `readlink`
+### 03.11 — `readlink` ([pkg/readlink/](../pkg/readlink/))
 
 - [x] Prints symlink target
 - [x] `-f` canonicalize (resolve all symlinks)
 
-### 03.12 — `basename` / `dirname`
+### 03.12 — `basename` / `dirname` ([pkg/basename/](../pkg/basename/), [pkg/dirname/](../pkg/dirname/))
 
 - [x] `basename /path/to/file.txt` → `file.txt`
 - [x] `basename file.txt .txt` → `file` (suffix removal)

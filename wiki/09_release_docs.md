@@ -20,6 +20,14 @@ Automate releases, finalize all documentation, and prepare for public launch.
 
 ### 09.2 — Release Automation (GoReleaser)
 
+**File location:** `.goreleaser.yml` lives at the repo root (not in `.github/`) because
+it is a tool-level config — GoReleaser looks for it there by default, the same way
+`Makefile`, `Dockerfile`, and `go.mod` sit at the root. The `.github/` directory is
+reserved for GitHub-specific features (Actions workflows, issue templates). The
+GoReleaser _invocation_ happens inside `.github/workflows/release.yml`, keeping the
+separation clean: GitHub-specific orchestration in `.github/`, tool configuration at
+the root.
+
 ```yaml
 # .goreleaser.yml
 builds:

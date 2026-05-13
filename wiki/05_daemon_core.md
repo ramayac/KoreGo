@@ -6,7 +6,7 @@
 
 ## Goal
 
-Build the persistent JSON-RPC 2.0 daemon that listens on a Unix socket, routes methods to `pkg/` libraries, and handles concurrency.
+Build the persistent JSON-RPC 2.0 daemon that listens on a Unix socket, routes methods to `pkg/` libraries, and handles concurrency. Source: [pkg/daemon/](../pkg/daemon/), [pkg/client/](../pkg/client/)
 
 ## Tasks
 

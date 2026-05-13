@@ -67,7 +67,7 @@ Implemented in order of complexity, each building on patterns established by ear
 
 ---
 
-#### 07.4.1 — `printf` (Formatted Output) ✅ Complete
+#### 07.4.1 — `printf` ([pkg/printf/](../pkg/printf/)) — Formatted Output ✅ Complete
 
 **Complexity:** Low — pure output, no filesystem interaction.
 
@@ -83,7 +83,7 @@ Implement POSIX `printf` with format specifiers (`%s`, `%d`, `%x`, `%o`, `%f`, `
 
 ---
 
-#### 07.4.2 — `expr` (Integer Arithmetic & String Ops) ✅ Complete
+#### 07.4.2 — `expr` ([pkg/expr/](../pkg/expr/)) — Integer Arithmetic & String Ops ✅ Complete
 
 **Complexity:** Low-Medium — recursive-descent expression parser, no I/O.
 
@@ -103,7 +103,7 @@ Implement POSIX `expr` supporting arithmetic (`+`, `-`, `*`, `/`, `%`), comparis
 
 ---
 
-#### 07.4.3 — `test` / `[` (Conditional Expressions) ✅ Complete
+#### 07.4.3 — `test` / `[` ([pkg/testcmd/](../pkg/testcmd/)) — Conditional Expressions ✅ Complete
 
 **Complexity:** Medium — must handle file tests, string tests, integer comparisons, and compound expressions.
 
@@ -120,7 +120,7 @@ Implement POSIX `test` (and `[` symlink form) for shell conditional evaluation.
 
 ---
 
-#### 07.4.4 — `sha256sum` / `md5sum` (Cryptographic Hashing) ✅ Complete
+#### 07.4.4 — `sha256sum` / `md5sum` ([pkg/sha256sum/](../pkg/sha256sum/), [pkg/md5sum/](../pkg/md5sum/)) — Cryptographic Hashing ✅ Complete
 
 **Complexity:** Medium — streaming file I/O with `crypto/sha256` and `crypto/md5`.
 
@@ -143,7 +143,7 @@ Hash one or more files, output in standard `HASH  FILENAME` format.
 
 ---
 
-#### 07.4.5 — `diff` (File Comparison) ✅ Complete
+#### 07.4.5 — `diff` ([pkg/diff/](../pkg/diff/)) — File Comparison ✅ Complete
 
 **Complexity:** Medium-High — Myers diff algorithm, hunk formatting.
 
@@ -160,7 +160,7 @@ Compare two files line by line, producing unified diff output.
 
 ---
 
-#### 07.4.6 — `gzip` / `gunzip` (Compression) ✅ Complete
+#### 07.4.6 — `gzip` / `gunzip` ([pkg/gzip/](../pkg/gzip/)) — Compression ✅ Complete
 
 **Complexity:** Medium-High — streaming compression with `compress/gzip`, file replacement semantics.
 
@@ -178,7 +178,7 @@ Compress and decompress files using gzip format.
 
 ---
 
-#### 07.4.7 — `tar` (Archive Create/Extract) ✅ Complete
+#### 07.4.7 — `tar` ([pkg/tar/](../pkg/tar/)) — Archive Create/Extract ✅ Complete
 
 **Complexity:** High — recursive directory traversal, multiple archive formats, gzip integration.
 

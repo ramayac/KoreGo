@@ -12,7 +12,7 @@ Build the three shared libraries that every utility depends on. Nothing else can
 
 ## Tasks
 
-### 00.1 — POSIX Flag Parser (`pkg/common/flags.go`)
+### 00.1 — POSIX Flag Parser ([pkg/common/](../pkg/common/))
 
 **Why first:** Every POSIX utility needs `-laR` style grouped short flags. Go's `flag` package doesn't support this. This must exist before any utility can be implemented.
 

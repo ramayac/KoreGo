@@ -81,18 +81,17 @@ Each utility follows this pattern:
 1. **Library** in `pkg/<name>/` — pure function returning a struct
 2. **CLI wrapper** — registered in dispatcher, calls library, uses `Render()`
 
-| Utility | Library Return | `--json` Output | Notes |
-|---------|---------------|-----------------|-------|
-| `echo` | `EchoResult{Text string}` | `{"data":{"text":"hello"}}` | Support `-n` (no newline), `-e` (escapes) |
-| `true` | — | — | Just `os.Exit(0)` |
-| `false` | — | — | Just `os.Exit(1)` |
-| `yes` | — | — | Infinite loop printing "y" or arg. No `--json`. |
-| `whoami` | `WhoamiResult{User string, UID int}` | `{"data":{"user":"root","uid":0}}` | `os/user.Current()` |
-| `hostname` | `HostnameResult{Name string}` | `{"data":{"hostname":"abc"}}` | `os.Hostname()` |
-| `uname` | `UnameResult{Sysname,Node,Release,Version,Machine}` | Full struct | `syscall.Uname()` |
-| `pwd` | `PwdResult{Path string}` | `{"data":{"path":"/home"}}` | `os.Getwd()`. Flag: `-P` (physical, resolve symlinks) |
-| `printenv` | `PrintenvResult{Vars map[string]string}` | Full env map | Specific var: `printenv HOME` |
-| `env` | `EnvResult{Vars map[string]string}` | Full env map | Like printenv but also supports `-i` (ignore environment) |
+| Utility | Package | Library Return | `--json` Output | Notes |
+|---------|---------|---------------|-----------------|-------|
+| `echo` | [pkg/echo/](../pkg/echo/) | `EchoResult{Text string}` | `{"data":{"text":"hello"}}` | Support `-n` (no newline), `-e` (escapes) |
+| `true` / `false` | [pkg/truefalse/](../pkg/truefalse/) | — | — | Just `os.Exit(0)` / `os.Exit(1)` |
+| `yes` | [pkg/yes/](../pkg/yes/) | — | — | Infinite loop printing "y" or arg. No `--json`. |
+| `whoami` | [pkg/whoami/](../pkg/whoami/) | `WhoamiResult{User string, UID int}` | `{"data":{"user":"root","uid":0}}` | `os/user.Current()` |
+| `hostname` | [pkg/hostname/](../pkg/hostname/) | `HostnameResult{Name string}` | `{"data":{"hostname":"abc"}}` | `os.Hostname()` |
+| `uname` | [pkg/uname/](../pkg/uname/) | `UnameResult{Sysname,Node,Release,Version,Machine}` | Full struct | `syscall.Uname()` |
+| `pwd` | [pkg/pwd/](../pkg/pwd/) | `PwdResult{Path string}` | `{"data":{"path":"/home"}}` | `os.Getwd()`. Flag: `-P` (physical, resolve symlinks) |
+| `printenv` | [pkg/printenv/](../pkg/printenv/) | `PrintenvResult{Vars map[string]string}` | Full env map | Specific var: `printenv HOME` |
+| `env` | [pkg/env/](../pkg/env/) | `EnvResult{Vars map[string]string}` | Full env map | Like printenv but also supports `-i` (ignore environment) |
 
 **Per-utility checklist (repeat for each):**
 - [x] `pkg/<name>/<name>.go` — library function
