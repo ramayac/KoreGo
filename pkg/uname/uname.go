@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"syscall"
 
 	"github.com/ramayac/korego/internal/dispatch"
 	"github.com/ramayac/korego/pkg/common"
@@ -43,21 +42,6 @@ func charsToString(chars [65]int8) string {
 		b = append(b, byte(c))
 	}
 	return string(b)
-}
-
-// Run calls syscall.Uname and returns the result.
-func Run() (UnameResult, error) {
-	var u syscall.Utsname
-	if err := syscall.Uname(&u); err != nil {
-		return UnameResult{}, err
-	}
-	return UnameResult{
-		Sysname:  charsToString(u.Sysname),
-		Nodename: charsToString(u.Nodename),
-		Release:  charsToString(u.Release),
-		Version:  charsToString(u.Version),
-		Machine:  charsToString(u.Machine),
-	}, nil
 }
 
 func run(args []string, out io.Writer) int {

@@ -87,7 +87,13 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 		return ExecResult{Stderr: err.Error(), ExitCode: 127}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	timeout := 30 * time.Second
+	if s := os.Getenv("KOREGO_SHELL_TIMEOUT"); s != "" {
+		if d, err := time.ParseDuration(s); err == nil {
+			timeout = d
+		}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	err = runner.Run(ctx, prog)
