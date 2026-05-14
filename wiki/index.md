@@ -29,6 +29,7 @@
 - [12_road_to_gold.md](12_road_to_gold.md) | Phase 12 — Road to Gold (authoritative roadmap: 5 gaps + awk; 12.0–12.4 = Gold, +12.5 = Platinum)
 - [13_code_audit.md](13_code_audit.md) | Phase 13 — Code Audit: Code-level evidence & wiki discrepancies (execution plan merged into Phase 12)
 - [14_agent_architecture.md](14_agent_architecture.md) | Phase 14 — Autonomous Coding Agent (ReAct loop, go-git, LLM provider interface, CLI + RPC)
+- [15_coverage_ramp.md](15_coverage_ramp.md) | Phase 15 — Coverage Ramp: 50% → 75% (test plan for internal/daemon, grep, client, CLI layer)
 
 ## Design
 

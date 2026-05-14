@@ -2,6 +2,15 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-13] plan | 15 — Coverage Ramp plan (50% → 75%)
+
+Created `wiki/15_coverage_ramp.md` — 3-stage plan targeting 75% overall coverage.
+Stage 1 targets `internal/daemon` (3.3%), `cmd/korego` (0%), `pkg/client` (44.9%),
+and `pkg/daemon` (5.9%) to reach 60%. Stage 2 closes the `run()` gap across 24
+utilities via dispatch-call tests with `testdata/` fixtures to reach 68%. Stage 3
+refactors `run()` signatures to accept interfaces, pushing to 75%. Includes per-package
+coverage targets, test fixture conventions, and verification commands.
+
 ## [2026-05-13] implement | 12.3b — Coverage push 46.2% → 50.0%
 
 Added/enhanced unit tests across 15+ packages: sed (31.6%→49.1% — parser/compiler/

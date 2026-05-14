@@ -122,6 +122,7 @@ korego/
 | [12_road_to_gold.md](12_road_to_gold.md) | Road to Gold (5/5 Gold gaps resolved; 60% coverage in progress) | **GOLD ACHIEVED** |
 | [13_code_audit.md](13_code_audit.md) | Code Audit (code-level evidence; 5/6 fixed, only awk open) | **REVIEW** |
 | [14_agent_architecture.md](14_agent_architecture.md) | Autonomous Coding Agent (ReAct loop, go-git, LLM providers, CLI + RPC) | **DESIGN** |
+| [15_coverage_ramp.md](15_coverage_ramp.md) | Coverage Ramp: 50% → 75% (3-stage plan: daemon, CLI layer, refactors) | **PLANNING** |
 
 ---
 
