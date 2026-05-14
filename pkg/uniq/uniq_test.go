@@ -44,3 +44,89 @@ func TestUniqIgnoreCase(t *testing.T) {
 		t.Errorf("got %v", res)
 	}
 }
+
+func TestUniqSkipFields(t *testing.T) {
+	// skipFields=1 on single-word lines consumes everything (no separator),
+	// so all become "" → all duplicates of the first line.
+	in := "hello\nworld\nfoo\n"
+	res, _ := Run(strings.NewReader(in), false, false, false, false, 1, 0, 0)
+	if len(res) != 1 {
+		t.Errorf("expected 1 unique after skipping 1 field (single-word lines), got %d: %v", len(res), res)
+	}
+}
+
+func TestUniqSkipFieldsMultiword(t *testing.T) {
+	in := "hello there\nhello world\n"
+	res, _ := Run(strings.NewReader(in), false, false, false, false, 1, 0, 0)
+	if len(res) != 2 {
+		t.Errorf("expected 2 unique, got %d", len(res))
+	}
+}
+
+func TestUniqSkipChars(t *testing.T) {
+	in := "001a\n002b\n003c\n"
+	res, _ := Run(strings.NewReader(in), false, false, false, false, 0, 3, 0)
+	if len(res) != 3 {
+		t.Errorf("expected 3 unique, got %d", len(res))
+	}
+}
+
+func TestUniqCheckChars(t *testing.T) {
+	in := "abc\nabd\nabe\n"
+	res, _ := Run(strings.NewReader(in), false, false, false, false, 0, 0, 2)
+	if len(res) != 1 {
+		t.Errorf("expected 1 unique (first 2 chars same), got %d", len(res))
+	}
+}
+
+func TestUniqEmpty(t *testing.T) {
+	res, err := Run(strings.NewReader(""), false, false, false, false, 0, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res) != 0 {
+		t.Errorf("expected 0 items for empty input, got %d", len(res))
+	}
+}
+
+func TestUniqSingle(t *testing.T) {
+	in := "hello\n"
+	res, _ := Run(strings.NewReader(in), false, false, false, false, 0, 0, 0)
+	if len(res) != 1 || res[0].Line != "hello" {
+		t.Errorf("got %v", res)
+	}
+}
+
+func TestUniqBothUniqueAndDuplicates(t *testing.T) {
+	in := "a\na\nb\n"
+	res, _ := Run(strings.NewReader(in), false, true, true, false, 0, 0, 0)
+	if len(res) != 0 {
+		t.Errorf("expected 0 items when both -d and -u, got %d", len(res))
+	}
+}
+
+func TestExtractCompareKey(t *testing.T) {
+	cases := []struct {
+		line       string
+		skipFields int
+		skipChars  int
+		checkChars int
+		want       string
+	}{
+		// Skip 1 field: preserves the delimiter, so " world" (space + remainder)
+		{"  hello world", 1, 0, 0, " world"},
+		// Skip 2 fields on a 2-field line: last field consumed entirely → ""
+		{"  hello world", 2, 0, 0, ""},
+		{"abcdef", 0, 2, 0, "cdef"},
+		{"abcdef", 0, 0, 3, "abc"},
+		// Skip 1 field on a single word (no separator) → empty
+		{"  abc", 1, 2, 0, ""},
+	}
+	for _, c := range cases {
+		got := extractCompareKey(c.line, c.skipFields, c.skipChars, c.checkChars)
+		if got != c.want {
+			t.Errorf("extractCompareKey(%q, %d, %d, %d) = %q, want %q",
+				c.line, c.skipFields, c.skipChars, c.checkChars, got, c.want)
+		}
+	}
+}

@@ -35,8 +35,9 @@ jobs:
           CGO_ENABLED=0 go test -coverprofile=coverage.out $(go list ./pkg/... ./internal/... | grep -v /cmd/)
           COVERED=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | sed 's/%//')
           echo "Overall coverage: ${COVERED}%"
-          if (( $(echo "$COVERED < 50" | bc -l) )); then
-            echo "::warning::Coverage ${COVERED}% is below 50% threshold"
+          if (( $(echo "$COVERED < 45" | bc -l) )); then
+            echo "::error::Coverage ${COVERED}% is below 45% threshold"
+            exit 1
           fi
 
       - name: Build binary

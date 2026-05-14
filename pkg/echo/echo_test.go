@@ -1,6 +1,7 @@
 package echo
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -19,7 +20,6 @@ func TestRunEscapes(t *testing.T) {
 }
 
 func TestRunNoEscapes(t *testing.T) {
-	// Without -e, backslash sequences should NOT be expanded.
 	result := Run(false, false, []string{`hello\nworld`})
 	if result.Text != `hello\nworld` {
 		t.Errorf("got %q, want literal backslash-n", result.Text)
@@ -37,5 +37,73 @@ func TestRunMultipleEscapes(t *testing.T) {
 	result := Run(false, true, []string{`a\tb`})
 	if result.Text != "a\tb" {
 		t.Errorf("got %q, want tab", result.Text)
+	}
+}
+
+func TestProcessEscapes(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		{``, ``},
+		{`hello`, `hello`},
+		{`\n`, "\n"},
+		{`\t`, "\t"},
+		{`\r`, "\r"},
+		{`\\`, "\\"},
+		{`\a`, "\a"},
+		{`\b`, "\b"},
+		{`\v`, "\v"},
+		{`\n\t\a`, "\n\t\a"},
+		{`\x41`, "A"},        // hex
+		{`\x41\x42`, "AB"},   // double hex
+		{`\nhello\tworld`, "\nhello\tworld"},
+		{`text\n`, "text\n"},
+		{`\x`, "\\x"},
+		{`\xG`, "\\xG"},
+	}
+	for _, c := range cases {
+		got := processEscapes(c.in)
+		if got != c.want {
+			t.Errorf("processEscapes(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+func TestRunNoNewline(t *testing.T) {
+	result := Run(true, false, []string{"hello"})
+	if result.Text != "hello" {
+		t.Errorf("got %q, want %q", result.Text, "hello")
+	}
+}
+
+func TestRunSingleWord(t *testing.T) {
+	result := Run(false, false, []string{"hello"})
+	if result.Text != "hello" {
+		t.Errorf("got %q, want %q", result.Text, "hello")
+	}
+}
+
+func TestProcessEscapesOctal(t *testing.T) {
+	got := processEscapes(`\0`)
+	if got != "\x00" {
+		t.Errorf("expected NUL byte, got %q (%v)", got, []byte(got))
+	}
+}
+
+func TestProcessEscapesLiteralBackslash(t *testing.T) {
+	got := processEscapes(`\q`)
+	if got != `\q` {
+		t.Errorf("expected literal backslash-q, got %q", got)
+	}
+}
+
+// Verify strings.Builder usage pattern works identically for multiple words
+func TestRunMultiWordEscapes(t *testing.T) {
+	result := Run(false, true, []string{`line1\nline2`, `line3`})
+	if !strings.Contains(result.Text, "line1\nline2") {
+		t.Errorf("expected line1\\nline2, got %q", result.Text)
+	}
+	if !strings.HasSuffix(result.Text, "line3") {
+		t.Errorf("expected to end with line3, got %q", result.Text)
 	}
 }

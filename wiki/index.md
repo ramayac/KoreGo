@@ -29,6 +29,10 @@
 - [12_road_to_gold.md](12_road_to_gold.md) | Phase 12 — Road to Gold (authoritative roadmap: 5 gaps + awk; 12.0–12.4 = Gold, +12.5 = Platinum)
 - [13_code_audit.md](13_code_audit.md) | Phase 13 — Code Audit: Code-level evidence & wiki discrepancies (execution plan merged into Phase 12)
 
+## Design
+
+- [agent_architecture.md](agent_architecture.md) | Agent Architecture — Autonomous coding agent design (ReAct loop, go-git, LLM provider interface, CLI + RPC)
+
 ## Reference
 
 - [posix_coverage.md](posix_coverage.md) | POSIX Compliance Matrix (49 utilities)

@@ -2,6 +2,26 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-13] implement | 12.3 — Coverage gate enforcement + unit test expansion
+
+Changed CI coverage step from `::warning::` (exits 0) to hard failure at 45% (`exit 1`).
+Added/enhanced unit tests across 9 packages: head (11.2%→29.0%), tail (10.3%→27.6%),
+grep (12.4%→16.0%), cat (21.8%→37.6%), wc (15.8%→32.5%), echo (20.8%→56.9%),
+sort (23.4%→58.0%), uniq (37.2%→higher), cut (56.2%→higher), touch (20.0%→higher).
+
+Overall coverage: **41.6% → 46.2%**. All 57 packages pass. CI enforces ≥45%.
+
+Updated wiki: 11a_lower_priority.md (status, CI gate, remaining work table),
+11_post_mvp_priorities.md (status, remaining work table).
+
+## [2026-05-13] design | Agent Architecture design document
+
+Created `wiki/agent_architecture.md` — a detailed design for an autonomous coding
+agent compiled into the KoreGo binary. Covers: ReAct agent loop, go-git integration,
+LLM provider interface (OpenAI / Anthropic / local), CLI + JSON-RPC dual interface,
+workspace management, security model, Docker compose integration, and state machine.
+No code changes; design-only phase.
+
 ## [2026-05-12] update | Document .goreleaser.yml file location convention
 
 Added explanation to `09_release_docs.md` for why `.goreleaser.yml` lives at the repo

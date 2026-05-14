@@ -9,6 +9,11 @@ func TestBasic(t *testing.T) {
 		{"/path/to/dir/", "", "dir"},
 		{"file", "", "file"},
 		{"/", "", "/"},
+		{"///", "", "/"},
+		{".hidden", "", ".hidden"},
+		{"file.tar.gz", ".gz", "file.tar"},
+		{"/usr/", "", "usr"},
+		{"noext", ".ext", "noext"},
 	}
 	for _, c := range cases {
 		got := Run(c.path, c.suffix).Result

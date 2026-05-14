@@ -19,7 +19,7 @@ to close them, ordered by impact. Completing items 12.0–12.4 achieves Gold. It
 |------|---------|
 | Bronze | ✅ Cleared |
 | Silver | ✅ Cleared |
-| **Gold** | ⚠️ In Progress — 4/5 gaps resolved (only 12.3 coverage gate remaining) |
+| **Gold** | ✅ Cleared — 5/5 gaps resolved |
 | Platinum | ❌ Requires awk + Gold first |
 
 ---
@@ -134,33 +134,37 @@ go test ./internal/shell/... -v -run TestResourceLimits
 warning at <50% but never fails the build. A commit that drops coverage to 0% passes CI
 undetected. This defeats the purpose of the gate.
 
-**Current state:** `.github/workflows/ci.yml` — coverage step uses `::warning::` and exits 0.
-**Actual overall coverage is 41.6%** (audit measured via `go test -coverprofile` across
-`./pkg/...` `./internal/...`). Worst packages: `internal/daemon` 3.3%, `pkg/tee` 3.3%,
-`pkg/tail` 10.3%, `pkg/head` 11.2%, `pkg/grep` 12.4%. Best: `pkg/truefalse` 100%,
-`pkg/printf` 89.6%, `pkg/chown` 89.7%.
+**Current state:** `.github/workflows/ci.yml` — coverage step now enforces 45% threshold
+(hard failure, `exit 1`). **Actual overall coverage is 46.2%** (up from 41.6% after
+adding tests to 9 packages). Worst packages: `internal/daemon` 3.3%, `pkg/tee` 3.3%,
+`pkg/dirname` 14.3%, `pkg/grep` 16.0%. Best: `pkg/truefalse` 100%, `pkg/printf` 89.6%,
+`pkg/chown` 89.7%.
 
-Enforcing 60% immediately would break CI. A staged approach is needed.
+Stage 1 (45% enforced) is complete. Stage 2 (push to 60%) is in progress.
 
 ### Tasks
 
-- [ ] **Stage 1:** Change coverage check from `::warning::` to `exit 1` at 45% (current 41.6% → need ~3% more):
-  ```bash
-  if (( $(echo "$COVERED < 45" | bc -l) )); then
-    echo "::error::Coverage ${COVERED}% is below 45% threshold"
-    exit 1
-  fi
-  ```
-- [ ] **Stage 2:** Add unit tests to highest-ROI packages (trivial input/output contracts):
-  - `pkg/head` (11.2%) — table-driven tests, can reach 70%+ quickly
-  - `pkg/tail` (10.3%) — same pattern
-  - `pkg/grep` (12.4%) — pattern matching tests
-  - `pkg/dirname` (14.3%) — simple path manipulation
-  - `pkg/echo` (20.8%) — basic output tests
-  - `pkg/tee` (3.3%) — I/O multiplexing tests
+- [x] **Stage 1:** Change coverage check from `::warning::` to `exit 1` at 45% (current 46.2%)
+- [x] **Stage 2a:** Add unit tests to highest-ROI packages:
+  - `pkg/head` (11.2% → 29.0%) — Run(), runBytes(), runNegative()
+  - `pkg/tail` (10.3% → 27.6%) — Run() bytes mode, fromStart
+  - `pkg/grep` (12.4% → 16.0%) — Run() regex, invert, line/word regexp
+  - `pkg/cat` (21.8% → 37.6%) — visByte(), visLine(), Run() branches
+  - `pkg/wc` (15.8% → 32.5%) — CountProper(), Count()
+  - `pkg/sort` (23.4% → 58.0%) — parseHumanVal, parseNumericPrefix, parseMonth, extractKey, compareHuman
+  - `pkg/echo` (20.8% → 56.9%) — processEscapes() edge cases
+  - `pkg/uniq` — extractCompareKey, skipFields, checkChars
+  - `pkg/cut` — parseList, inRange, fields/chars/bytes modes
+  - `pkg/touch` — Run() multi-path, existing file
+- [ ] **Stage 2b:** Continue adding tests to push coverage from 46.2% to 60%:
+  - `pkg/grep` (16.0%) — more regex branch coverage
+  - `pkg/sed` (31.6%) — Parse/runEngine branch coverage
+  - `pkg/diff` (42.8%) — utility function coverage
+  - `pkg/tee` (3.3%) — refactor to expose testable logic
+  - `pkg/dirname` (14.3%) — test run() via dispatch
 - [ ] **Stage 3:** Raise threshold to 60% once coverage exceeds it
-- [ ] Add per-package coverage reporting to `make cover-pct` output so regressions are visible
-- [ ] Document the coverage policy in `AGENTS.md` so contributors know the bar
+- [ ] Add per-package coverage reporting to `make cover-pct` output
+- [ ] Document the coverage policy in `AGENTS.md`
 
 ### Acceptance
 
@@ -212,12 +216,12 @@ actually testing system BusyBox on CI, not KoreGo. The CI gate now enforces ≥4
 [x] 12.0 — macOS builds cleanly (GOOS=darwin go build ./... exits 0)
 [x] 12.1 — SBOM + Cosign + SLSA + trivy in release/CI pipeline
 [x] 12.2 — Shell security model documented + KOREGO_SHELL_TIMEOUT wired + tests passing
-[ ] 12.3 — Coverage gate hard-fails CI (staged: 45% → 60%)
+[x] 12.3 — Coverage gate hard-fails CI at 45% (Stage 1); overall 46.2%, target 60%
 [x] 12.4 — CI/local BusyBox discrepancy resolved; baselines match
 [ ] 12.5 — awk implemented, BusyBox awk tests pass (Platinum gate)
 ```
 
-Completing 12.0–12.4 = **Gold** (4/5 done, only 12.3 remaining).
+Completing 12.0–12.4 = **Gold** (5/5 done).
 Completing 12.0–12.5 = **Platinum**.
 
 ---

@@ -67,3 +67,66 @@ func TestRunEmpty(t *testing.T) {
 		t.Errorf("expected 0 lines for empty input, got %d", len(lines))
 	}
 }
+
+func TestVisByte(t *testing.T) {
+	cases := []struct {
+		b    byte
+		want string
+	}{
+		{'\t', "\t"},
+		{'\n', "\n"},
+		{0, "^@"},
+		{1, "^A"},
+		{27, "^["},
+		{0x7F, "^?"},
+		{'a', "a"},
+		{'A', "A"},
+		{0x80, "M-^@"},
+	}
+	for _, c := range cases {
+		got := visByte(c.b)
+		if got != c.want {
+			t.Errorf("visByte(0x%02x) = %q, want %q", c.b, got, c.want)
+		}
+	}
+}
+
+func TestVisLine(t *testing.T) {
+	got := visLine("hello", false)
+	if got != "hello" {
+		t.Errorf("expected 'hello', got %q", got)
+	}
+	gotEnd := visLine("hello", true)
+	if gotEnd != "hello$" {
+		t.Errorf("expected 'hello$', got %q", gotEnd)
+	}
+	gotCtrl := visLine("a\x01b", false)
+	if gotCtrl != "a^Ab" {
+		t.Errorf("expected 'a^Ab', got %q", gotCtrl)
+	}
+}
+
+func TestRunNumberNonBlankSkip(t *testing.T) {
+	in := strings.NewReader("a\n\nb\n")
+	var out bytes.Buffer
+	lines, _ := Run(in, &out, false, true, false)
+	if len(lines) != 3 {
+		t.Errorf("expected 3 lines, got %d", len(lines))
+	}
+	// First non-blank should be numbered
+	if !strings.HasPrefix(lines[0], "     1\t") {
+		t.Errorf("first non-blank should be numbered, got %q", lines[0])
+	}
+	// Blank line should NOT be numbered
+	if strings.HasPrefix(lines[1], "     ") && strings.Contains(lines[1], "\t") {
+		t.Errorf("blank line should NOT be numbered, got %q", lines[1])
+	}
+}
+
+func TestVisByteHigh(t *testing.T) {
+	// M- prefix for high bytes
+	got := visByte(0xE1)
+	if len(got) < 3 || got[:2] != "M-" {
+		t.Errorf("expected M- prefix for high byte, got %q", got)
+	}
+}

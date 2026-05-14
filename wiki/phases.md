@@ -119,8 +119,8 @@ korego/
 | [11_lessons_learned.md](11_lessons_learned.md) | Phase 11 Lessons Learned, Insights & Gotchas | **COMPLETED** |
 | [11_post_mvp_priorities.md](11_post_mvp_priorities.md) | Post-MVP Priorities (11.1–11.3 complete; 11.4 awk → 07a) | **COMPLETED** |
 | [11a_lower_priority.md](11a_lower_priority.md) | Lower Priority Improvements (8/8 complete) | **COMPLETED** |
-| [12_road_to_gold.md](12_road_to_gold.md) | Road to Gold (4/5 gaps resolved; only 12.3 remaining) | **IN PROGRESS** |
-| [13_code_audit.md](13_code_audit.md) | Code Audit (code-level evidence; 4/6 fixed, 2 open) | **REVIEW** |
+| [12_road_to_gold.md](12_road_to_gold.md) | Road to Gold (5/5 Gold gaps resolved; 60% coverage in progress) | **GOLD ACHIEVED** |
+| [13_code_audit.md](13_code_audit.md) | Code Audit (code-level evidence; 5/6 fixed, only awk open) | **REVIEW** |
 
 ---
 

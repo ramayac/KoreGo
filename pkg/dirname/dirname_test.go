@@ -8,6 +8,12 @@ func TestBasic(t *testing.T) {
 		{"/path/to/dir", "/path/to"},
 		{"file.txt", "."},
 		{"/", "/"},
+		{"///", "/"},
+		{"/usr", "/"},
+		{"/usr/", "/usr"},
+		{"./file.txt", "."},
+		{"dir/", "dir"},
+		{"", "."},
 	}
 	for _, c := range cases {
 		got := Run(c.path).Result

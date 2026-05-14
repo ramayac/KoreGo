@@ -1,6 +1,6 @@
 # Phase 11 — Post-MVP Priorities
 
-> **Status:** Complete (11.1–11.3) | **Depends on:** All Phases 00–10 complete
+> **Status:** 3/4 complete (11.1–11.3 done; 11.4 awk deferred) | **Date:** 2026-05-13
 > 
 > Lessons learned, insights, and gotchas are documented in [11_lessons_learned.md](11_lessons_learned.md).
 
@@ -99,6 +99,13 @@ fmt.Println(result.Files[0].Name)
 - [x] `pkg/client` supports connection pooling and typed helper methods (42 utilities)
 - [ ] `awk` implemented (see [07a_awk.md](07a_awk.md)) — passes BusyBox awk tests, listed as complete in `posix_coverage.md`
 
+## Remaining Work
+
+| # | Task | Status | Where Tracked |
+|---|------|--------|---------------|
+| 11.4 | `awk` implementation (Platinum gate) | ⏳ Deferred | [07a_awk.md](07a_awk.md), [12_road_to_gold.md](12_road_to_gold.md) (12.5) |
+| 12.3 | Coverage gate → 60% (currently 46.1%, CI enforces 45%) | ⏳ In Progress | [12_road_to_gold.md](12_road_to_gold.md) |
+
 ## How to Verify
 
 ```bash
@@ -110,6 +117,9 @@ make example-agent
 
 # Client library
 go test ./pkg/client/... -v
+
+# Coverage
+make cover-pct   # must be >=45% (CI enforces this); target 60%
 
 # awk (see 07a_awk.md for full acceptance criteria)
 echo "hello world" | ./korego awk '{print $1}'
