@@ -135,17 +135,16 @@ warning at <50% but never fails the build. A commit that drops coverage to 0% pa
 undetected. This defeats the purpose of the gate.
 
 **Current state:** `.github/workflows/ci.yml` — coverage step now enforces 45% threshold
-(hard failure, `exit 1`). **Actual overall coverage is 46.2%** (up from 41.6% after
-adding tests to 9 packages). Worst packages: `internal/daemon` 3.3%, `pkg/tee` 3.3%,
-`pkg/dirname` 14.3%, `pkg/grep` 16.0%. Best: `pkg/truefalse` 100%, `pkg/printf` 89.6%,
-`pkg/chown` 89.7%.
+(hard failure, `exit 1`). **Actual overall coverage is 50.0%** (up from 41.6%). Worst
+packages: `internal/daemon` 3.3%, `pkg/tee` 3.3%, `pkg/daemon` 5.9%. Best: `pkg/truefalse`
+100%, `pkg/printf` 89.6%, `pkg/chown` 89.7%.
 
-Stage 1 (45% enforced) is complete. Stage 2 (push to 60%) is in progress.
+Stage 1 (45% enforced) is complete. Stage 2 (push to 60%) is in progress (50.0% reached).
 
 ### Tasks
 
-- [x] **Stage 1:** Change coverage check from `::warning::` to `exit 1` at 45% (current 46.2%)
-- [x] **Stage 2a:** Add unit tests to highest-ROI packages:
+- [x] **Stage 1:** Change coverage check from `::warning::` to `exit 1` at 45% (current 50.0%)
+- [x] **Stage 2a:** Add unit tests to highest-ROI packages (50.0% reached):
   - `pkg/head` (11.2% → 29.0%) — Run(), runBytes(), runNegative()
   - `pkg/tail` (10.3% → 27.6%) — Run() bytes mode, fromStart
   - `pkg/grep` (12.4% → 16.0%) — Run() regex, invert, line/word regexp

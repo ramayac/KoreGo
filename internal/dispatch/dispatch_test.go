@@ -59,3 +59,14 @@ func TestListAllSorted(t *testing.T) {
 		t.Errorf("not sorted: %v", all)
 	}
 }
+
+func TestListAllEmpty(t *testing.T) {
+	old := registry
+	registry = map[string]Command{}
+	defer func() { registry = old }()
+
+	all := ListAll()
+	if len(all) != 0 {
+		t.Errorf("expected 0 commands, got %d", len(all))
+	}
+}

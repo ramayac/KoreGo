@@ -1,6 +1,9 @@
 package uname
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+)
 
 func TestRunReturnsFields(t *testing.T) {
 	result, err := Run()
@@ -12,5 +15,24 @@ func TestRunReturnsFields(t *testing.T) {
 	}
 	if result.Machine == "" {
 		t.Error("expected non-empty Machine")
+	}
+}
+
+func TestRunCLI(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{}, &buf)
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+}
+
+func TestRunCLIJSON(t *testing.T) {
+	var buf bytes.Buffer
+	code := run([]string{"-j"}, &buf)
+	if code != 0 {
+		t.Errorf("expected exit 0, got %d", code)
+	}
+	if buf.Len() == 0 {
+		t.Error("expected JSON output")
 	}
 }

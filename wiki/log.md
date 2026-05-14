@@ -2,6 +2,15 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-13] implement | 12.3b — Coverage push 46.2% → 50.0%
+
+Added/enhanced unit tests across 15+ packages: sed (31.6%→49.1% — parser/compiler/
+BRE tests), diff (42.8%→52.9% — Diff, normalizeSpace, filterBlankLines, edge cases),
+grep (16.0%→16.5% — regex/invert/line-regex bounds), find (buildExecArgs),
+dirname/basename/hostname/whoami/uname (run() CLI tests), dispatch (ListAll empty).
+
+Overall coverage: **41.6% → 50.0%** (+8.4%). All 57 packages pass. CI enforces ≥45%.
+
 ## [2026-05-13] implement | 12.3 — Coverage gate enforcement + unit test expansion
 
 Changed CI coverage step from `::warning::` (exits 0) to hard failure at 45% (`exit 1`).
