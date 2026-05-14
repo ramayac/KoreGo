@@ -3,7 +3,7 @@
 KoreGo is a POSIX-compliant userland implemented as a single, statically-linked Go binary. It is designed to function both as a traditional command-line utility (multicall binary) and as an interactive, persistent JSON-RPC daemon for AI agents.
 
 ## Core Design Principles
-1. **Zero External Dependencies**: Beyond the standard library and a lightweight shell interpreter (`mvdan.cc/sh`), KoreGo depends on nothing.
+1. **Zero External Dependencies**: Beyond the standard library and a lightweight shell interpreter (`mvdan.cc/sh`), KoreGo depends on nothing. (Phase 14 will introduce `go-git` as an additional dependency for agent-based git operations.)
 2. **Dual-Mode Execution**:
    - **CLI Mode**: Standard POSIX standard output.
    - **JSON Mode**: Executed via daemon or with `--json` flag, rendering outputs as structured JSON payloads.
@@ -32,4 +32,5 @@ graph TD
 - `internal/daemon`: JSON-RPC 2.0 persistent server.
 - `internal/shell`: Sandbox for script execution (`mvdan.cc/sh`).
 - `pkg/common`: Shared tools (flags parsing, security, limits).
+- `pkg/agent`: Autonomous coding agent (Phase 14, design stage). ReAct loop, LLM integration, go-git ops.
 - `pkg/*`: Individual POSIX utility implementations.

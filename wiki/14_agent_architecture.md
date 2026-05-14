@@ -1,6 +1,6 @@
-# Agent Architecture — Autonomous Coding Agent
+# Phase 14 — Autonomous Coding Agent
 
-> **Status:** Design | **Depends on:** Phase 05 (daemon), Phase 07 (sessions, shell)
+> **Status:** Design | **Depends on:** Phase 05 (daemon), Phase 07 (sessions, shell) | **Milestone:** Phase 14
 
 ---
 

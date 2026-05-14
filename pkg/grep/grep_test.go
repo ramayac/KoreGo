@@ -103,3 +103,81 @@ func TestGrepLineNumbers(t *testing.T) {
 		t.Errorf("expected line 4, got %d", matches[1].Line)
 	}
 }
+
+func TestGrepRegexOnlyMatching(t *testing.T) {
+	in := "hello world\n"
+	re := regexp.MustCompile(`wo\w+`)
+	matches, _ := Run(strings.NewReader(in), "file", re, nil, false, false, false)
+	if len(matches) != 1 {
+		t.Fatalf("expected 1 match")
+	}
+	if len(matches[0].Matches) != 1 || matches[0].Matches[0] != "world" {
+		t.Errorf("expected capture 'world', got %v", matches[0].Matches)
+	}
+}
+
+func TestGrepFixedIgnoreCase(t *testing.T) {
+	in := "HELLO\nworld\n"
+	re := regexp.MustCompile(`(?i)hello`)
+	matches, _ := Run(strings.NewReader(in), "file", re, nil, false, false, false)
+	if len(matches) != 1 {
+		t.Errorf("expected 1 case-insensitive match, got %d", len(matches))
+	}
+}
+
+func TestGrepInvertRegex(t *testing.T) {
+	in := "hello\nworld\n"
+	re := regexp.MustCompile(`hello`)
+	matches, _ := Run(strings.NewReader(in), "file", re, nil, true, false, false)
+	if len(matches) != 1 || matches[0].Text != "world" {
+		t.Errorf("expected 1 inverted match 'world', got %v", matches)
+	}
+}
+
+func TestGrepInvertWithMultipleMatches(t *testing.T) {
+	in := "a\nb\nc\na\n"
+	re := regexp.MustCompile(`a`)
+	matches, _ := Run(strings.NewReader(in), "file", re, nil, true, false, false)
+	if len(matches) != 2 {
+		t.Errorf("expected 2 non-a matches, got %d", len(matches))
+	}
+}
+
+func TestGrepLineRegexpFixedMode(t *testing.T) {
+	in := "exact\nnot exact\n"
+	matches, _ := Run(strings.NewReader(in), "file", nil, []string{"exact"}, false, true, true)
+	if len(matches) != 1 {
+		t.Errorf("expected 1 exact line match, got %d", len(matches))
+	}
+}
+
+func TestGrepMultipleMatchesPerLine(t *testing.T) {
+	re := regexp.MustCompile(`a`)
+	in := "banana\n"
+	matches, _ := Run(strings.NewReader(in), "file", re, nil, false, false, false)
+	if len(matches) != 1 {
+		t.Fatalf("expected 1 line match")
+	}
+	if len(matches[0].Matches) != 3 {
+		t.Errorf("expected 3 'a' on line, got %d matches: %v", len(matches[0].Matches), matches[0].Matches)
+	}
+}
+
+func TestGrepFixedFullLineMatch(t *testing.T) {
+	in := "hello\nhello world\n"
+	matches, _ := Run(strings.NewReader(in), "file", nil, []string{"hello"}, false, true, true)
+	if len(matches) != 1 {
+		t.Errorf("expected 1 exact whole-line match, got %d", len(matches))
+	}
+}
+
+func TestGrepFilename(t *testing.T) {
+	in := "hello\n"
+	matches, _ := Run(strings.NewReader(in), "/path/to/file.txt", nil, []string{"hello"}, false, true, false)
+	if len(matches) != 1 {
+		t.Fatalf("expected 1 match")
+	}
+	if matches[0].File != "/path/to/file.txt" {
+		t.Errorf("expected filename, got %q", matches[0].File)
+	}
+}

@@ -103,3 +103,142 @@ func TestRunCLIJSON(t *testing.T) {
 		t.Errorf("expected differ true")
 	}
 }
+
+func TestDiffEmpty(t *testing.T) {
+	script := Diff(nil, nil)
+	if len(script) != 0 {
+		t.Errorf("expected 0 items for empty diff, got %d", len(script))
+	}
+}
+
+func TestDiffInsert(t *testing.T) {
+	script := Diff([]string{"a"}, []string{"a", "b"})
+	if len(script) != 2 {
+		t.Errorf("expected 2 items, got %d", len(script))
+	}
+	if script[0].op != opEq || script[1].op != opIns {
+		t.Errorf("expected eq+ins, got %v", script)
+	}
+}
+
+func TestDiffDelete(t *testing.T) {
+	script := Diff([]string{"a", "b"}, []string{"a"})
+	if len(script) != 2 {
+		t.Errorf("expected 2 items, got %d", len(script))
+	}
+	if script[0].op != opEq || script[1].op != opDel {
+		t.Errorf("expected eq+del, got %v", script)
+	}
+}
+
+func TestDiffAllDifferent(t *testing.T) {
+	script := Diff([]string{"a"}, []string{"b"})
+	hasDel := false
+	hasIns := false
+	for _, item := range script {
+		if item.op == opDel {
+			hasDel = true
+		}
+		if item.op == opIns {
+			hasIns = true
+		}
+	}
+	if !hasDel || !hasIns {
+		t.Errorf("expected del+ins for all-different, got %v", script)
+	}
+}
+
+func TestNormalizeSpace(t *testing.T) {
+	lines := []string{"  hello   world  ", "\ttabs\there\t"}
+	got := normalizeSpace(lines)
+	if got[0] != " hello world" {
+		t.Errorf("got %q", got[0])
+	}
+	if got[1] != " tabs here" {
+		t.Errorf("got %q", got[1])
+	}
+}
+
+func TestFilterBlankLines(t *testing.T) {
+	script := []diffItem{
+		{op: opDel, text: ""},
+		{op: opIns, text: ""},
+		{op: opEq, text: "real"},
+	}
+	got := filterBlankLineChanges(script)
+	if got[0].op != opIgnoredDel || got[1].op != opIgnoredIns {
+		t.Errorf("blank line changes should be ignored, got %v", got)
+	}
+}
+
+func TestGenerateDiffIgnoreSpace(t *testing.T) {
+	differ, _ := GenerateDiff("hello   world", "hello world", 3, true, false)
+	if differ {
+		t.Error("expected no diff when ignoring whitespace changes")
+	}
+}
+
+func TestGenerateDiffIgnoreBlankLines(t *testing.T) {
+	differ, _ := GenerateDiff("a\n\n\nb", "a\nb", 3, false, true)
+	if differ {
+		t.Error("expected no diff when ignoring blank lines")
+	}
+}
+
+func TestGenerateDiffEmptyVsContent(t *testing.T) {
+	differ, hunks := GenerateDiff("", "hello\n", 3, false, false)
+	if !differ {
+		t.Error("expected differ=true for empty vs content")
+	}
+	if len(hunks) != 1 {
+		t.Errorf("expected 1 hunk, got %d", len(hunks))
+	}
+}
+
+func TestGenerateDiffContentVsEmpty(t *testing.T) {
+	differ, hunks := GenerateDiff("hello\n", "", 3, false, false)
+	if !differ {
+		t.Error("expected differ=true for content vs empty")
+	}
+	if len(hunks) != 1 {
+		t.Errorf("expected 1 hunk, got %d", len(hunks))
+	}
+}
+
+func TestJoinPreserving(t *testing.T) {
+	if got := joinPreserving("dir/", "file"); got != "dir/file" {
+		t.Errorf("got %q", got)
+	}
+	if got := joinPreserving("dir", "file"); got != "dir/file" {
+		t.Errorf("got %q", got)
+	}
+}
+
+func TestMinMax(t *testing.T) {
+	if min(3, 5) != 3 {
+		t.Error("min(3,5) should be 3")
+	}
+	if max(3, 5) != 5 {
+		t.Error("max(3,5) should be 5")
+	}
+}
+
+func TestGenerateDiffNoContext(t *testing.T) {
+	differ, hunks := GenerateDiff("a\nb\nc", "a\nx\nc", 0, false, false)
+	if !differ {
+		t.Error("expected differ")
+	}
+	if len(hunks) != 1 {
+		t.Errorf("expected 1 hunk, got %d", len(hunks))
+	}
+}
+
+func TestGenerateDiffMultiHunk(t *testing.T) {
+	differ, hunks := GenerateDiff("a\nb\nc\nd\ne", "a\nx\nc\ny\ne", 1, false, false)
+	if !differ {
+		t.Error("expected differ")
+	}
+	if len(hunks) < 1 {
+		t.Errorf("expected at least 1 hunk")
+	}
+}

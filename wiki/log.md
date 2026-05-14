@@ -14,13 +14,19 @@ Overall coverage: **41.6% → 46.2%**. All 57 packages pass. CI enforces ≥45%.
 Updated wiki: 11a_lower_priority.md (status, CI gate, remaining work table),
 11_post_mvp_priorities.md (status, remaining work table).
 
+## [2026-05-13] milestone | Promote agent architecture to Phase 14
+
+Renamed `wiki/agent_architecture.md` → `wiki/14_agent_architecture.md`. Added to
+wiki index and phases.md as Phase 14 (status: DESIGN). Updated ARCHITECTURE.md to
+acknowledge pkg/agent and go-git dependency as planned additions.
+
 ## [2026-05-13] design | Agent Architecture design document
 
 Created `wiki/agent_architecture.md` — a detailed design for an autonomous coding
 agent compiled into the KoreGo binary. Covers: ReAct agent loop, go-git integration,
 LLM provider interface (OpenAI / Anthropic / local), CLI + JSON-RPC dual interface,
 workspace management, security model, Docker compose integration, and state machine.
-No code changes; design-only phase.
+No code changes; design-only phase. (Later promoted to Phase 14.)
 
 ## [2026-05-12] update | Document .goreleaser.yml file location convention
 
