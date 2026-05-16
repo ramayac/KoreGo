@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 // FileInfo is the structured representation of a single directory entry.

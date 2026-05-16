@@ -16,10 +16,10 @@ func TestSedSubstitute(t *testing.T) {
 	f.Close()
 
 	var out bytes.Buffer
-	insts, _ := Parse("s/world/korego/")
+	insts, _ := Parse("s/world/goposix/")
 	runEngine(insts, []string{f.Name()}, false, false, &out)
 
-	if out.String() != "hello korego\n" {
+	if out.String() != "hello goposix\n" {
 		t.Errorf("got %q", out.String())
 	}
 }
@@ -423,7 +423,7 @@ func TestSedJSONSubstitute(t *testing.T) {
 	f.Close()
 
 	var out bytes.Buffer
-	code := run([]string{"--json", "s/world/korego/", f.Name()}, &out)
+	code := run([]string{"--json", "s/world/goposix/", f.Name()}, &out)
 	if code != 0 {
 		t.Fatalf("exit code %d, want 0", code)
 	}
@@ -438,8 +438,8 @@ func TestSedJSONSubstitute(t *testing.T) {
 	if len(lines) != 1 {
 		t.Fatalf("expected 1 line, got %d", len(lines))
 	}
-	if lines[0] != "hello korego" {
-		t.Errorf("got %q, want 'hello korego'", lines[0])
+	if lines[0] != "hello goposix" {
+		t.Errorf("got %q, want 'hello goposix'", lines[0])
 	}
 	if data["lineCount"].(float64) != 1 {
 		t.Errorf("lineCount %v, want 1", data["lineCount"])

@@ -6,13 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/korego/pkg/client"
-	_ "github.com/ramayac/korego/pkg/basename"
-	_ "github.com/ramayac/korego/pkg/dirname"
-	_ "github.com/ramayac/korego/pkg/env"
-	_ "github.com/ramayac/korego/pkg/expr"
-	_ "github.com/ramayac/korego/pkg/printenv"
-	_ "github.com/ramayac/korego/pkg/xargs"
+	"github.com/ramayac/goposix/pkg/client"
+	_ "github.com/ramayac/goposix/pkg/basename"
+	_ "github.com/ramayac/goposix/pkg/dirname"
+	_ "github.com/ramayac/goposix/pkg/env"
+	_ "github.com/ramayac/goposix/pkg/expr"
+	_ "github.com/ramayac/goposix/pkg/printenv"
+	_ "github.com/ramayac/goposix/pkg/xargs"
 )
 
 func TestTier5_Expr(t *testing.T) {
@@ -21,7 +21,7 @@ func TestTier5_Expr(t *testing.T) {
 
 	t.Run("expr evaluates arithmetic", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.expr",
+		err := c.Call(context.Background(), "goposix.expr",
 			map[string]interface{}{
 				"flags": []interface{}{"3", "+", "4"},
 			},
@@ -54,7 +54,7 @@ func TestTier5_Expr(t *testing.T) {
 
 	t.Run("expr string comparison", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.expr",
+		err := c.Call(context.Background(), "goposix.expr",
 			map[string]interface{}{
 				"flags": []interface{}{"hello", "=", "hello"},
 			},
@@ -74,7 +74,7 @@ func TestTier5_Basename(t *testing.T) {
 
 	t.Run("basename strips directory", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.basename",
+		err := c.Call(context.Background(), "goposix.basename",
 			map[string]interface{}{
 				"flags": []interface{}{"/usr/local/bin/myapp"},
 			},
@@ -96,7 +96,7 @@ func TestTier5_Basename(t *testing.T) {
 
 	t.Run("basename strips suffix", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.basename",
+		err := c.Call(context.Background(), "goposix.basename",
 			map[string]interface{}{
 				"flags": []interface{}{"/tmp/file.txt", ".txt"},
 			},
@@ -120,7 +120,7 @@ func TestTier5_Dirname(t *testing.T) {
 
 	t.Run("dirname returns directory portion", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.dirname",
+		err := c.Call(context.Background(), "goposix.dirname",
 			map[string]interface{}{
 				"flags": []interface{}{"/usr/local/bin/myapp"},
 			},
@@ -147,7 +147,7 @@ func TestTier5_Env(t *testing.T) {
 
 	t.Run("env returns environment variables", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.env",
+		err := c.Call(context.Background(), "goposix.env",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},
@@ -175,13 +175,13 @@ func TestTier5_Printenv(t *testing.T) {
 	c := client.Dial(socket, 5*time.Second)
 
 	t.Run("printenv returns specific env var", func(t *testing.T) {
-		os.Setenv("KOREGO_POSIX_TEST", "hello")
-		defer os.Unsetenv("KOREGO_POSIX_TEST")
+		os.Setenv("GOPOSIX_POSIX_TEST", "hello")
+		defer os.Unsetenv("GOPOSIX_POSIX_TEST")
 
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.printenv",
+		err := c.Call(context.Background(), "goposix.printenv",
 			map[string]interface{}{
-				"flags": []interface{}{"KOREGO_POSIX_TEST"},
+				"flags": []interface{}{"GOPOSIX_POSIX_TEST"},
 			},
 			&result)
 		if err != nil {
@@ -197,8 +197,8 @@ func TestTier5_Printenv(t *testing.T) {
 		if vars, ok := data["vars"].(map[string]interface{}); !ok {
 			t.Errorf("expected 'vars' map in printenv output")
 		} else {
-			if val, ok := vars["KOREGO_POSIX_TEST"]; !ok || val != "hello" {
-				t.Errorf("expected KOREGO_POSIX_TEST='hello', got %v", val)
+			if val, ok := vars["GOPOSIX_POSIX_TEST"]; !ok || val != "hello" {
+				t.Errorf("expected GOPOSIX_POSIX_TEST='hello', got %v", val)
 			}
 		}
 	})
@@ -211,7 +211,7 @@ func TestTier5_Xargs(t *testing.T) {
 	t.Run("xargs with empty stdin returns exit 0", func(t *testing.T) {
 		// xargs reads from stdin; with no input it should exit 0 with no results
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.xargs",
+		err := c.Call(context.Background(), "goposix.xargs",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},

@@ -9,27 +9,27 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/korego/internal/daemon"
-	"github.com/ramayac/korego/pkg/client"
-	_ "github.com/ramayac/korego/pkg/cat"
-	_ "github.com/ramayac/korego/pkg/echo"
-	_ "github.com/ramayac/korego/pkg/sed"
-	_ "github.com/ramayac/korego/pkg/sleep"
-	_ "github.com/ramayac/korego/pkg/tee"
-	_ "github.com/ramayac/korego/pkg/testcmd"
-	_ "github.com/ramayac/korego/pkg/tr"
-	_ "github.com/ramayac/korego/pkg/truefalse"
-	_ "github.com/ramayac/korego/pkg/yes"
+	"github.com/ramayac/goposix/internal/daemon"
+	"github.com/ramayac/goposix/pkg/client"
+	_ "github.com/ramayac/goposix/pkg/cat"
+	_ "github.com/ramayac/goposix/pkg/echo"
+	_ "github.com/ramayac/goposix/pkg/sed"
+	_ "github.com/ramayac/goposix/pkg/sleep"
+	_ "github.com/ramayac/goposix/pkg/tee"
+	_ "github.com/ramayac/goposix/pkg/testcmd"
+	_ "github.com/ramayac/goposix/pkg/tr"
+	_ "github.com/ramayac/goposix/pkg/truefalse"
+	_ "github.com/ramayac/goposix/pkg/yes"
 )
 
-// ResultWrapper represents the standardized output structure for KoreGo JSON-RPC
+// ResultWrapper represents the standardized output structure for GoPOSIX JSON-RPC
 type ResultWrapper struct {
 	ExitCode int         `json:"exitCode"`
 	Data     interface{} `json:"data"`
 }
 
 func startDaemon(t *testing.T) string {
-	socketPath := filepath.Join(t.TempDir(), "korego.sock")
+	socketPath := filepath.Join(t.TempDir(), "goposix.sock")
 	
 	// Start daemon in background
 	go func() {
@@ -63,7 +63,7 @@ func TestStructuredOutputSemantics(t *testing.T) {
 	}{
 		{
 			name:       "true utility exits 0 with value=true",
-			method:     "korego.true",
+			method:     "goposix.true",
 			params:     nil,
 			expectCode: 0,
 			verifyData: func(t *testing.T, data interface{}) {
@@ -81,7 +81,7 @@ func TestStructuredOutputSemantics(t *testing.T) {
 		},
 		{
 			name:       "false utility exits 1 with value=false",
-			method:     "korego.false",
+			method:     "goposix.false",
 			params:     nil,
 			expectCode: 1,
 			verifyData: func(t *testing.T, data interface{}) {
@@ -99,7 +99,7 @@ func TestStructuredOutputSemantics(t *testing.T) {
 		},
 		{
 			name:       "echo utility returns text and exits 0",
-			method:     "korego.echo",
+			method:     "goposix.echo",
 			params:     map[string]interface{}{"text": "hello posix"},
 			expectCode: 0,
 			verifyData: func(t *testing.T, data interface{}) {
@@ -114,7 +114,7 @@ func TestStructuredOutputSemantics(t *testing.T) {
 		},
 		{
 			name:       "sleep utility returns duration info",
-			method:     "korego.sleep",
+			method:     "goposix.sleep",
 			params:     map[string]interface{}{"flags": []interface{}{"0.001"}},
 			expectCode: 0,
 			verifyData: func(t *testing.T, data interface{}) {
@@ -132,7 +132,7 @@ func TestStructuredOutputSemantics(t *testing.T) {
 		},
 		{
 			name:       "yes utility returns string/count in json mode",
-			method:     "korego.yes",
+			method:     "goposix.yes",
 			params:     nil,
 			expectCode: 0,
 			verifyData: func(t *testing.T, data interface{}) {
@@ -182,7 +182,7 @@ func TestStructuredOutputSemantics(t *testing.T) {
 		
 		req := map[string]interface{}{
 			"jsonrpc": "2.0",
-			"method":  "korego.cat",
+			"method":  "goposix.cat",
 			"params":  map[string]interface{}{"path": "/does/not/exist/ever"},
 			"id":      1,
 		}
@@ -220,7 +220,7 @@ func TestStructuredOutputSemantics(t *testing.T) {
 
 		req := map[string]interface{}{
 			"jsonrpc": "2.0",
-			"method":  "korego.test",
+			"method":  "goposix.test",
 			"params":  map[string]interface{}{"flags": []interface{}{"hello", "=", "hello"}},
 			"id":      2,
 		}

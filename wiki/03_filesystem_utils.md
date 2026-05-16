@@ -113,11 +113,11 @@ Per-utility behavior is verified through the BusyBox test suite (`make testsuite
 
 ## Milestone 03
 
-- [x] `korego ls --json /` returns valid JSON array of FileInfo
-- [x] `korego ls -laR /tmp` output matches `/bin/ls -laR /tmp` format
-- [x] `korego cat file | korego grep pattern` — pipes work
-- [x] `korego rm -rf /` is refused
-- [x] `korego stat --json /etc/passwd` returns full stat struct
+- [x] `goposix ls --json /` returns valid JSON array of FileInfo
+- [x] `goposix ls -laR /tmp` output matches `/bin/ls -laR /tmp` format
+- [x] `goposix cat file | goposix grep pattern` — pipes work
+- [x] `goposix rm -rf /` is refused
+- [x] `goposix stat --json /etc/passwd` returns full stat struct
 - [x] All 13 utilities have unit tests with > 85% coverage
 - [x] BusyBox test suite verifies utility behavior (479+ tests)
 
@@ -126,6 +126,6 @@ Per-utility behavior is verified through the BusyBox test suite (`make testsuite
 ```bash
 make test
 make testsuite
-docker run --rm korego:dev ls --json /bin
-docker run --rm korego:dev stat --json /bin/korego
+docker run --rm goposix:dev ls --json /bin
+docker run --rm goposix:dev stat --json /bin/goposix
 ```

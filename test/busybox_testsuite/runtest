@@ -20,17 +20,17 @@ run_applet_testcase()
 	testname="$testcase"
 
 	testname="${testname##*/}" # take basename
-	# Removed .config checks for korego
+	# Removed .config checks for goposix
 
 	rm -rf ".tmpdir.$applet"
 	mkdir -p ".tmpdir.$applet"
 	cd ".tmpdir.$applet" || return 1
 
 #	echo "Running testcase $testcase"
-	# All old-style tests use a shared PATH that finds korego first.
-	# BBDIR (busybox → korego) and LINKSDIR (applet → korego) are in the
+	# All old-style tests use a shared PATH that finds goposix first.
+	# BBDIR (busybox → goposix) and LINKSDIR (applet → goposix) are in the
 	# inherited PATH, so 'busybox <applet>' and direct applet calls both
-	# route to korego.
+	# route to goposix.
 	PATH=".:$PATH" d="$tsdir" \
 		sh -x -e "$testcase" >"$testname.stdout.txt" 2>&1 || status=$?
 	if [ $status -ne 0 ]; then
@@ -90,8 +90,8 @@ if [ x"$1" = x"-v" ]; then
 fi
 
 implemented=$(
-	printf "korego " # always implemented
-	"$bindir/korego" --list-commands
+	printf "goposix " # always implemented
+	"$bindir/goposix" --list-commands
 	)
 
 applets="$implemented"
@@ -113,18 +113,18 @@ for i in $implemented; do
 	# Note: if $LINKSDIR/applet exists, we do not overwrite it.
 	# Useful if one wants to run tests against a standard utility,
 	# not an applet.
-	ln -s "$bindir/korego" "$LINKSDIR/$i" 2>/dev/null
+	ln -s "$bindir/goposix" "$LINKSDIR/$i" 2>/dev/null
 done
 
-# Route ALL 'busybox <applet>' calls to korego (not system busybox).
+# Route ALL 'busybox <applet>' calls to goposix (not system busybox).
 # Old-style tests call 'busybox <applet>' and expect it to dispatch to the
 # same binary being tested. Without this, CI finds /usr/bin/busybox.
 BBDIR=$(mktemp -d)
-ln -s "$bindir/korego" "$BBDIR/busybox"
+ln -s "$bindir/goposix" "$BBDIR/busybox"
 trap 'rm -rf "$BBDIR"' EXIT
 
-# Prepend BBDIR (busybox → korego) and LINKSDIR (applet → korego) to PATH
-# so both 'busybox <applet>' and direct applet calls route to korego.
+# Prepend BBDIR (busybox → goposix) and LINKSDIR (applet → goposix) to PATH
+# so both 'busybox <applet>' and direct applet calls route to goposix.
 export PATH="$BBDIR:$LINKSDIR:$PATH"
 
 # Create .config for tests that need it (e.g., md5sum checks CONFIG_FEATURE_FANCY_HEAD).
@@ -154,8 +154,8 @@ CONFIG_FEATURE_READLINK_FOLLOW=y
 CONFIG_FEATURE_XARGS_SUPPORT_QUOTES=y
 CONFIG_FEATURE_XARGS_SUPPORT_REPL_STR=y
 CONFIGEOF
-# Build OPTIONFLAGS to enable tests for features KoreGo supports.
-KOREGO_FEATURES="${KOREGO_FEATURES:-}"
+# Build OPTIONFLAGS to enable tests for features GoPOSIX supports.
+GOPOSIX_FEATURES="${GOPOSIX_FEATURES:-}"
 OPTIONFLAGS=":"
 # cat features
 OPTIONFLAGS="${OPTIONFLAGS}FEATURE_CATV:FEATURE_CATN:"
@@ -182,7 +182,7 @@ OPTIONFLAGS="${OPTIONFLAGS}FEATURE_TR_CLASSES:"
 # xargs features
 OPTIONFLAGS="${OPTIONFLAGS}FEATURE_XARGS_SUPPORT_QUOTES:FEATURE_XARGS_SUPPORT_REPL_STR:"
 # Allow caller to append additional features
-for f in $KOREGO_FEATURES; do
+for f in $GOPOSIX_FEATURES; do
 	OPTIONFLAGS="${OPTIONFLAGS}${f}:"
 done
 export OPTIONFLAGS

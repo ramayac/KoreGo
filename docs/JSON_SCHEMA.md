@@ -1,6 +1,6 @@
 # JSON Output Schemas
 
-All KoreGo utilities support structured machine-readable output via the `--json` flag or when invoked via the JSON-RPC daemon.
+All GoPOSIX utilities support structured machine-readable output via the `--json` flag or when invoked via the JSON-RPC daemon.
 
 ## Standard Envelope
 
@@ -43,7 +43,7 @@ The common envelope schema is at `test/schemas/common.schema.json`.
 
 ```bash
 # Validate a single utility's output against its schema
-./korego ls --json /tmp | npx ajv-cli validate -s test/schemas/ls.schema.json
+./goposix ls --json /tmp | npx ajv-cli validate -s test/schemas/ls.schema.json
 
 # Run all schema validations against golden fixtures
 make validate-schemas

@@ -5,8 +5,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 var spec = common.FlagSpec{
@@ -38,7 +38,7 @@ func run(args []string, out io.Writer) int {
 		PID:  os.Getpid(),
 		PPID: os.Getppid(),
 		User: "root",
-		Cmd:  "korego",
+		Cmd:  "goposix",
 		CPU:  "0.0%",
 		Mem:  "0.1%",
 	})

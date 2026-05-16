@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/korego/pkg/client"
-	_ "github.com/ramayac/korego/pkg/gzip"
-	_ "github.com/ramayac/korego/pkg/md5sum"
-	_ "github.com/ramayac/korego/pkg/sha256sum"
-	_ "github.com/ramayac/korego/pkg/tar"
+	"github.com/ramayac/goposix/pkg/client"
+	_ "github.com/ramayac/goposix/pkg/gzip"
+	_ "github.com/ramayac/goposix/pkg/md5sum"
+	_ "github.com/ramayac/goposix/pkg/sha256sum"
+	_ "github.com/ramayac/goposix/pkg/tar"
 )
 
 func TestTier4_Tar(t *testing.T) {
@@ -30,7 +30,7 @@ func TestTier4_Tar(t *testing.T) {
 
 	t.Run("tar -c creates archive", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.tar",
+		err := c.Call(context.Background(), "goposix.tar",
 			map[string]interface{}{
 				"flags": []interface{}{
 					"-cf", archivePath,
@@ -53,7 +53,7 @@ func TestTier4_Tar(t *testing.T) {
 
 	t.Run("tar -t lists archive contents", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.tar",
+		err := c.Call(context.Background(), "goposix.tar",
 			map[string]interface{}{
 				"flags": []interface{}{"-tf", archivePath},
 			},
@@ -86,7 +86,7 @@ func TestTier4_Gzip(t *testing.T) {
 
 	t.Run("gzip compresses file", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.gzip",
+		err := c.Call(context.Background(), "goposix.gzip",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},
@@ -126,7 +126,7 @@ func TestTier4_Sha256sum(t *testing.T) {
 
 	t.Run("sha256sum computes hash", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.sha256sum",
+		err := c.Call(context.Background(), "goposix.sha256sum",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},
@@ -166,7 +166,7 @@ func TestTier4_Md5sum(t *testing.T) {
 
 	t.Run("md5sum computes hash", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.md5sum",
+		err := c.Call(context.Background(), "goposix.md5sum",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},

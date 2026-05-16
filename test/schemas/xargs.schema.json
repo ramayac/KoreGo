@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/xargs.schema.json",
-  "title": "KoreGo xargs --json output",
-  "description": "Validates the complete JSON output of korego xargs --json.",
+  "$id": "https://goposix.dev/schemas/xargs.schema.json",
+  "title": "GoPOSIX xargs --json output",
+  "description": "Validates the complete JSON output of goposix xargs --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

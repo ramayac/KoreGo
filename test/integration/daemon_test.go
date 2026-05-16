@@ -10,18 +10,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/korego/internal/daemon"
-	"github.com/ramayac/korego/pkg/client"
+	"github.com/ramayac/goposix/internal/daemon"
+	"github.com/ramayac/goposix/pkg/client"
 
 	// Register all utilities so the daemon can dispatch them
-	_ "github.com/ramayac/korego/pkg/cat"
-	_ "github.com/ramayac/korego/pkg/echo"
-	_ "github.com/ramayac/korego/pkg/ls"
-	_ "github.com/ramayac/korego/pkg/pwd"
+	_ "github.com/ramayac/goposix/pkg/cat"
+	_ "github.com/ramayac/goposix/pkg/echo"
+	_ "github.com/ramayac/goposix/pkg/ls"
+	_ "github.com/ramayac/goposix/pkg/pwd"
 )
 
 func TestDaemonConcurrent(t *testing.T) {
-	socket := filepath.Join(t.TempDir(), "korego.sock")
+	socket := filepath.Join(t.TempDir(), "goposix.sock")
 
 	// Start server in background
 	server := daemon.NewServer(socket, 4, "")
@@ -38,7 +38,7 @@ func TestDaemonConcurrent(t *testing.T) {
 	// Single ping test
 	var pingRes map[string]interface{}
 	ctx := context.Background()
-	err := c.Call(ctx, "korego.ping", nil, &pingRes)
+	err := c.Call(ctx, "goposix.ping", nil, &pingRes)
 	if err != nil {
 		t.Fatalf("Ping failed: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestDaemonConcurrent(t *testing.T) {
 
 	// Single ls test
 	var lsRes map[string]interface{}
-	err = c.Call(ctx, "korego.ls", map[string]interface{}{"path": "/tmp"}, &lsRes)
+	err = c.Call(ctx, "goposix.ls", map[string]interface{}{"path": "/tmp"}, &lsRes)
 	if err != nil {
 		t.Fatalf("ls failed: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestDaemonConcurrent(t *testing.T) {
 		go func(idx int) {
 			defer wg.Done()
 			var res map[string]interface{}
-			err := c.Call(ctx, "korego.echo", map[string]interface{}{"text": fmt.Sprintf("req-%d", idx)}, &res)
+			err := c.Call(ctx, "goposix.echo", map[string]interface{}{"text": fmt.Sprintf("req-%d", idx)}, &res)
 			if err != nil {
 				errs <- err
 			}
@@ -85,7 +85,7 @@ func TestDaemonBatch(t *testing.T) {
 	// Our client currently only supports single Call().
 	// To test batch, we could use net.Dial directly, or modify the client.
 	// We'll use net.Dial for a quick check.
-	socket := filepath.Join(t.TempDir(), "korego-batch.sock")
+	socket := filepath.Join(t.TempDir(), "goposix-batch.sock")
 	server := daemon.NewServer(socket, 4, "")
 	server.Start()
 	defer server.Stop()
@@ -98,8 +98,8 @@ func TestDaemonBatch(t *testing.T) {
 	defer conn.Close()
 
 	batchReq := `[
-		{"jsonrpc":"2.0", "method":"korego.echo", "params":{"text":"a"}, "id":1},
-		{"jsonrpc":"2.0", "method":"korego.echo", "params":{"text":"b"}, "id":2}
+		{"jsonrpc":"2.0", "method":"goposix.echo", "params":{"text":"a"}, "id":1},
+		{"jsonrpc":"2.0", "method":"goposix.echo", "params":{"text":"b"}, "id":2}
 	]`
 	conn.Write([]byte(batchReq))
 

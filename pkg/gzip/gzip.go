@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 // GzipStat holds the result of compressing or decompressing a single file.

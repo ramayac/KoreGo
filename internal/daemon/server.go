@@ -18,9 +18,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/internal/shell"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/internal/shell"
+	"github.com/ramayac/goposix/pkg/common"
 	"log/slog"
 )
 
@@ -295,8 +295,8 @@ func (s *Server) writeError(conn net.Conn, id interface{}, code int, msg string)
 	})
 }
 
-// KoregoParams is used to parse the standard parameters.
-type KoregoParams struct {
+// GoposixParams is used to parse the standard parameters.
+type GoposixParams struct {
 	Flags     []string `json:"flags"`
 	Path      string   `json:"path"`
 	Text      string   `json:"text"`
@@ -321,7 +321,7 @@ func (s *Server) processRequest(req Request) *Response {
 		durationMs := float64(duration.Microseconds()) / 1000.0
 		sessionId := ""
 		if len(req.Params) > 0 {
-			var p KoregoParams
+			var p GoposixParams
 			if err := json.Unmarshal(req.Params, &p); err == nil {
 				sessionId = p.SessionId
 			}
@@ -362,7 +362,7 @@ func (s *Server) processRequest(req Request) *Response {
 		return nil
 	}
 
-	if req.Method == "korego.ping" {
+	if req.Method == "goposix.ping" {
 		if req.ID == nil {
 		rpcCmd = "ping"
 			return nil
@@ -381,14 +381,14 @@ func (s *Server) processRequest(req Request) *Response {
 		}
 	}
 
-	if req.Method == "korego.session.create" {
+	if req.Method == "goposix.session.create" {
 		rpcCmd = "session.create"
 		if req.ID == nil { return nil }
 		s := s.sm.Create()
 		return &Response{JSONRPC: "2.0", ID: req.ID, Result: s}
 	}
 
-	if req.Method == "korego.session.setCwd" {
+	if req.Method == "goposix.session.setCwd" {
 		rpcCmd = "session.setCwd"
 		if req.ID == nil { return nil }
 		var p struct {
@@ -403,14 +403,14 @@ func (s *Server) processRequest(req Request) *Response {
 		return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Invalid session"}}
 	}
 
-	if req.Method == "korego.session.list" {
+	if req.Method == "goposix.session.list" {
 		rpcCmd = "session.list"
 		if req.ID == nil { return nil }
 		sessions := s.sm.List()
 		return &Response{JSONRPC: "2.0", ID: req.ID, Result: sessions}
 	}
 
-	if req.Method == "korego.session.destroy" {
+	if req.Method == "goposix.session.destroy" {
 		rpcCmd = "session.destroy"
 		if req.ID == nil { return nil }
 		var p struct {
@@ -424,7 +424,7 @@ func (s *Server) processRequest(req Request) *Response {
 		return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Invalid session"}}
 	}
 
-	if req.Method == "korego.shell.exec" {
+	if req.Method == "goposix.shell.exec" {
 		rpcCmd = "shell.exec"
 		if req.ID == nil { return nil }
 		var p struct {
@@ -446,14 +446,14 @@ func (s *Server) processRequest(req Request) *Response {
 		return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32602, Message: "Invalid params"}}
 	}
 
-	if !strings.HasPrefix(req.Method, "korego.") {
+	if !strings.HasPrefix(req.Method, "goposix.") {
 		if req.ID != nil {
 			return &Response{JSONRPC: "2.0", ID: req.ID, Error: &Error{Code: -32601, Message: "Method not found"}}
 		}
 		return nil
 	}
 
-	cmdName := strings.TrimPrefix(req.Method, "korego.")
+	cmdName := strings.TrimPrefix(req.Method, "goposix.")
 		rpcCmd = cmdName
 	cmd, ok := dispatch.Lookup(cmdName)
 	if !ok {
@@ -468,7 +468,7 @@ func (s *Server) processRequest(req Request) *Response {
 	var session *Session
 
 	if len(req.Params) > 0 {
-		var p KoregoParams
+		var p GoposixParams
 		var dynMap map[string]interface{}
 		
 		if err := json.Unmarshal(req.Params, &p); err == nil {
@@ -577,9 +577,9 @@ func RunDaemon(socketPath string, workers int, httpAddr string) error {
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, nil))
 	slog.SetDefault(logger)
 
-	slog.Info("starting korego daemon", "socket", socketPath, "workers", workers)
+	slog.Info("starting goposix daemon", "socket", socketPath, "workers", workers)
 
-	if os.Getenv("KOREGO_DEBUG") == "1" {
+	if os.Getenv("GOPOSIX_DEBUG") == "1" {
 		go func() {
 			slog.Info("starting pprof on :6060")
 			if err := http.ListenAndServe("localhost:6060", nil); err != nil {
@@ -595,8 +595,8 @@ func RunDaemon(socketPath string, workers int, httpAddr string) error {
 	}
 
 	// PID file
-	pidFile := "/var/run/korego.pid"
-	if socketPath != "/var/run/korego.sock" {
+	pidFile := "/var/run/goposix.pid"
+	if socketPath != "/var/run/goposix.sock" {
 		pidFile = socketPath + ".pid" // mostly for testing in /tmp
 	}
 	os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", os.Getpid())), 0644)

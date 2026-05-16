@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/printenv.schema.json",
-  "title": "KoreGo printenv --json output",
-  "description": "Validates the complete JSON output of korego printenv --json.",
+  "$id": "https://goposix.dev/schemas/printenv.schema.json",
+  "title": "GoPOSIX printenv --json output",
+  "description": "Validates the complete JSON output of goposix printenv --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

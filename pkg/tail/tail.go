@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 // TailResult is the --json output for tail.

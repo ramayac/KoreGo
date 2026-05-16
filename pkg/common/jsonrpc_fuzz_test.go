@@ -10,7 +10,7 @@ import (
 func FuzzJSONRPC(f *testing.F) {
 	// Seed corpus
 	f.Add([]byte(`{"jsonrpc": "2.0", "method": "test", "id": 1}`))
-	f.Add([]byte(`{"jsonrpc": "2.0", "method": "korego.ping", "params": {"path": "/etc/shadow"}}`))
+	f.Add([]byte(`{"jsonrpc": "2.0", "method": "goposix.ping", "params": {"path": "/etc/shadow"}}`))
 	f.Add([]byte(`[`))
 	f.Add([]byte(`{"jsonrpc": "2.0"}`))
 

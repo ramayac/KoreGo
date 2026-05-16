@@ -1,6 +1,6 @@
 # System Architecture
 
-KoreGo is a POSIX-compliant userland implemented as a single, statically-linked Go binary.
+GoPOSIX is a POSIX-compliant userland implemented as a single, statically-linked Go binary.
 It functions as both a traditional CLI tool (multicall binary) and as a persistent
 JSON-RPC 2.0 daemon for AI agent backends.
 
@@ -13,7 +13,7 @@ JSON-RPC 2.0 daemon for AI agent backends.
 2. **Dual-Mode Execution:**
    - **CLI Mode:** Standard POSIX stdout/stderr, exit codes.
    - **JSON Mode:** `--json` flag or daemon invocation → structured JSON envelope output.
-3. **Container-Native:** Runs as non-root user `korego:1000` inside a `FROM scratch` Docker
+3. **Container-Native:** Runs as non-root user `goposix:1000` inside a `FROM scratch` Docker
    image. Compiles with `CGO_ENABLED=0` for full static linking.
 
 ## Component Flow
@@ -24,7 +24,7 @@ JSON-RPC 2.0 daemon for AI agent backends.
                   └──────┬───────────────┬───────────┘
                          │               │
                    Unix Socket     CLI invocation
-                   (JSON-RPC)      (symlink/korego <cmd>)
+                   (JSON-RPC)      (symlink/goposix <cmd>)
                          │               │
                          ▼               ▼
                   ┌────────────┐  ┌────────────────┐
@@ -63,8 +63,8 @@ JSON-RPC calls, connection pooling, and retry logic.
 ## Directory Structure
 
 ```
-KoreGo/
-├── cmd/korego/          Main entry point: multicall dispatch + symlink handling
+GoPOSIX/
+├── cmd/goposix/          Main entry point: multicall dispatch + symlink handling
 ├── internal/
 │   ├── dispatch/        Command registry (init() auto-registration)
 │   ├── daemon/          JSON-RPC 2.0 persistent server (Unix socket)
@@ -88,7 +88,7 @@ KoreGo/
 
 | Package | Role |
 |---------|------|
-| `cmd/korego` | Multicall entry. Detects symlink name (`/bin/ls → korego`) or subcommand (`korego ls`). |
+| `cmd/goposix` | Multicall entry. Detects symlink name (`/bin/ls → goposix`) or subcommand (`goposix ls`). |
 | `internal/dispatch` | Registry where utilities self-register via `init()`. |
 | `internal/daemon` | JSON-RPC 2.0 server over Unix socket. Dispatches to registered commands. |
 | `internal/shell` | Sandbox for `shell.exec` RPC. Configurable timeout, output limits, path confinement. |
@@ -135,4 +135,4 @@ Run `make testsuite` before every commit to prevent regressions.
 - [SECURITY.md](SECURITY.md) — Security model, shell sandbox, deployment posture
 - [RPC_API.md](RPC_API.md) — JSON-RPC client API reference (`pkg/client`)
 - [JSON_SCHEMA.md](JSON_SCHEMA.md) — `--json` output envelope and per-utility schemas
-- [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md) — How to use KoreGo as an AI agent backend
+- [AGENT_INTEGRATION.md](AGENT_INTEGRATION.md) — How to use GoPOSIX as an AI agent backend

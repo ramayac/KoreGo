@@ -6,7 +6,7 @@
 
 ## Goal
 
-Add `--xml` flag support to every KoreGo utility, producing a structured XML
+Add `--xml` flag support to every GoPOSIX utility, producing a structured XML
 envelope that mirrors the existing `--json` / `-j` format. The two flags are mutually
 exclusive — `--xml` takes precedence when both are passed.
 
@@ -26,11 +26,11 @@ schema. Field names, types, presence/absence rules, and error codes are identica
 ```
 JSON:  {"command":"ls","version":"0.1.0","schemaVersion":"1.0","exitCode":0,"data":{...},"error":null}
 
-XML:   <korego command="ls" version="0.1.0" schemaVersion="1.0" exitCode="0">
+XML:   <goposix command="ls" version="0.1.0" schemaVersion="1.0" exitCode="0">
          <data>
            <!-- utility-specific payload, same structure as JSON -->
          </data>
-       </korego>
+       </goposix>
 ```
 
 Error envelope:
@@ -40,12 +40,12 @@ JSON:  {"command":"ls","version":"...","schemaVersion":"1.0","exitCode":2,
         "data":null,
         "error":{"code":"ENOENT","message":"No such file or directory"}}
 
-XML:   <korego command="ls" version="..." schemaVersion="1.0" exitCode="2">
+XML:   <goposix command="ls" version="..." schemaVersion="1.0" exitCode="2">
          <error>
            <code>ENOENT</code>
            <message>No such file or directory</message>
          </error>
-       </korego>
+       </goposix>
 ```
 
 ### Implementation Strategy
@@ -58,7 +58,7 @@ embed pre-serialized payload XML.
 // pkg/common/output.go
 
 type XMLElement struct {
-    XMLName       xml.Name     `xml:"korego"`
+    XMLName       xml.Name     `xml:"goposix"`
     Command       string       `xml:"command,attr"`
     Version       string       `xml:"version,attr"`
     SchemaVersion string       `xml:"schemaVersion,attr"`
@@ -172,7 +172,7 @@ Adding `--xml` is the next step:
 | `pkg/daemon/` | Daemon CLI launcher; no output format flag needed |
 | `internal/daemon/` | JSON-RPC 2.0 server; protocol is fixed |
 | `internal/shell/` | Shell interpreter; structured output not applicable |
-| `cmd/korego/` | Multicall dispatcher; no output format flag needed |
+| `cmd/goposix/` | Multicall dispatcher; no output format flag needed |
 
 ---
 
@@ -346,7 +346,7 @@ The envelope omits `<data>` when DataWrapper is nil (via `omitempty`) and omits
 ### Unicode
 
 XML declares `encoding="UTF-8"` in the prolog. Go's `encoding/xml` emits the
-standard header `<?xml version="1.0" encoding="UTF-8"?>`. All KoreGo strings
+standard header `<?xml version="1.0" encoding="UTF-8"?>`. All GoPOSIX strings
 are Go-native UTF-8 — no transcoding needed.
 
 ---
@@ -374,12 +374,12 @@ per utility × 52 utilities = ~780 LOC for the core changes. Plus tests at ~10 L
 cd pkg/common && go test -run XML -v
 
 # Per-utility XML round-trip (example)
-./korego ls --xml /tmp | xmllint --format -
-./korego cat --xml /etc/hostname | xmllint --format -
-./korego stat --xml /etc/passwd | xmllint --format -
+./goposix ls --xml /tmp | xmllint --format -
+./goposix cat --xml /etc/hostname | xmllint --format -
+./goposix stat --xml /etc/passwd | xmllint --format -
 
 # Mutual exclusion
-./korego ls -j --xml /tmp | head -1   # must output XML, not JSON
+./goposix ls -j --xml /tmp | head -1   # must output XML, not JSON
 
 # POSIX-XML test suite
 go test ./test/posix-xml/... -v

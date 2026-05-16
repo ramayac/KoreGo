@@ -8,13 +8,13 @@
 
 ## Context
 
-KoreGo MVP is complete: 49 utilities implemented, 97.9% BusyBox pass rate, daemon functional. This phase addresses the gaps that matter most for the stated goals — AI agent tooling and minimal container deployments. Items are ordered by impact on adoption.
+GoPOSIX MVP is complete: 49 utilities implemented, 97.9% BusyBox pass rate, daemon functional. This phase addresses the gaps that matter most for the stated goals — AI agent tooling and minimal container deployments. Items are ordered by impact on adoption.
 
 ---
 
 ## 11.1 — Formal JSON Output Schemas
 
-**Why it matters:** The primary differentiator of KoreGo is machine-readable output. Without a formal schema, consumers can't rely on stable JSON shapes — defeating the purpose.
+**Why it matters:** The primary differentiator of GoPOSIX is machine-readable output. Without a formal schema, consumers can't rely on stable JSON shapes — defeating the purpose.
 
 ### Tasks
 
@@ -27,7 +27,7 @@ KoreGo MVP is complete: 49 utilities implemented, 97.9% BusyBox pass rate, daemo
 
 ```bash
 # Any utility's JSON output validates against its published schema
-./korego ls --json /tmp | ajv validate -s docs/schemas/ls.schema.json
+./goposix ls --json /tmp | ajv validate -s docs/schemas/ls.schema.json
 ```
 
 ---
@@ -40,8 +40,8 @@ KoreGo MVP is complete: 49 utilities implemented, 97.9% BusyBox pass rate, daemo
 
 - [x] Create `examples/agent/` directory with a self-contained example (`examples/agent/main.go`)
 - [x] Implement a Go agent that:
-  - Starts the KoreGo daemon
-  - Creates a session via `korego.session.create`
+  - Starts the GoPOSIX daemon
+  - Creates a session via `goposix.session.create`
   - Executes a multi-step task (ls, wc, shell.exec, cat)
   - Cleans up the session
 - [x] Provide the example in Go (`examples/agent/main.go`)
@@ -75,7 +75,7 @@ make example-agent   # runs Go example against a live daemon, exits 0
 ### Acceptance
 
 ```go
-c, _ := client.New("/tmp/korego.sock", client.WithPoolSize(4))
+c, _ := client.New("/tmp/goposix.sock", client.WithPoolSize(4))
 result, _ := c.Ls(ctx, "/var/log", "-l")
 fmt.Println(result.Files[0].Name)
 ```
@@ -122,5 +122,5 @@ go test ./pkg/client/... -v
 make cover-pct   # ≥70% enforced via Makefile; see [coverage policy](13_coverage_and_hardening.md)
 
 # awk (see 07a_awk.md for full acceptance criteria)
-echo "hello world" | ./korego awk '{print $1}'
+echo "hello world" | ./goposix awk '{print $1}'
 ```

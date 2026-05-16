@@ -1,33 +1,33 @@
 builds:
-  - id: korego
-    main: ./cmd/korego/
-    binary: korego
+  - id: goposix
+    main: ./cmd/goposix/
+    binary: goposix
     env: [CGO_ENABLED=0]
     goos: [linux]
     goarch: [amd64, arm64]
-    ldflags: ["-s", "-w", "-X 'github.com/ramayac/korego/pkg/common.Version={{.Version}}' -X 'github.com/ramayac/korego.Version={{.Version}}'"]
+    ldflags: ["-s", "-w", "-X 'github.com/ramayac/goposix/pkg/common.Version={{.Version}}' -X 'github.com/ramayac/goposix.Version={{.Version}}'"]
 
 dockers:
-  - image_templates: ["ghcr.io/ramayac/korego:{{.Version}}-amd64"]
+  - image_templates: ["ghcr.io/ramayac/goposix:{{.Version}}-amd64"]
     dockerfile: docker/Dockerfile.goreleaser
     use: buildx
     build_flag_templates:
       - "--platform=linux/amd64"
-  - image_templates: ["ghcr.io/ramayac/korego:{{.Version}}-arm64"]
+  - image_templates: ["ghcr.io/ramayac/goposix:{{.Version}}-arm64"]
     dockerfile: docker/Dockerfile.goreleaser
     use: buildx
     build_flag_templates:
       - "--platform=linux/arm64"
 
 docker_manifests:
-  - name_template: ghcr.io/ramayac/korego:{{.Version}}
+  - name_template: ghcr.io/ramayac/goposix:{{.Version}}
     image_templates:
-      - ghcr.io/ramayac/korego:{{.Version}}-amd64
-      - ghcr.io/ramayac/korego:{{.Version}}-arm64
-  - name_template: ghcr.io/ramayac/korego:latest
+      - ghcr.io/ramayac/goposix:{{.Version}}-amd64
+      - ghcr.io/ramayac/goposix:{{.Version}}-arm64
+  - name_template: ghcr.io/ramayac/goposix:latest
     image_templates:
-      - ghcr.io/ramayac/korego:{{.Version}}-amd64
-      - ghcr.io/ramayac/korego:{{.Version}}-arm64
+      - ghcr.io/ramayac/goposix:{{.Version}}-amd64
+      - ghcr.io/ramayac/goposix:{{.Version}}-arm64
 
 sboms:
   - id: archive

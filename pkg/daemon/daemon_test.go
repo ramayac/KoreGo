@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/korego/internal/daemon"
+	"github.com/ramayac/goposix/internal/daemon"
 )
 
 func TestRunDaemonSocketCreation(t *testing.T) {
-	socket := filepath.Join(t.TempDir(), "korego.sock")
+	socket := filepath.Join(t.TempDir(), "goposix.sock")
 	srv := daemon.NewServer(socket, 2, "")
 	if err := srv.Start(); err != nil {
 		t.Fatalf("Start: %v", err)
@@ -20,7 +20,7 @@ func TestRunDaemonSocketCreation(t *testing.T) {
 }
 
 func TestRunDaemonGracefulShutdown(t *testing.T) {
-	socket := filepath.Join(t.TempDir(), "korego.sock")
+	socket := filepath.Join(t.TempDir(), "goposix.sock")
 	srv := daemon.NewServer(socket, 1, "")
 	if err := srv.Start(); err != nil {
 		t.Fatalf("Start: %v", err)
@@ -30,7 +30,7 @@ func TestRunDaemonGracefulShutdown(t *testing.T) {
 }
 
 func TestRunDaemonWorkerCount(t *testing.T) {
-	socket := filepath.Join(t.TempDir(), "korego.sock")
+	socket := filepath.Join(t.TempDir(), "goposix.sock")
 	// Workers > 1 should work fine
 	srv := daemon.NewServer(socket, 8, "")
 	if err := srv.Start(); err != nil {
@@ -51,7 +51,7 @@ func TestCLI_BadFlag(t *testing.T) {
 }
 
 func TestCLI_WorkerCount(t *testing.T) {
-	socket := filepath.Join(t.TempDir(), "korego.sock")
+	socket := filepath.Join(t.TempDir(), "goposix.sock")
 	var out bytes.Buffer
 	go func() {
 		run([]string{"-s", socket, "-w", "2"}, &out)

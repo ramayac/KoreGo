@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/common.schema.json",
-  "title": "KoreGo JSON Output Envelope",
-  "description": "Common envelope shared by all korego utility --json output.",
+  "$id": "https://goposix.dev/schemas/common.schema.json",
+  "title": "GoPOSIX JSON Output Envelope",
+  "description": "Common envelope shared by all goposix utility --json output.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {
@@ -12,7 +12,7 @@
     },
     "version": {
       "type": "string",
-      "description": "KoreGo release version."
+      "description": "GoPOSIX release version."
     },
     "schemaVersion": {
       "type": "string",

@@ -7,20 +7,20 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/korego/pkg/client"
-	_ "github.com/ramayac/korego/pkg/chgrp"
-	_ "github.com/ramayac/korego/pkg/chmod"
-	_ "github.com/ramayac/korego/pkg/chown"
-	_ "github.com/ramayac/korego/pkg/cp"
-	_ "github.com/ramayac/korego/pkg/ln"
-	_ "github.com/ramayac/korego/pkg/ls"
-	_ "github.com/ramayac/korego/pkg/mkdir"
-	_ "github.com/ramayac/korego/pkg/mv"
-	_ "github.com/ramayac/korego/pkg/readlink"
-	_ "github.com/ramayac/korego/pkg/rm"
-	_ "github.com/ramayac/korego/pkg/rmdir"
-	_ "github.com/ramayac/korego/pkg/stat"
-	_ "github.com/ramayac/korego/pkg/touch"
+	"github.com/ramayac/goposix/pkg/client"
+	_ "github.com/ramayac/goposix/pkg/chgrp"
+	_ "github.com/ramayac/goposix/pkg/chmod"
+	_ "github.com/ramayac/goposix/pkg/chown"
+	_ "github.com/ramayac/goposix/pkg/cp"
+	_ "github.com/ramayac/goposix/pkg/ln"
+	_ "github.com/ramayac/goposix/pkg/ls"
+	_ "github.com/ramayac/goposix/pkg/mkdir"
+	_ "github.com/ramayac/goposix/pkg/mv"
+	_ "github.com/ramayac/goposix/pkg/readlink"
+	_ "github.com/ramayac/goposix/pkg/rm"
+	_ "github.com/ramayac/goposix/pkg/rmdir"
+	_ "github.com/ramayac/goposix/pkg/stat"
+	_ "github.com/ramayac/goposix/pkg/touch"
 )
 
 func TestTier1_Ls(t *testing.T) {
@@ -29,7 +29,7 @@ func TestTier1_Ls(t *testing.T) {
 
 	t.Run("ls -1 lists directory contents", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.ls",
+		err := c.Call(context.Background(), "goposix.ls",
 			map[string]interface{}{"flags": []interface{}{"-1"}},
 			&result)
 		if err != nil {
@@ -50,7 +50,7 @@ func TestTier1_Ls(t *testing.T) {
 
 	t.Run("ls missing path returns error", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.ls",
+		err := c.Call(context.Background(), "goposix.ls",
 			map[string]interface{}{
 				"flags": []interface{}{"-1"},
 				"path":  "/nonexistent_xyz",
@@ -73,7 +73,7 @@ func TestTier1_MkdirRmdir(t *testing.T) {
 
 	t.Run("mkdir creates directory", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.mkdir",
+		err := c.Call(context.Background(), "goposix.mkdir",
 			map[string]interface{}{
 				"flags": []interface{}{},
 				"path":  dir,
@@ -98,7 +98,7 @@ func TestTier1_MkdirRmdir(t *testing.T) {
 
 	t.Run("rmdir removes directory", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.rmdir",
+		err := c.Call(context.Background(), "goposix.rmdir",
 			map[string]interface{}{
 				"flags": []interface{}{},
 				"path":  dir,
@@ -124,7 +124,7 @@ func TestTier1_Touch(t *testing.T) {
 
 	t.Run("touch creates file", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.touch",
+		err := c.Call(context.Background(), "goposix.touch",
 			map[string]interface{}{
 				"flags": []interface{}{},
 				"path":  fpath,
@@ -156,7 +156,7 @@ func TestTier1_Cp(t *testing.T) {
 
 	t.Run("cp copies file", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.cp",
+		err := c.Call(context.Background(), "goposix.cp",
 			map[string]interface{}{
 				"flags": []interface{}{src, dst},
 			},
@@ -193,7 +193,7 @@ func TestTier1_Mv(t *testing.T) {
 
 	t.Run("mv moves file", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.mv",
+		err := c.Call(context.Background(), "goposix.mv",
 			map[string]interface{}{
 				"flags": []interface{}{src, dst},
 			},
@@ -224,7 +224,7 @@ func TestTier1_Rm(t *testing.T) {
 
 	t.Run("rm removes file", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.rm",
+		err := c.Call(context.Background(), "goposix.rm",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},
@@ -254,7 +254,7 @@ func TestTier1_Ln(t *testing.T) {
 
 	t.Run("ln -s creates symlink", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.ln",
+		err := c.Call(context.Background(), "goposix.ln",
 			map[string]interface{}{
 				"flags": []interface{}{"-s", target, link},
 			},
@@ -291,7 +291,7 @@ func TestTier1_Readlink(t *testing.T) {
 
 	t.Run("readlink resolves symlink", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.readlink",
+		err := c.Call(context.Background(), "goposix.readlink",
 			map[string]interface{}{
 				"flags": []interface{}{link},
 			},
@@ -324,7 +324,7 @@ func TestTier1_Stat(t *testing.T) {
 
 	t.Run("stat returns file metadata", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.stat",
+		err := c.Call(context.Background(), "goposix.stat",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},
@@ -359,7 +359,7 @@ func TestTier1_Chmod(t *testing.T) {
 
 	t.Run("chmod changes permissions", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.chmod",
+		err := c.Call(context.Background(), "goposix.chmod",
 			map[string]interface{}{
 				"flags": []interface{}{"0600", fpath},
 			},
@@ -390,9 +390,9 @@ func TestTier1_Chown(t *testing.T) {
 		uid := os.Getuid()
 		// chown to self should succeed
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.chown",
+		err := c.Call(context.Background(), "goposix.chown",
 			map[string]interface{}{
-				"flags": []interface{}{fpath}, // chown uses korego.chown utility
+				"flags": []interface{}{fpath}, // chown uses goposix.chown utility
 			},
 			&result)
 		// chown requires owner:group syntax or just owner
@@ -420,7 +420,7 @@ func TestTier1_Chgrp(t *testing.T) {
 
 	t.Run("chgrp returns structured response", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.chgrp",
+		err := c.Call(context.Background(), "goposix.chgrp",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},

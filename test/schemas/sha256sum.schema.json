@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/sha256sum.schema.json",
-  "title": "KoreGo sha256sum --json output",
-  "description": "Validates the complete JSON output of korego sha256sum --json.",
+  "$id": "https://goposix.dev/schemas/sha256sum.schema.json",
+  "title": "GoPOSIX sha256sum --json output",
+  "description": "Validates the complete JSON output of goposix sha256sum --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

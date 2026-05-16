@@ -1,6 +1,6 @@
 # POSIX Compliance Matrix
 
-This document tracks the implementation status of KoreGo utilities against the POSIX standard.
+This document tracks the implementation status of GoPOSIX utilities against the POSIX standard.
 
 ## Overall Compliance Summary
 - **Targeted Utilities (MVP Scope):** 49

@@ -4,7 +4,7 @@
 
 ## The Gap
 
-The JSON-RPC daemon is a core architectural feature of KoreGo — every utility is supposed to support structured machine-readable output via `--json`, and the daemon exposes all utilities over a persistent JSON-RPC socket to avoid process-spawning overhead.
+The JSON-RPC daemon is a core architectural feature of GoPOSIX — every utility is supposed to support structured machine-readable output via `--json`, and the daemon exposes all utilities over a persistent JSON-RPC socket to avoid process-spawning overhead.
 
 The integration test at `test/posix-json/runner_test.go` only exercises **9 of 55** utility packages:
 
@@ -19,7 +19,7 @@ No JSON-RPC coverage exists for critical utilities like ls, cp, mv, rm, grep, fi
 Each utility should have at least one JSON-RPC integration test that:
 
 1. Starts the daemon (reuse `startDaemon`)
-2. Calls the utility via `korego.<name>` method
+2. Calls the utility via `goposix.<name>` method
 3. Validates the structured JSON response envelope:
    - `exitCode` is correct
    - `data` contains expected typed fields
@@ -73,7 +73,7 @@ func TestLsViaDaemon(t *testing.T) {
 
     t.Run("ls lists current directory", func(t *testing.T) {
         var result ResultWrapper
-        err := c.Call(context.Background(), "korego.ls",
+        err := c.Call(context.Background(), "goposix.ls",
             map[string]interface{}{"flags": []interface{}{"-1"}},
             &result)
         if err != nil {

@@ -1,4 +1,4 @@
-# KoreGo — Open TODOs & Remaining Work
+# GoPOSIX — Open TODOs & Remaining Work
 
 > **Last updated:** 2026-05-16 | **BusyBox pass rate:** 99.4% (477 passed, 3 failed, 10 skipped of 490 total)
 >
@@ -22,7 +22,7 @@
 |------|-----------|----------|
 | `date-@-works` | Go `time` doesn't parse POSIX TZ strings | ❌ Needs custom parser |
 | `date-timezone` | Same | ❌ Same |
-| `date-works-1` | Error format: korego says `date: invalid date` but test expects BusyBox banner | ⚠️ Cosmetic |
+| `date-works-1` | Error format: goposix says `date: invalid date` but test expects BusyBox banner | ⚠️ Cosmetic |
 
 ### JSON-RPC Coverage Gap (14c) — **COMPLETED (2026-05-16)**
 
@@ -110,7 +110,7 @@ All 10 are `tar` tests blocked by external dependencies:
 | **After Tier 2 (2026-05-02)** | **479 passed, 1 failed, 10 skipped (97.9%)** |
 | **Current (2026-05-16)** | **477 passed, 3 failed, 10 skipped (99.4%)** |
 
-> **Note on `tar writing into read-only dir`:** Previously listed as a remaining failure, this test always passes in the suite because `tar.tests` sets `umask 022` on line 11 — producing the expected 0644 permissions. Without that umask, a host umask of 002 would produce 0664 and the test would fail. This is not a KoreGo bug; the test environment self-corrects.
+> **Note on `tar writing into read-only dir`:** Previously listed as a remaining failure, this test always passes in the suite because `tar.tests` sets `umask 022` on line 11 — producing the expected 0644 permissions. Without that umask, a host umask of 002 would produce 0664 and the test would fail. This is not a GoPOSIX bug; the test environment self-corrects.
 
 99% requires either fixing the 2 date TZ-parsing failures (custom POSIX TZ parser) or adding bzip2/xz decompression for the 10 skipped tar tests.
 
@@ -138,10 +138,10 @@ Implemented:
 - Also added: `-O` flag (extract to stdout), `-C` archive path resolution fix, `busybox` alias in main dispatcher, and include-list normalization (stripping `./` prefix).
 
 ### C.3 — BusyBox Test Harness Integration ✅
-**File:** `test/busybox_testsuite/runtest`, `cmd/korego/main.go`
+**File:** `test/busybox_testsuite/runtest`, `cmd/goposix/main.go`
 
 Fixed:
-- Added `busybox` symlink to korego in the test runner link directory.
+- Added `busybox` symlink to goposix in the test runner link directory.
 - Added `LINKSDIR` to PATH in old-style test runner for `busybox` resolution.
 - Added `busybox` alias in main dispatcher (`name == "busybox"` → subcommand mode).
 - Exported `LINKSDIR` environment variable.
@@ -221,7 +221,7 @@ These are known differences from GNU/BusyBox behavior that are low-priority or b
 ## BusyBox Skipped Tests (10 tests — external dependency gated)
 
 These tests are skipped because they require external compression tools or features
-not yet implemented in KoreGo.
+not yet implemented in GoPOSIX.
 
 | Test | Reason |
 |------|--------|
@@ -240,9 +240,9 @@ not yet implemented in KoreGo.
 
 ## CI vs Local Discrepancy Note — RESOLVED (2026-05-13)
 
-The discrepancy was fixed by adding a global `busybox → korego` symlink in `runtest`.
-All old-style `busybox <applet>` calls now resolve to KoreGo on both CI and local.
-The true KoreGo BusyBox pass rate is **477 passed, 3 failed, 10 skipped**.
+The discrepancy was fixed by adding a global `busybox → goposix` symlink in `runtest`.
+All old-style `busybox <applet>` calls now resolve to GoPOSIX on both CI and local.
+The true GoPOSIX BusyBox pass rate is **477 passed, 3 failed, 10 skipped**.
 See [12_road_to_gold.md](12_road_to_gold.md) (12.4) for the implementation details.
 
 ---

@@ -1,6 +1,6 @@
 # RPC Client API
 
-Go client library for the KoreGo daemon. Import path: `github.com/ramayac/korego/pkg/client`.
+Go client library for the GoPOSIX daemon. Import path: `github.com/ramayac/goposix/pkg/client`.
 
 ## Quick Start
 
@@ -10,11 +10,11 @@ package main
 import (
     "context"
     "fmt"
-    "github.com/ramayac/korego/pkg/client"
+    "github.com/ramayac/goposix/pkg/client"
 )
 
 func main() {
-    c, _ := client.New("/var/run/korego.sock", client.WithPoolSize(4))
+    c, _ := client.New("/var/run/goposix.sock", client.WithPoolSize(4))
     defer c.Close()
     ctx := context.Background()
 
@@ -31,7 +31,7 @@ func main() {
 ## Connection Lifecycle
 
 ```go
-c, err := client.New("/tmp/korego.sock",
+c, err := client.New("/tmp/goposix.sock",
     client.WithPoolSize(4),
     client.WithTimeout(30*time.Second),
     client.WithMaxRetries(2),
@@ -47,21 +47,21 @@ Connections are pooled and reused. The pool grows up to `poolSize` concurrent co
 
 ```go
 var result MyType
-err := c.Call(ctx, "korego.ls", params, &result)
+err := c.Call(ctx, "goposix.ls", params, &result)
 ```
 
 ### CallRaw — returns raw JSON
 
 ```go
-raw, err := c.CallRaw(ctx, "korego.someMethod", params)
+raw, err := c.CallRaw(ctx, "goposix.someMethod", params)
 ```
 
 ### Batch — multiple requests in one round-trip
 
 ```go
 reqs := []client.BatchRequest{
-    {Method: "korego.echo", Params: map[string]string{"text": "a"}},
-    {Method: "korego.echo", Params: map[string]string{"text": "b"}},
+    {Method: "goposix.echo", Params: map[string]string{"text": "a"}},
+    {Method: "goposix.echo", Params: map[string]string{"text": "b"}},
 }
 resps, err := c.Batch(ctx, reqs)
 ```
@@ -69,7 +69,7 @@ resps, err := c.Batch(ctx, reqs)
 ### Notify — fire-and-forget (no response)
 
 ```go
-err := c.Notify(ctx, "korego.true", nil)
+err := c.Notify(ctx, "goposix.true", nil)
 ```
 
 ## Typed Utility Helpers
@@ -182,7 +182,7 @@ c.ShellExec(ctx, sessionID, "echo hello && ls -la")
 
 The `sessionID` parameter is optional — pass `""` for stateless one-off commands. When provided,
 the shell inherits the session's working directory and environment. All executions are subject to
-the timeout configured by `KOREGO_SHELL_TIMEOUT` (default `30s`, accepts Go duration strings like
+the timeout configured by `GOPOSIX_SHELL_TIMEOUT` (default `30s`, accepts Go duration strings like
 `"60s"`, `"5m"`). See [Security Model](SECURITY.md) for the full sandbox and resource limit details.
 
 ### Ping

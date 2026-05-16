@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/pwd.schema.json",
-  "title": "KoreGo pwd --json output",
-  "description": "Validates the complete JSON output of korego pwd --json.",
+  "$id": "https://goposix.dev/schemas/pwd.schema.json",
+  "title": "GoPOSIX pwd --json output",
+  "description": "Validates the complete JSON output of goposix pwd --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

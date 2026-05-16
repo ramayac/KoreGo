@@ -1,14 +1,14 @@
-# korego Makefile
+# goposix Makefile
 # -------------------------------------------------------------------
 # All Go is built with CGO_ENABLED=0 for scratch-container compatibility.
 
-BINARY     := korego
-CMD        := ./cmd/korego
-MODULE     := github.com/ramayac/korego
+BINARY     := goposix
+CMD        := ./cmd/goposix
+MODULE     := github.com/ramayac/goposix
 VERSION    ?= $(shell git describe --tags --always 2>/dev/null || echo "dev")
 LDFLAGS    := -ldflags "-s -w -X '$(MODULE)/pkg/common.Version=$(VERSION)' \
-                              -X 'github.com/ramayac/korego.Version=$(VERSION)'"
-DOCKER_IMG := korego:$(VERSION)
+                              -X 'github.com/ramayac/goposix.Version=$(VERSION)'"
+DOCKER_IMG := goposix:$(VERSION)
 
 # Directories tested by the unit-test and coverage targets.
 PKG_DIRS   := . \
@@ -81,14 +81,14 @@ PKG_DIRS   := . \
 .PHONY: help
 help:
 	@echo ""
-	@echo "  korego — $(VERSION)"
+	@echo "  goposix — $(VERSION)"
 	@echo ""
 	@echo "  Usage: make <target>"
 	@echo ""
 	@echo "  Build"
-	@echo "    build        Compile the korego binary (CGO_ENABLED=0)"
+	@echo "    build        Compile the goposix binary (CGO_ENABLED=0)"
 	@echo "    build-race   Compile with -race detector (dev only)"
-	@echo "    install      Install korego to \$$GOPATH/bin"
+	@echo "    install      Install goposix to \$$GOPATH/bin"
 	@echo ""
 	@echo "  Test"
 	@echo "    test         Run all unit tests"
@@ -104,12 +104,12 @@ help:
 	@echo ""
 	@echo "  Docker"
 	@echo "    docker        Build production scratch image ($(DOCKER_IMG))"
-	@echo "    docker-debug  Build Alpine debug image (korego:debug)"
+	@echo "    docker-debug  Build Alpine debug image (goposix:debug)"
 	@echo "    smoke-docker  Run smoke tests inside the production container"
 	@echo ""
 	@echo "  Smoke"
 	@echo "    smoke        Build + run manual integration smoke tests (local)"
-	@echo "    symlink-test Test symlink dispatch (ln -s korego echo)"
+	@echo "    symlink-test Test symlink dispatch (ln -s goposix echo)"
 	@echo ""
 	@echo "  Housekeeping"
 	@echo "    clean        Remove build artifacts and Docker image"
@@ -173,8 +173,8 @@ COVERAGE_THRESHOLD := 70
 .PHONY: cover-gate
 cover-gate:
 	@echo "Checking coverage ≥ $(COVERAGE_THRESHOLD)%..."
-	@CGO_ENABLED=0 go test -coverprofile=/tmp/korego_ci_cover.out $(PKG_DIRS) > /dev/null 2>&1 || true
-	@total=$$(go tool cover -func=/tmp/korego_ci_cover.out 2>/dev/null | grep '^total:' | awk '{print $$NF}' | tr -d '%'); \
+	@CGO_ENABLED=0 go test -coverprofile=/tmp/goposix_ci_cover.out $(PKG_DIRS) > /dev/null 2>&1 || true
+	@total=$$(go tool cover -func=/tmp/goposix_ci_cover.out 2>/dev/null | grep '^total:' | awk '{print $$NF}' | tr -d '%'); \
 	if [ -z "$$total" ]; then echo "FAIL: could not parse coverage"; exit 1; fi; \
 	if [ "$$(echo "$$total < $(COVERAGE_THRESHOLD)" | bc -l)" = "1" ]; then \
 		echo "FAIL: coverage $$total% < $(COVERAGE_THRESHOLD)% threshold"; exit 1; \
@@ -221,11 +221,11 @@ docker:
 
 .PHONY: docker-debug
 docker-debug: ## Build debug alpine docker image
-	docker build -t korego:debug -f docker/Dockerfile.debug .
+	docker build -t goposix:debug -f docker/Dockerfile.debug .
 
 .PHONY: docker-shell
 docker-shell: docker-debug ## Run an interactive shell in the docker image
-	docker run -it --rm korego:debug sh
+	docker run -it --rm goposix:debug sh
 
 .PHONY: docker-run
 docker-run: docker ## Run a command in the production scratch container (e.g., make docker-run CMD="ls -la")
@@ -300,7 +300,7 @@ smoke: build
 
 .PHONY: symlink-test
 symlink-test: build
-	@echo "Creating symlink: echo -> korego"
+	@echo "Creating symlink: echo -> goposix"
 	ln -sf ./$(BINARY) ./echo
 	@echo "Running ./echo via symlink..."
 	./echo symlink dispatch works
@@ -314,7 +314,7 @@ symlink-test: build
 .PHONY: clean
 clean:
 	rm -f $(BINARY) $(BINARY)-race coverage.out coverage.html
-	-docker rmi $(DOCKER_IMG) korego:debug 2>/dev/null || true
+	-docker rmi $(DOCKER_IMG) goposix:debug 2>/dev/null || true
 	@echo "clean: done"
 
 .PHONY: tidy

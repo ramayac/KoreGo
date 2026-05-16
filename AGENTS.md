@@ -1,12 +1,12 @@
-# Agent Context & Directives for KoreGo
+# Agent Context & Directives for GoPOSIX
 
-**Hello AI Assistant!** you are working on **KoreGo**. This document provides the critical context, architectural invariants, and workflow rules required to contribute successfully to this project. 
+**Hello AI Assistant!** you are working on **GoPOSIX**. This document provides the critical context, architectural invariants, and workflow rules required to contribute successfully to this project. 
 
 ## 1. Project Identity & Goal
 
-KoreGo is a 100% Go-native, POSIX-compliant userland designed to run inside a Docker `FROM scratch` container. It serves as a modern replacement for GNU Coreutils CLI tools by compiling down to a single multicall binary (like BusyBox).
+GoPOSIX is a 100% Go-native, POSIX-compliant userland designed to run inside a Docker `FROM scratch` container. It serves as a modern replacement for GNU Coreutils CLI tools by compiling down to a single multicall binary (like BusyBox).
 
-Crucially, KoreGo is designed for **Agentic Runtimes**:
+Crucially, GoPOSIX is designed for **Agentic Runtimes**:
 1. Every utility supports structured machine-readable output via a `--json` flag.
 2. It will eventually feature a persistent JSON-RPC daemon to avoid continuous process-spawning overhead.
 
@@ -22,11 +22,11 @@ Whenever you write or modify code in this repository, you **MUST** adhere to the
 
 ## 3. Component Structure
 
-- `cmd/korego/main.go`: The multicall entry point. Handles symlink invocation (e.g., `/bin/ls -> /bin/korego`) and subcommand invocation (`korego ls`).
+- `cmd/goposix/main.go`: The multicall entry point. Handles symlink invocation (e.g., `/bin/ls -> /bin/goposix`) and subcommand invocation (`goposix ls`).
 - `internal/dispatch/`: The command registry.
 - `pkg/common/`: Foundation libraries (flags, JSON envelope, JSON-RPC types).
 - `pkg/<utility>/`: Implementation of specific POSIX utilities (e.g., `pkg/cat/`, `pkg/ls/`).
-- `test/compliance/`: Bash scripts that compare KoreGo's output and exit codes against the host OS (GNU/Linux) equivalents.
+- `test/compliance/`: Bash scripts that compare GoPOSIX's output and exit codes against the host OS (GNU/Linux) equivalents.
 - `docker/`: Dockerfiles for the production `scratch` image and the `alpine` debug image.
 
 ## 4. Development Workflow
@@ -38,7 +38,7 @@ When implementing a new utility or feature, follow this checklist:
 3. **Unit Tests:** Write robust unit tests in `pkg/<name>/<name>_test.go` targeting > 80% coverage.
 4. **Compliance Tests:** Add a test script in `test/compliance/test_<name>.sh`. Use `set -uo pipefail` (do NOT use `set -e`, as non-zero exit codes from utilities are expected and should be captured).
 5. **Registration:** 
-   - Add a blank import for the package in `cmd/korego/main.go`.
+   - Add a blank import for the package in `cmd/goposix/main.go`.
    - Add the package to the `PKG_DIRS` variable in the `Makefile`.
    - Add the compliance script to the `compliance` target in the `Makefile`.
 6. **Verification:**
@@ -76,18 +76,18 @@ Refer to the Phase documents in `wiki/` (e.g., `wiki/plan_updated.md`) to unders
 ## 7. Docker & Containerization Insights
 
 - **Go Version Alignment:** Always ensure the `golang` base image version in `docker/Dockerfile*` matches or exceeds the `go` version specified in `go.mod`. Failing to do so will break the build during `go mod download`.
-- **Debug Image Flexibility:** Use `CMD ["/bin/sh"]` instead of `ENTRYPOINT` in debug images. This allows `docker run -it korego:debug sh` to work as expected, rather than passing `sh` as an argument to the `korego` multicall binary.
+- **Debug Image Flexibility:** Use `CMD ["/bin/sh"]` instead of `ENTRYPOINT` in debug images. This allows `docker run -it goposix:debug sh` to work as expected, rather than passing `sh` as an argument to the `goposix` multicall binary.
 - **Scratch Image Purity:** When generating symlinks in a multi-stage Docker build, do **not** `COPY --from=stage /bin/ /bin/`. This pulls in all host OS binaries (like Alpine's BusyBox). Instead, create a dedicated output directory (e.g., `/out/bin`) in the intermediate stage and copy only that to the final `scratch` image.
 - **Testing Production:** Use `make smoke-docker` to verify the production image. Use `make docker-run CMD="ls -la"` for ad-hoc testing of specific utilities inside the minimal `scratch` environment.
 
 ## 8. BusyBox Test Suite Insights & Agent Learnings
 
-While running and porting the BusyBox test suite to KoreGo, be aware of the following implicit assumptions the suite makes about the utilities it tests:
+While running and porting the BusyBox test suite to GoPOSIX, be aware of the following implicit assumptions the suite makes about the utilities it tests:
 
 - **Formatting Rigidity:** Utilities like `wc` must not emit leading padding (e.g., `%7d`), as tests often compare raw string matches against expected output (e.g., `8185` vs `   8185`). 
 - **Binary Data Parsing (`NUL` bytes):** The BusyBox test suite actively tests embedded `NUL` bytes (e.g., passing `he\0llo` to `sed` commands). Be careful when parsing text files or command arguments in Go. Do not use standard C-style `0` byte checks as an EOF marker or early-termination signal in parsers (like the `sed` AST builder), because literal `NUL` bytes are valid inputs.
-- **Harness Dependencies (`echo -e`):** The `testing.sh` harness often relies on `echo` to generate binary payloads. If `ECHO="korego echo"` is used, ensure `korego echo` fully implements octal (`\0NNN`) and hexadecimal (`\xNN`) escapes. Otherwise, the tests will generate literal backslashes, leading to cascading false-positive failures in downstream tools like `sed` and `grep`.
+- **Harness Dependencies (`echo -e`):** The `testing.sh` harness often relies on `echo` to generate binary payloads. If `ECHO="goposix echo"` is used, ensure `goposix echo` fully implements octal (`\0NNN`) and hexadecimal (`\xNN`) escapes. Otherwise, the tests will generate literal backslashes, leading to cascading false-positive failures in downstream tools like `sed` and `grep`.
 - **Flag Pre-processing (`find`):** The custom `common.ParseFlags` expects double-dash long flags (`--name`). For tools that use single-dash long flags (like `find -name -exec {} \;`), an argument pre-processing step is required before passing arguments to the flag parser to ensure compatibility without breaking standard POSIX flag logic. `-exec` must be captured as a unit before the flag parser sees it to avoid treating it as bundled short flags (`-e -x -e -c`).
-- **Symlink collision (`sh`):** Never register a dispatch command named `sh` in a multicall binary. The test harness creates symlinks for every command via `--list-commands`, and a `sh -> korego` symlink shadows the system `/bin/sh`, causing the entire test suite to fail (the harness runs test cases via `sh -x -e`). The `shell` command is safe; KoreGoOS can manually create a `sh` symlink if needed.
+- **Symlink collision (`sh`):** Never register a dispatch command named `sh` in a multicall binary. The test harness creates symlinks for every command via `--list-commands`, and a `sh -> goposix` symlink shadows the system `/bin/sh`, causing the entire test suite to fail (the harness runs test cases via `sh -x -e`). The `shell` command is safe; GoPOSIXOS can manually create a `sh` symlink if needed.
 
 **Always read the active Phase document before writing code!**

@@ -2,7 +2,7 @@
 
 ## Trust Level
 
-The `korego.shell.exec` RPC method is designed for **trusted input only**. Scripts executed
+The `goposix.shell.exec` RPC method is designed for **trusted input only**. Scripts executed
 through this interface run with the same OS-level privileges as the daemon process. The
 sandboxing below is a defense-in-depth measure, not a guarantee against a determined
 adversary with arbitrary code execution.
@@ -34,15 +34,15 @@ networking capabilities. Scripts cannot make outbound connections or listen on p
 
 ### Process Execution
 
-Scripts can invoke KoreGo utilities (the same ones available via the multicall binary)
+Scripts can invoke GoPOSIX utilities (the same ones available via the multicall binary)
 and any external commands available in the container/VM. On a `FROM scratch` Docker
-image, only KoreGo utilities are available.
+image, only GoPOSIX utilities are available.
 
 ## Resource Limits
 
 | Resource | Limit | Configurable |
 |----------|-------|-------------|
-| Execution timeout | 30s default | `KOREGO_SHELL_TIMEOUT` env var (Go duration format, e.g. `60s`, `5m`) |
+| Execution timeout | 30s default | `GOPOSIX_SHELL_TIMEOUT` env var (Go duration format, e.g. `60s`, `5m`) |
 | Stdout buffer | 128 MB | No (hardcoded `LimitWriter`) |
 | Stderr buffer | 128 MB | No (hardcoded `LimitWriter`) |
 
@@ -60,17 +60,17 @@ a non-zero exit code. When either output buffer is exceeded, the stream is trunc
 
 ## Recommended Deployment Posture
 
-1. **Run as non-root.** The Docker image uses `USER korego (1000:1000)`. Never override
+1. **Run as non-root.** The Docker image uses `USER goposix (1000:1000)`. Never override
    this without a specific reason.
 2. **Socket permissions.** The Unix socket should be owned by the daemon user with `0600`
    or `0660` permissions. Restrict access to a specific group.
 3. **No network exposure.** Use Unix domain sockets, not TCP. If TCP is unavoidable, place
    a reverse proxy with authentication in front of the daemon.
 4. **Minimal base image.** Use the `FROM scratch` production image. It contains only the
-   KoreGo static binary — no shell, no package manager, no utilities.
+   GoPOSIX static binary — no shell, no package manager, no utilities.
 5. **Read-only filesystem.** Mount the container filesystem as read-only except for the
    socket directory and any paths the daemon needs to write to.
-6. **Session isolation.** Use sessions (`korego.session.create`) for multi-step workflows.
+6. **Session isolation.** Use sessions (`goposix.session.create`) for multi-step workflows.
    Sessions confine file operations to a working directory and carry environment state
    across calls. Stateless calls operate against `/` by default.
 
@@ -92,16 +92,16 @@ CI scans the Docker image with Trivy on every push for CRITICAL/HIGH CVEs.
 
 ```bash
 # Verify a release image is signed by this repo's GitHub Actions
-cosign verify ghcr.io/ramayac/korego:latest \
+cosign verify ghcr.io/ramayac/goposix:latest \
   --certificate-identity-regexp='.*' \
   --certificate-oidc-issuer='https://token.actions.githubusercontent.com'
 
 # Inspect the SBOM attached to the image
-docker buildx imagetools inspect ghcr.io/ramayac/korego:latest --format '{{ json .SBOM }}'
+docker buildx imagetools inspect ghcr.io/ramayac/goposix:latest --format '{{ json .SBOM }}'
 
 # Verify SLSA provenance (requires slsa-verifier)
-slsa-verifier verify-image ghcr.io/ramayac/korego:latest \
-  --source-uri github.com/ramayac/korego
+slsa-verifier verify-image ghcr.io/ramayac/goposix:latest \
+  --source-uri github.com/ramayac/goposix
 ```
 
 ## Reporting Vulnerabilities

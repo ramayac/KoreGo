@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 	"mvdan.cc/sh/v3/expand"
 	"mvdan.cc/sh/v3/interp"
 	"mvdan.cc/sh/v3/syntax"
@@ -88,7 +88,7 @@ func Exec(script string, cwd string, env map[string]string) ExecResult {
 	}
 
 	timeout := 30 * time.Second
-	if s := os.Getenv("KOREGO_SHELL_TIMEOUT"); s != "" {
+	if s := os.Getenv("GOPOSIX_SHELL_TIMEOUT"); s != "" {
 		if d, err := time.ParseDuration(s); err == nil {
 			timeout = d
 		}

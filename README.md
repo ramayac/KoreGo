@@ -1,6 +1,6 @@
-# KoreGo
+# GoPOSIX
 
-A Go-native, single-binary POSIX userland (99.4% BusyBox test compatibility). KoreGo replaces
+A Go-native, single-binary POSIX userland (99.4% BusyBox test compatibility). GoPOSIX replaces
 GNU Coreutils in Docker `FROM scratch` containers, featuring structured `--json` output in
 every utility and a persistent JSON-RPC daemon to eliminate process-spawning overhead.
 
@@ -21,14 +21,14 @@ Key Features:
 
 ### Docker
 ```bash
-docker pull ghcr.io/ramayac/korego:latest
-docker run --rm ghcr.io/ramayac/korego:latest ls --json /
+docker pull ghcr.io/ramayac/goposix:latest
+docker run --rm ghcr.io/ramayac/goposix:latest ls --json /
 ```
 
 ### Build from Source
 ```bash
 make all
-./korego --list-commands
+./goposix --list-commands
 ```
 
 ### Run Tests
@@ -40,14 +40,14 @@ make ci            # full pipeline (test + testsuite + coverage + docker)
 
 ### Start Daemon
 ```bash
-./korego daemon --socket /tmp/korego.sock &
+./goposix daemon --socket /tmp/goposix.sock &
 ```
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `KOREGO_SHELL_TIMEOUT` | `30s` | Shell execution timeout (Go duration format, e.g. `60s`, `5m`) |
+| `GOPOSIX_SHELL_TIMEOUT` | `30s` | Shell execution timeout (Go duration format, e.g. `60s`, `5m`) |
 
 ## Documentation
 - [Architecture](docs/ARCHITECTURE.md)
@@ -94,6 +94,6 @@ The 10 skipped tests require external tools (bzip2, xz, uudecode) or PAX extende
 
 - **No CGO:** Static compilation for `FROM scratch` containers (`CGO_ENABLED=0`).
 - **Zero Dependencies:** No external Go modules for flag parsing, output, or utility logic.
-- **Multicall Binary:** Single binary dispatched via symlink or subcommand (`korego ls`).
+- **Multicall Binary:** Single binary dispatched via symlink or subcommand (`goposix ls`).
 - **`--json` Only:** Structured output via `--json` long flag only — no short-form collision with POSIX flags.
 - **POSIX Flag Parsing:** Custom parser in `pkg/common/flags.go` with escape hatches for free-form utilities.

@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/kill.schema.json",
-  "title": "KoreGo kill --json output",
-  "description": "Validates the complete JSON output of korego kill --json.",
+  "$id": "https://goposix.dev/schemas/kill.schema.json",
+  "title": "GoPOSIX kill --json output",
+  "description": "Validates the complete JSON output of goposix kill --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

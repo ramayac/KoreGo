@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/readlink.schema.json",
-  "title": "KoreGo readlink --json output",
-  "description": "Validates the complete JSON output of korego readlink --json.",
+  "$id": "https://goposix.dev/schemas/readlink.schema.json",
+  "title": "GoPOSIX readlink --json output",
+  "description": "Validates the complete JSON output of goposix readlink --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

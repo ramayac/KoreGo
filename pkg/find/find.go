@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 var spec = common.FlagSpec{
@@ -21,7 +21,7 @@ var spec = common.FlagSpec{
 		{Short: "n", Long: "name", Type: common.FlagValue},
 		{Short: "t", Long: "type", Type: common.FlagValue},
 		{Short: "d", Long: "maxdepth", Type: common.FlagValue},
-		// -xdev: stay on this filesystem (no-op in korego; filepath.WalkDir
+		// -xdev: stay on this filesystem (no-op in goposix; filepath.WalkDir
 		// already respects filesystem boundaries).
 		{Short: "x", Long: "xdev", Type: common.FlagBool},
 		{Short: "m", Long: "mtime", Type: common.FlagValue},

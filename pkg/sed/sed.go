@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 // SedResult is the structured result for --json mode.
@@ -37,7 +37,7 @@ func run(args []string, out io.Writer) int {
 		return 2
 	}
 	if flags.Has("version") {
-		fmt.Fprintln(out, "GNU sed version 4.0 (KoreGo)")
+		fmt.Fprintln(out, "GNU sed version 4.0 (GoPOSIX)")
 		return 0
 	}
 	jsonMode := flags.Has("json")

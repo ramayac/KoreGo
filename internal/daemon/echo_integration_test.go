@@ -6,21 +6,21 @@ import (
 	"time"
 
 	// Register utilities so dispatch.Lookup works.
-	_ "github.com/ramayac/korego/pkg/echo"
-	_ "github.com/ramayac/korego/pkg/truefalse"
+	_ "github.com/ramayac/goposix/pkg/echo"
+	_ "github.com/ramayac/goposix/pkg/truefalse"
 )
 
 func TestProcessRequest_EchoJSONMode(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30)}
 
-	params, err := json.Marshal(KoregoParams{Flags: nil, Text: "hello world"})
+	params, err := json.Marshal(GoposixParams{Flags: nil, Text: "hello world"})
 	if err != nil {
 		t.Fatalf("marshal params: %v", err)
 	}
 
 	req := Request{
 		JSONRPC: "2.0",
-		Method:  "korego.echo",
+		Method:  "goposix.echo",
 		Params:  json.RawMessage(params),
 		ID:      1,
 	}
@@ -63,14 +63,14 @@ func TestProcessRequest_EchoJSONMode(t *testing.T) {
 func TestProcessRequest_EchoJSONModeWithFlags(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30)}
 
-	params, err := json.Marshal(KoregoParams{Flags: []string{"-n"}, Text: "hello"})
+	params, err := json.Marshal(GoposixParams{Flags: []string{"-n"}, Text: "hello"})
 	if err != nil {
 		t.Fatalf("marshal params: %v", err)
 	}
 
 	req := Request{
 		JSONRPC: "2.0",
-		Method:  "korego.echo",
+		Method:  "goposix.echo",
 		Params:  json.RawMessage(params),
 		ID:      1,
 	}
@@ -104,7 +104,7 @@ func TestProcessRequest_EchoJSONModeWithFlags(t *testing.T) {
 
 func TestProcessRequest_MethodNotFound(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30)}
-	req := Request{JSONRPC: "2.0", Method: "korego.nonexistent", Params: nil, ID: 1}
+	req := Request{JSONRPC: "2.0", Method: "goposix.nonexistent", Params: nil, ID: 1}
 	resp := srv.processRequest(req)
 	if resp == nil { t.Fatal("expected response") }
 	if resp.Error == nil { t.Fatal("expected error") }
@@ -113,14 +113,14 @@ func TestProcessRequest_MethodNotFound(t *testing.T) {
 
 func TestProcessRequest_Notification(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30)}
-	req := Request{JSONRPC: "2.0", Method: "korego.true", Params: nil}
+	req := Request{JSONRPC: "2.0", Method: "goposix.true", Params: nil}
 	resp := srv.processRequest(req)
 	if resp != nil { t.Error("notification should return nil response") }
 }
 
 func TestProcessRequest_Ping(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30), uptime: time.Now()}
-	req := Request{JSONRPC: "2.0", Method: "korego.ping", Params: nil, ID: 1}
+	req := Request{JSONRPC: "2.0", Method: "goposix.ping", Params: nil, ID: 1}
 	resp := srv.processRequest(req)
 	if resp == nil { t.Fatal("expected response") }
 	if resp.Error != nil { t.Fatalf("unexpected error: %v", resp.Error) }
@@ -128,14 +128,14 @@ func TestProcessRequest_Ping(t *testing.T) {
 
 func TestProcessRequest_PingNotification(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30), uptime: time.Now()}
-	req := Request{JSONRPC: "2.0", Method: "korego.ping", Params: nil}
+	req := Request{JSONRPC: "2.0", Method: "goposix.ping", Params: nil}
 	resp := srv.processRequest(req)
 	if resp != nil { t.Error("ping notification should return nil") }
 }
 
 func TestProcessRequest_InvalidJSONRPC(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30)}
-	req := Request{JSONRPC: "1.0", Method: "korego.echo", Params: nil, ID: 1}
+	req := Request{JSONRPC: "1.0", Method: "goposix.echo", Params: nil, ID: 1}
 	resp := srv.processRequest(req)
 	if resp == nil { t.Fatal("expected response") }
 	if resp.Error == nil { t.Fatal("expected error") }
@@ -144,7 +144,7 @@ func TestProcessRequest_InvalidJSONRPC(t *testing.T) {
 
 func TestProcessRequest_MethodTooLong(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30)}
-	longMethod := "korego." + string(make([]byte, 300))
+	longMethod := "goposix." + string(make([]byte, 300))
 	req := Request{JSONRPC: "2.0", Method: longMethod, Params: nil, ID: 1}
 	resp := srv.processRequest(req)
 	if resp == nil { t.Fatal("expected response") }
@@ -154,7 +154,7 @@ func TestProcessRequest_MethodTooLong(t *testing.T) {
 
 func TestProcessRequest_SessionCreate(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30)}
-	req := Request{JSONRPC: "2.0", Method: "korego.session.create", Params: nil, ID: 1}
+	req := Request{JSONRPC: "2.0", Method: "goposix.session.create", Params: nil, ID: 1}
 	resp := srv.processRequest(req)
 	if resp == nil { t.Fatal("expected response") }
 	if resp.Error != nil { t.Fatalf("unexpected error: %v", resp.Error) }
@@ -163,8 +163,8 @@ func TestProcessRequest_SessionCreate(t *testing.T) {
 func TestProcessRequest_SessionDestroy(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30)}
 	s := srv.sm.Create()
-	params, _ := json.Marshal(KoregoParams{SessionId: s.ID})
-	req := Request{JSONRPC: "2.0", Method: "korego.session.destroy", Params: json.RawMessage(params), ID: 1}
+	params, _ := json.Marshal(GoposixParams{SessionId: s.ID})
+	req := Request{JSONRPC: "2.0", Method: "goposix.session.destroy", Params: json.RawMessage(params), ID: 1}
 	resp := srv.processRequest(req)
 	if resp == nil { t.Fatal("expected response") }
 	if resp.Error != nil { t.Fatalf("unexpected error: %v", resp.Error) }
@@ -173,8 +173,8 @@ func TestProcessRequest_SessionDestroy(t *testing.T) {
 func TestProcessRequest_SessionSetCwd(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30)}
 	s := srv.sm.Create()
-	params, _ := json.Marshal(KoregoParams{SessionId: s.ID, Path: "/tmp"})
-	req := Request{JSONRPC: "2.0", Method: "korego.session.setCwd", Params: json.RawMessage(params), ID: 1}
+	params, _ := json.Marshal(GoposixParams{SessionId: s.ID, Path: "/tmp"})
+	req := Request{JSONRPC: "2.0", Method: "goposix.session.setCwd", Params: json.RawMessage(params), ID: 1}
 	resp := srv.processRequest(req)
 	if resp == nil { t.Fatal("expected response") }
 	if resp.Error != nil { t.Fatalf("unexpected error: %v", resp.Error) }
@@ -183,7 +183,7 @@ func TestProcessRequest_SessionSetCwd(t *testing.T) {
 func TestProcessRequest_SessionList(t *testing.T) {
 	srv := &Server{sm: NewSessionManager(30)}
 	srv.sm.Create()
-	req := Request{JSONRPC: "2.0", Method: "korego.session.list", Params: nil, ID: 1}
+	req := Request{JSONRPC: "2.0", Method: "goposix.session.list", Params: nil, ID: 1}
 	resp := srv.processRequest(req)
 	if resp == nil { t.Fatal("expected response") }
 	if resp.Error != nil { t.Fatalf("unexpected error: %v", resp.Error) }

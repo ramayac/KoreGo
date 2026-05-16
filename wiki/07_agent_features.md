@@ -18,33 +18,33 @@ Each agent connection can create a session that remembers state across RPC calls
 
 ```json
 // Create session
-{"jsonrpc":"2.0","method":"korego.session.create","id":1}
+{"jsonrpc":"2.0","method":"goposix.session.create","id":1}
 → {"result":{"sessionId":"abc-123","cwd":"/"}}
 
 // Set working directory
-{"jsonrpc":"2.0","method":"korego.session.setCwd","params":{"sessionId":"abc-123","path":"/tmp"},"id":2}
+{"jsonrpc":"2.0","method":"goposix.session.setCwd","params":{"sessionId":"abc-123","path":"/tmp"},"id":2}
 
 // Run command in session context
-{"jsonrpc":"2.0","method":"korego.ls","params":{"sessionId":"abc-123","path":"."},"id":3}
+{"jsonrpc":"2.0","method":"goposix.ls","params":{"sessionId":"abc-123","path":"."},"id":3}
 // ls runs relative to /tmp because of session cwd
 ```
 
 - [x] Session stores: `cwd`, `env` vars, command history
 - [x] Session TTL: auto-expire after 30min idle (configurable)
-- [x] `korego.session.list` — list active sessions
-- [x] `korego.session.destroy` — cleanup
+- [x] `goposix.session.list` — list active sessions
+- [x] `goposix.session.destroy` — cleanup
 
 ### 07.2 — Shell Interpreter (`internal/shell/interpreter.go`)
 
 Embed `mvdan.cc/sh/v3` to execute shell scripts via RPC.
 
 ```json
-{"jsonrpc":"2.0","method":"korego.shell.exec",
+{"jsonrpc":"2.0","method":"goposix.shell.exec",
  "params":{"script":"ls -la | grep txt | wc -l", "sessionId":"abc-123"},"id":4}
 → {"result":{"stdout":"3\n","stderr":"","exitCode":0}}
 ```
 
-- [x] Builtins: KoreGo utilities are registered as shell builtins (no fork/exec)
+- [x] Builtins: GoPOSIX utilities are registered as shell builtins (no fork/exec)
 - [x] Pipes: `ls | grep | wc` uses Go channels, not OS pipes
 - [x] Environment: inherits from session env vars
 - [x] Safety: execution timeout (default 30s), memory limit
@@ -54,7 +54,7 @@ Embed `mvdan.cc/sh/v3` to execute shell scripts via RPC.
 All daemon operations log as structured JSON to stderr/file.
 
 ```json
-{"time":"2026-04-24T20:00:00Z","level":"info","method":"korego.ls","sessionId":"abc-123","durationMs":2.1}
+{"time":"2026-04-24T20:00:00Z","level":"info","method":"goposix.ls","sessionId":"abc-123","durationMs":2.1}
 ```
 
 - [x] Use `log/slog` from stdlib
@@ -215,23 +215,23 @@ Targets:
 ## Milestone 07
 
 - [x] Agent creates session, sets cwd, runs relative commands
-- [x] `korego.shell.exec "ls | grep go | wc -l"` returns structured result
+- [x] `goposix.shell.exec "ls | grep go | wc -l"` returns structured result
 - [x] Daemon latency < 1ms for `echo`, < 5ms for `ls`
 - [x] Sessions auto-expire after TTL
 - [x] `sha256sum --json file` returns hash
 - [x] `tar -czf archive.tar.gz dir/` creates archive
-- [x] Makefile target so the user can get an interactive shell in the docker image. (docker run -it korego)
+- [x] Makefile target so the user can get an interactive shell in the docker image. (docker run -it goposix)
 
 ## How to Verify
 
 ```bash
 # Session workflow
-echo '{"jsonrpc":"2.0","method":"korego.session.create","id":1}' | socat - UNIX-CONNECT:/tmp/korego.sock
+echo '{"jsonrpc":"2.0","method":"goposix.session.create","id":1}' | socat - UNIX-CONNECT:/tmp/goposix.sock
 # → get sessionId, then use it in subsequent calls
 
 # Shell exec
-echo '{"jsonrpc":"2.0","method":"korego.shell.exec","params":{"script":"echo hello | tr a-z A-Z"},"id":2}' \
-  | socat - UNIX-CONNECT:/tmp/korego.sock
+echo '{"jsonrpc":"2.0","method":"goposix.shell.exec","params":{"script":"echo hello | tr a-z A-Z"},"id":2}' \
+  | socat - UNIX-CONNECT:/tmp/goposix.sock
 
 # Benchmarks
 go test -bench=. -benchmem ./test/benchmark/

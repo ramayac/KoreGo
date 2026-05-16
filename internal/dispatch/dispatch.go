@@ -1,4 +1,4 @@
-// Package dispatch implements the multicall command registry for korego.
+// Package dispatch implements the multicall command registry for goposix.
 package dispatch
 
 import (
@@ -43,7 +43,7 @@ func ListAll() []Command {
 }
 
 // ListCommands prints one command name per line to stdout.
-// Used by the Dockerfile symlink-generator stage via: korego --list-commands
+// Used by the Dockerfile symlink-generator stage via: goposix --list-commands
 func ListCommands() {
 	for _, c := range ListAll() {
 		fmt.Fprintln(os.Stdout, c.Name)

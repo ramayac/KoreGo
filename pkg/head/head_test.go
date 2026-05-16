@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/goposix/internal/dispatch"
 )
 
 // captureOutput runs fn with os.Stdout and os.Stderr redirected to pipes.

@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/gzip.schema.json",
-  "title": "KoreGo gzip --json output",
-  "description": "Validates the complete JSON output of korego gzip --json.",
+  "$id": "https://goposix.dev/schemas/gzip.schema.json",
+  "title": "GoPOSIX gzip --json output",
+  "description": "Validates the complete JSON output of goposix gzip --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

@@ -8,7 +8,7 @@
 
 ## Goal
 
-Implement a fully POSIX-compliant (and BusyBox-compatible) `sed` utility for KoreGo. The current implementation in `pkg/sed` only supports a very basic `s///` command. To pass the `busybox_testsuite/sed.tests`, we need a robust parsing and execution engine capable of handling pattern spaces, hold spaces, branching, and complex addressing.
+Implement a fully POSIX-compliant (and BusyBox-compatible) `sed` utility for GoPOSIX. The current implementation in `pkg/sed` only supports a very basic `s///` command. To pass the `busybox_testsuite/sed.tests`, we need a robust parsing and execution engine capable of handling pattern spaces, hold spaces, branching, and complex addressing.
 
 ## Architecture
 

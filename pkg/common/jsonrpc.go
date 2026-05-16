@@ -1,4 +1,4 @@
-// Package common provides JSON-RPC 2.0 types for korego utilities.
+// Package common provides JSON-RPC 2.0 types for goposix utilities.
 // See https://www.jsonrpc.org/specification
 package common
 
@@ -36,7 +36,7 @@ const (
 	ErrInvalidParams  = -32602 // Invalid method parameters
 	ErrInternal       = -32603 // Internal JSON-RPC error
 
-	// Custom korego error codes (1000–1999 reserved).
+	// Custom goposix error codes (1000–1999 reserved).
 	ErrPermission = 1001
 	ErrNotFound   = 1002
 	ErrTimeout    = 1003

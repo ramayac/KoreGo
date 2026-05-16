@@ -8,15 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/korego/internal/daemon"
-	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/goposix/internal/daemon"
+	"github.com/ramayac/goposix/internal/dispatch"
 
-	_ "github.com/ramayac/korego/pkg/echo"
-	_ "github.com/ramayac/korego/pkg/ls"
+	_ "github.com/ramayac/goposix/pkg/echo"
+	_ "github.com/ramayac/goposix/pkg/ls"
 )
 
 func BenchmarkDaemonEcho(b *testing.B) {
-	socket := filepath.Join(b.TempDir(), "korego-bench.sock")
+	socket := filepath.Join(b.TempDir(), "goposix-bench.sock")
 	server := daemon.NewServer(socket, 4, "")
 	server.Start()
 	defer server.Stop()
@@ -26,7 +26,7 @@ func BenchmarkDaemonEcho(b *testing.B) {
 
 	reqBytes, _ := json.Marshal(map[string]interface{}{
 		"jsonrpc": "2.0",
-		"method":  "korego.echo",
+		"method":  "goposix.echo",
 		"params":  map[string]interface{}{"text": "hello"},
 		"id":      1,
 	})
@@ -48,7 +48,7 @@ func BenchmarkDaemonEcho(b *testing.B) {
 }
 
 func BenchmarkDaemonLs(b *testing.B) {
-	socket := filepath.Join(b.TempDir(), "korego-bench-ls.sock")
+	socket := filepath.Join(b.TempDir(), "goposix-bench-ls.sock")
 	server := daemon.NewServer(socket, 4, "")
 	server.Start()
 	defer server.Stop()
@@ -58,7 +58,7 @@ func BenchmarkDaemonLs(b *testing.B) {
 
 	reqBytes, _ := json.Marshal(map[string]interface{}{
 		"jsonrpc": "2.0",
-		"method":  "korego.ls",
+		"method":  "goposix.ls",
 		"params":  map[string]interface{}{"path": "/tmp"},
 		"id":      1,
 	})

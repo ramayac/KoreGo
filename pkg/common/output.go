@@ -1,4 +1,4 @@
-// Package common provides the standard JSON output envelope for korego utilities.
+// Package common provides the standard JSON output envelope for goposix utilities.
 package common
 
 import (
@@ -6,7 +6,7 @@ import (
 	"io"
 )
 
-// Version is the korego release version, injected at build time with -ldflags.
+// Version is the goposix release version, injected at build time with -ldflags.
 var Version = "0.1.0"
 
 // JSONEnvelope is the standard top-level response format for every utility when

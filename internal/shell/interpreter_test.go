@@ -17,8 +17,8 @@ func TestExecBasic(t *testing.T) {
 }
 
 func TestTimeout(t *testing.T) {
-	os.Setenv("KOREGO_SHELL_TIMEOUT", "500ms")
-	defer os.Unsetenv("KOREGO_SHELL_TIMEOUT")
+	os.Setenv("GOPOSIX_SHELL_TIMEOUT", "500ms")
+	defer os.Unsetenv("GOPOSIX_SHELL_TIMEOUT")
 
 	result := Exec("sleep 10", "", nil)
 	if result.ExitCode == 0 {
@@ -30,8 +30,8 @@ func TestTimeout(t *testing.T) {
 }
 
 func TestTimeoutViaEnv(t *testing.T) {
-	os.Setenv("KOREGO_SHELL_TIMEOUT", "100ms")
-	defer os.Unsetenv("KOREGO_SHELL_TIMEOUT")
+	os.Setenv("GOPOSIX_SHELL_TIMEOUT", "100ms")
+	defer os.Unsetenv("GOPOSIX_SHELL_TIMEOUT")
 
 	result := Exec("sleep 5", "", nil)
 	if result.ExitCode == 0 {

@@ -12,7 +12,7 @@ These items improve quality, robustness, and production-readiness but are not bl
 
 ## 11a.1 — Compliance Test Suite Expansion (superseded)
 
-**Decision:** The per-utility `test/compliance/` bash scripts and `make compliance` target have been removed. The BusyBox test suite (`make testsuite`, 479+ tests at 97.9% pass rate) provides broader, more standardized coverage. Expanding the BusyBox suite with additional test cases for KoreGo-specific features (e.g., `--json` output) is the preferred path going forward.
+**Decision:** The per-utility `test/compliance/` bash scripts and `make compliance` target have been removed. The BusyBox test suite (`make testsuite`, 479+ tests at 97.9% pass rate) provides broader, more standardized coverage. Expanding the BusyBox suite with additional test cases for GoPOSIX-specific features (e.g., `--json` output) is the preferred path going forward.
 
 ### Tasks
 
@@ -42,17 +42,17 @@ These items improve quality, robustness, and production-readiness but are not bl
 
 > **Note:** The sandbox design and implementation were completed in Phase 08
 > ([08_hardening.md](08_hardening.md) 08.1). Testing (`interpreter_test.go`), env-var
-> wiring (`KOREGO_SHELL_TIMEOUT`), and documentation (`docs/SECURITY.md`) are tracked
+> wiring (`GOPOSIX_SHELL_TIMEOUT`), and documentation (`docs/SECURITY.md`) are tracked
 > in [12_road_to_gold.md](12_road_to_gold.md) (12.2). This section is superseded.
 
 **Current state:** `internal/shell/interpreter.go` wraps `mvdan.cc/sh` with a hardcoded
 30s timeout and a 128MB `LimitWriter` per stream. `SecurePath` confines file opens to
-the session CWD. Code audit confirmed `KOREGO_SHELL_TIMEOUT` is not actually read from
+the session CWD. Code audit confirmed `GOPOSIX_SHELL_TIMEOUT` is not actually read from
 the environment (env var is documented but not wired). No tests, no `docs/SECURITY.md`.
 
 ### Tasks (tracked in 12.2)
 
-- [ ] Wire `KOREGO_SHELL_TIMEOUT` env var (currently hardcoded 30s)
+- [ ] Wire `GOPOSIX_SHELL_TIMEOUT` env var (currently hardcoded 30s)
 - [ ] Write `internal/shell/interpreter_test.go` (timeout enforcement, path escape, resource limits)
 - [ ] Write `docs/SECURITY.md` (trust model, accessible resources, limits, deployment posture)
 
@@ -134,7 +134,7 @@ the environment (env var is documented but not wired). No tests, no `docs/SECURI
 
 - [x] Compliance test approach changed: per-utility scripts removed in favor of BusyBox test suite (11a.1 — superseded)
 - [x] 6 missing unit test files added (cp, mv, ln, rmdir, yes, daemon); overall coverage 70.5% with CI hard-fail at 70% ([coverage policy](13_coverage_and_hardening.md))
-- [x] Shell interpreter security model documented (11a.3 — completed via [12.2](12_road_to_gold.md): KOREGO_SHELL_TIMEOUT wired, interpreter_test.go with 10 tests, docs/SECURITY.md)
+- [x] Shell interpreter security model documented (11a.3 — completed via [12.2](12_road_to_gold.md): GOPOSIX_SHELL_TIMEOUT wired, interpreter_test.go with 10 tests, docs/SECURITY.md)
 - [x] BusyBox baseline enforced; image size gate hard failure; coverage hard-fails at 70% ([coverage policy](13_coverage_and_hardening.md))
 - [x] `make help`, `make bench`, `make validate-schemas`, `make example-agent`, `make cover-pct` all work (11a.5)
 - [x] Three deployment patterns documented with a working docker-compose example (11a.6)

@@ -15,7 +15,7 @@
 
 ## Why It Matters
 
-`awk` is the last missing POSIX.2 utility in KoreGo. Without it, the project's
+`awk` is the last missing POSIX.2 utility in GoPOSIX. Without it, the project's
 "POSIX-compliant userland" claim carries a permanent asterisk. Every serious
 shell script that processes structured text uses awk. Completing this utility
 is the **Platinum gate** — it qualifies the project for the highest compliance
@@ -35,7 +35,7 @@ stretch goal, not a blocker for release.
 
 These span all sub-phases and must be completed for the utility to ship:
 
-- [ ] Register `awk` in multicall dispatch (`cmd/korego/main.go`)
+- [ ] Register `awk` in multicall dispatch (`cmd/goposix/main.go`)
 - [ ] `--json` output: array of per-record results with matched fields
 - [ ] `test/schemas/awk.schema.json` — JSON Schema draft-07 for `--json` output
 - [ ] `docs/schemas/awk.schema.json` — copy for documentation
@@ -168,14 +168,14 @@ Add control flow statements to make awk Turing-complete.
 
 ```bash
 # Basic field splitting
-echo "alice 90\nbob 85" | korego awk '{ print $1 }'
+echo "alice 90\nbob 85" | goposix awk '{ print $1 }'
 
 # Sum a column
-echo "10\n20\n30" | korego awk '{ sum += $1 } END { print sum }'
+echo "10\n20\n30" | goposix awk '{ sum += $1 } END { print sum }'
 
 # Filter + format
-korego awk -F: '$3 >= 1000 { printf "%-20s %s\n", $1, $7 }' /etc/passwd
+goposix awk -F: '$3 >= 1000 { printf "%-20s %s\n", $1, $7 }' /etc/passwd
 
 # JSON mode
-echo "a b c" | korego awk --json '{ print $2 }'
+echo "a b c" | goposix awk --json '{ print $2 }'
 ```

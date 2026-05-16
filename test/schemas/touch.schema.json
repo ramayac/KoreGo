@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/touch.schema.json",
-  "title": "KoreGo touch --json output",
-  "description": "Validates the complete JSON output of korego touch --json.",
+  "$id": "https://goposix.dev/schemas/touch.schema.json",
+  "title": "GoPOSIX touch --json output",
+  "description": "Validates the complete JSON output of goposix touch --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

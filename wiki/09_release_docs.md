@@ -33,16 +33,16 @@ the root.
 ```yaml
 # .goreleaser.yml
 builds:
-  - id: korego
-    main: ./cmd/korego/
-    binary: korego
+  - id: goposix
+    main: ./cmd/goposix/
+    binary: goposix
     env: [CGO_ENABLED=0]
     goos: [linux]
     goarch: [amd64, arm64]
     ldflags: ["-s", "-w", "-X main.version={{.Version}}"]
 
 dockers:
-  - image_templates: ["ghcr.io/org/korego:{{.Version}}"]
+  - image_templates: ["ghcr.io/org/goposix:{{.Version}}"]
     dockerfile: docker/Dockerfile
     build_flag_templates: ["--platform=linux/amd64"]
 
@@ -154,15 +154,15 @@ Docker image size:         14.8 MB
 goreleaser release --snapshot --clean
 
 # Image size
-docker images ghcr.io/org/korego
+docker images ghcr.io/org/goposix
 
 # E2E test
 go test -v -run TestAgentWorkflow ./test/integration/
 
 # Final smoke
-docker run --rm ghcr.io/org/korego:latest ls --json /
-docker run --rm ghcr.io/org/korego:latest grep --json -r "korego" /bin/
-docker run --rm ghcr.io/org/korego:latest uname --json
+docker run --rm ghcr.io/org/goposix:latest ls --json /
+docker run --rm ghcr.io/org/goposix:latest grep --json -r "goposix" /bin/
+docker run --rm ghcr.io/org/goposix:latest uname --json
 ```
 
 ---

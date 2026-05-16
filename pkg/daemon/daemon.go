@@ -6,9 +6,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/ramayac/korego/internal/daemon"
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/daemon"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 	"io"
 )
 
@@ -27,7 +27,7 @@ func run(args []string, out io.Writer) int {
 		return 2
 	}
 
-	socket := "/var/run/korego.sock"
+	socket := "/var/run/goposix.sock"
 	if s := flags.Get("s"); s != "" {
 		socket = s
 	}

@@ -8,11 +8,11 @@
 
 ## Goal
 
-Integrate a formal POSIX testing framework to programmatically verify KoreGo's compliance against the IEEE Std 1003.1 spec, rather than relying solely on our internal bash compliance scripts.
+Integrate a formal POSIX testing framework to programmatically verify GoPOSIX's compliance against the IEEE Std 1003.1 spec, rather than relying solely on our internal bash compliance scripts.
 
 ## Rationale
 
-Previously, `test/compliance/` bash scripts compared KoreGo's output to the host system's GNU Coreutils. Those scripts have been removed — the BusyBox test suite (`make testsuite`, 479+ tests at 97.9% pass rate) now serves as the primary external compliance check. GNU Coreutils often implements extensions beyond POSIX; the BusyBox suite provides a more appropriate baseline for a minimal multi-call binary.
+Previously, `test/compliance/` bash scripts compared GoPOSIX's output to the host system's GNU Coreutils. Those scripts have been removed — the BusyBox test suite (`make testsuite`, 479+ tests at 97.9% pass rate) now serves as the primary external compliance check. GNU Coreutils often implements extensions beyond POSIX; the BusyBox suite provides a more appropriate baseline for a minimal multi-call binary.
 
 ## Framework Options
 
@@ -28,7 +28,7 @@ Previously, `test/compliance/` bash scripts compared KoreGo's output to the host
 
 ### 3. BusyBox Test Suite
 - BusyBox has an extensive `testsuite/` directory that verifies utility behavior.
-- **Pros:** Designed for minimal, multi-call binaries (very similar to KoreGo).
+- **Pros:** Designed for minimal, multi-call binaries (very similar to GoPOSIX).
 - **Cons:** Focuses on BusyBox behavior, which sometimes deviates from strict POSIX to save space.
 
 ### 4. Custom TAP-based Test Harness
@@ -38,13 +38,13 @@ Previously, `test/compliance/` bash scripts compared KoreGo's output to the host
 
 ## Selected Approach: Hybrid (BusyBox Test Suite + Custom TAP)
 
-Given KoreGo's architecture, we will adapt the BusyBox test suite for baseline behavior and build a custom TAP-based runner to verify our specific `--json` outputs and JSON-RPC daemon interactions.
+Given GoPOSIX's architecture, we will adapt the BusyBox test suite for baseline behavior and build a custom TAP-based runner to verify our specific `--json` outputs and JSON-RPC daemon interactions.
 
 ## Tasks
 
 ### 10.1 — Framework Selection and Porting
 - [x] Investigate and fork the BusyBox `testsuite/` directory.
-- [x] Adapt the runner to execute against the `korego` binary instead of `busybox`.
+- [x] Adapt the runner to execute against the `goposix` binary instead of `busybox`.
 - [x] Disable tests for utilities we haven't implemented yet.
 
 ### 10.2 — Baseline Execution

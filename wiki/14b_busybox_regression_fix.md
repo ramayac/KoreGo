@@ -77,7 +77,7 @@ Remaining (3):
 |------|-----------|--------|
 | `date-@-works` | Go `time` doesn't parse POSIX TZ strings (`EET-2EEST,M3.5.0/3`) | ❌ Unfixable |
 | `date-timezone` | Same Go TZ limitation | ❌ Unfixable |
-| `date-works-1` | Error format: korego says `date: invalid date` but test expects BusyBox help banner | ⚠️ Cosmetic |
+| `date-works-1` | Error format: goposix says `date: invalid date` but test expects BusyBox help banner | ⚠️ Cosmetic |
 
 ### 10. Single-failure utilities (all → 0)
 

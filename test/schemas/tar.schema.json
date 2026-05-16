@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/tar.schema.json",
-  "title": "KoreGo tar --json output",
-  "description": "Validates the complete JSON output of korego tar --json.",
+  "$id": "https://goposix.dev/schemas/tar.schema.json",
+  "title": "GoPOSIX tar --json output",
+  "description": "Validates the complete JSON output of goposix tar --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

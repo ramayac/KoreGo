@@ -1,20 +1,20 @@
 # systemd
 
-Run KoreGo as a persistent daemon on a Linux host managed by systemd.
+Run GoPOSIX as a persistent daemon on a Linux host managed by systemd.
 
 ## Unit File
 
-Save as `/etc/systemd/system/korego.service`:
+Save as `/etc/systemd/system/goposix.service`:
 
 ```ini
 [Unit]
-Description=KoreGo JSON-RPC Daemon
-Documentation=https://github.com/ramayac/korego
+Description=GoPOSIX JSON-RPC Daemon
+Documentation=https://github.com/ramayac/goposix
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/korego daemon -s /var/run/korego.sock -w 4
+ExecStart=/usr/local/bin/goposix daemon -s /var/run/goposix.sock -w 4
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 RestartSec=2
@@ -44,22 +44,22 @@ WantedBy=multi-user.target
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now korego
-sudo systemctl status korego
+sudo systemctl enable --now goposix
+sudo systemctl status goposix
 ```
 
 ## Socket Activation
 
 For on-demand daemon spawning, create a companion socket unit:
 
-`/etc/systemd/system/korego.socket`:
+`/etc/systemd/system/goposix.socket`:
 
 ```ini
 [Unit]
-Description=KoreGo Socket
+Description=GoPOSIX Socket
 
 [Socket]
-ListenStream=/var/run/korego.sock
+ListenStream=/var/run/goposix.sock
 SocketMode=0660
 SocketUser=nobody
 SocketGroup=nogroup
@@ -68,34 +68,34 @@ SocketGroup=nogroup
 WantedBy=sockets.target
 ```
 
-And update the service to use `KoreGo.socket`:
+And update the service to use `GoPOSIX.socket`:
 
 ```ini
 [Service]
 Type=simple
 # Accept the socket from systemd (via LISTEN_FDS)
-ExecStart=/usr/local/bin/korego daemon -s /var/run/korego.sock
+ExecStart=/usr/local/bin/goposix daemon -s /var/run/goposix.sock
 ```
 
-> When using systemd socket activation, remove the `-s` argument and let KoreGo inherit the fd. Check the release notes for sd_listen support.
+> When using systemd socket activation, remove the `-s` argument and let GoPOSIX inherit the fd. Check the release notes for sd_listen support.
 
 Then enable both:
 
 ```bash
-sudo systemctl enable --now korego.socket
+sudo systemctl enable --now goposix.socket
 ```
 
 ## Healthcheck
 
 ```bash
-echo '{"jsonrpc":"2.0","method":"korego.ping","id":1}' | nc -U /var/run/korego.sock
+echo '{"jsonrpc":"2.0","method":"goposix.ping","id":1}' | nc -U /var/run/goposix.sock
 # → {"jsonrpc":"2.0","result":{"pong":true,"version":"..."},"id":1}
 ```
 
 ## Logs
 
 ```bash
-journalctl -u korego -f
+journalctl -u goposix -f
 ```
 
 ## Troubleshooting
@@ -103,8 +103,8 @@ journalctl -u korego -f
 **Socket already in use**: Remove stale socket file:
 
 ```bash
-sudo rm /var/run/korego.sock
-sudo systemctl restart korego
+sudo rm /var/run/goposix.sock
+sudo systemctl restart goposix
 ```
 
 **Permission denied**: The socket is mode `0660` owned by `nobody:nogroup`. Ensure client processes are in the `nogroup` group:

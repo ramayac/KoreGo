@@ -26,7 +26,7 @@ against wiki claims and the [Gold roadmap](12_road_to_gold.md).
 | 13.1 | No supply chain security (SBOM, Cosign, SLSA, Trivy) | ✅ Fixed |
 | 13.2 | Shell security model undocumented, untested | ✅ Fixed |
 | 13.3 | Coverage gate was informational only | ✅ Fixed (≥70% enforced in `Makefile` via `COVERAGE_THRESHOLD`) |
-| 13.4 | BusyBox CI/local discrepancy (testing system BusyBox, not KoreGo) | ✅ Fixed |
+| 13.4 | BusyBox CI/local discrepancy (testing system BusyBox, not GoPOSIX) | ✅ Fixed |
 | 13.5 | `awk` not implemented (Platinum gate) | ⏳ Open — [07a_awk.md](07a_awk.md) |
 
 Details for each gap are recorded in the [Gold roadmap](12_road_to_gold.md)
@@ -112,7 +112,7 @@ Already improved from 3.3%→19.1% via posix-json integration tests (Phase 14c).
 
 **Est. gain:** +3.2% overall, ~400 test LOC.
 
-#### 1.2 `cmd/korego` (0% → 50%)
+#### 1.2 `cmd/goposix` (0% → 50%)
 
 - [ ] `main_test.go` — Extract `runMain(args []string) error`. Test: symlink dispatch,
   subcommand mode, `--list-commands`, `--help`, `--version`, missing subcommand.
@@ -222,7 +222,7 @@ func TestRunViaDispatch(t *testing.T) {
 | ⚡ grep + head hardening | 2 | 51 | ~900 | 55.3% ✅ |
 | 🌐 Phase 14c daemon tests | 46 | 46 | ~2,100 | 57.9% ✅ |
 | 1.1 `internal/daemon` | 1 | ~20 | ~300 | 59.5% |
-| 1.2 `cmd/korego` | 1 | ~8 | ~80 | 60.0% |
+| 1.2 `cmd/goposix` | 1 | ~8 | ~80 | 60.0% |
 | 1.3 `pkg/client` | 1 | ~15 | ~250 | 61.5% |
 | 1.4 `pkg/daemon` | 1 | ~4 | ~60 | 61.8% |
 | — | — | — | — | **~60%** |
@@ -243,6 +243,6 @@ make cover-pct          # 70.5% (current)
 make cover-gate         # ≥70% (hard CI gate); make cover-pkg for per-package
 make ci                 # coverage gate hard-fails below threshold
 make testsuite          # 477 passed, 3 failed (date), 0 regressions
-make smoke-docker       # docker run korego ls -la works
+make smoke-docker       # docker run goposix ls -la works
 go test ./test/posix-json/...  # 55/55 utilities JSON-RPC daemon coverage (Phase 14c ✅)
 ```

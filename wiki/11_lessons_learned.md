@@ -92,7 +92,7 @@ Four of 46 golden fixtures failed on first validation:
 
 **Symptom:** Complex pipelines like `echo 'hello' | tr 'a-z' 'A-Z'` produced empty output.
 
-**Root cause:** The shell interpreter (`mvdan.cc/sh`) includes the command name as `args[0]` when dispatching to KoreGo utilities, causing argument misalignment. This is a pre-existing bug in `internal/shell/` — not introduced by Phase 11.
+**Root cause:** The shell interpreter (`mvdan.cc/sh`) includes the command name as `args[0]` when dispatching to GoPOSIX utilities, causing argument misalignment. This is a pre-existing bug in `internal/shell/` — not introduced by Phase 11.
 
 **Decision:** Left unfixed (out of scope). Simplified the example shell command to `echo hello from agent`.
 

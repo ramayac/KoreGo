@@ -15,19 +15,19 @@ func TestSoak(t *testing.T) {
 	}
 
 	duration := 5 * time.Second
-	// Use KOREGO_SOAK_DURATION to override for true 24h testing
+	// Use GOPOSIX_SOAK_DURATION to override for true 24h testing
 	end := time.Now().Add(duration)
 
 	for time.Now().Before(end) {
-		conn, err := net.Dial("unix", "/tmp/korego.sock")
+		conn, err := net.Dial("unix", "/tmp/goposix.sock")
 		if err != nil {
-			t.Logf("daemon not running at /tmp/korego.sock, skipping soak test: %v", err)
+			t.Logf("daemon not running at /tmp/goposix.sock, skipping soak test: %v", err)
 			return
 		}
 
 		req := map[string]interface{}{
 			"jsonrpc": "2.0",
-			"method":  "korego.ping",
+			"method":  "goposix.ping",
 			"id":      1,
 		}
 		b, _ := json.Marshal(req)

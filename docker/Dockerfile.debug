@@ -1,6 +1,6 @@
 # =============================================================================
 # Debug image — same binary, Alpine base so you can exec in and poke around.
-# Usage: docker run -it --rm korego:debug sh
+# Usage: docker run -it --rm goposix:debug sh
 # =============================================================================
 FROM golang:1.26-alpine AS builder
 
@@ -13,10 +13,10 @@ ARG VERSION
 RUN VERSION=${VERSION:-$(git describe --tags --always 2>/dev/null || echo "dev")} && \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build \
-      -ldflags="-s -w -X 'github.com/ramayac/korego/pkg/common.Version=${VERSION}' -X 'github.com/ramayac/korego.Version=${VERSION}'" \
-      -o /korego ./cmd/korego/
+      -ldflags="-s -w -X 'github.com/ramayac/goposix/pkg/common.Version=${VERSION}' -X 'github.com/ramayac/goposix.Version=${VERSION}'" \
+      -o /goposix ./cmd/goposix/
 
-RUN /korego --list-commands > /commands.txt
+RUN /goposix --list-commands > /commands.txt
 
 # =============================================================================
 # Final: Alpine with shell, strace, busybox, etc. for debugging
@@ -25,14 +25,14 @@ FROM alpine:3.20
 
 RUN apk add --no-cache strace file
 
-COPY --from=builder /korego /bin/korego
+COPY --from=builder /goposix /bin/goposix
 COPY --from=builder /commands.txt /commands.txt
 
 # Recreate the same symlinks as the production image.
-RUN while IFS= read -r cmd; do ln -s /bin/korego "/bin/${cmd}"; done < /commands.txt
+RUN while IFS= read -r cmd; do ln -s /bin/goposix "/bin/${cmd}"; done < /commands.txt
 
 # Non-root user (mirrors production).
-RUN addgroup -g 1000 korego && adduser -u 1000 -G korego -s /bin/sh -D korego
+RUN addgroup -g 1000 goposix && adduser -u 1000 -G goposix -s /bin/sh -D goposix
 
-USER korego
+USER goposix
 CMD ["/bin/sh"]

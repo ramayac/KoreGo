@@ -5,17 +5,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/korego/pkg/client"
-	_ "github.com/ramayac/korego/pkg/date"
-	_ "github.com/ramayac/korego/pkg/df"
-	_ "github.com/ramayac/korego/pkg/du"
-	_ "github.com/ramayac/korego/pkg/hostname"
-	_ "github.com/ramayac/korego/pkg/id"
-	_ "github.com/ramayac/korego/pkg/kill"
-	_ "github.com/ramayac/korego/pkg/ps"
-	_ "github.com/ramayac/korego/pkg/pwd"
-	_ "github.com/ramayac/korego/pkg/uname"
-	_ "github.com/ramayac/korego/pkg/whoami"
+	"github.com/ramayac/goposix/pkg/client"
+	_ "github.com/ramayac/goposix/pkg/date"
+	_ "github.com/ramayac/goposix/pkg/df"
+	_ "github.com/ramayac/goposix/pkg/du"
+	_ "github.com/ramayac/goposix/pkg/hostname"
+	_ "github.com/ramayac/goposix/pkg/id"
+	_ "github.com/ramayac/goposix/pkg/kill"
+	_ "github.com/ramayac/goposix/pkg/ps"
+	_ "github.com/ramayac/goposix/pkg/pwd"
+	_ "github.com/ramayac/goposix/pkg/uname"
+	_ "github.com/ramayac/goposix/pkg/whoami"
 )
 
 func TestTier3_Date(t *testing.T) {
@@ -24,7 +24,7 @@ func TestTier3_Date(t *testing.T) {
 
 	t.Run("date returns current time info", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.date",
+		err := c.Call(context.Background(), "goposix.date",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},
@@ -54,7 +54,7 @@ func TestTier3_Du(t *testing.T) {
 
 	t.Run("du returns disk usage for current dir", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.du",
+		err := c.Call(context.Background(), "goposix.du",
 			map[string]interface{}{
 				"flags": []interface{}{"."},
 			},
@@ -88,7 +88,7 @@ func TestTier3_Df(t *testing.T) {
 
 	t.Run("df returns filesystem info", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.df",
+		err := c.Call(context.Background(), "goposix.df",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},
@@ -119,7 +119,7 @@ func TestTier3_Ps(t *testing.T) {
 
 	t.Run("ps returns process list", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.ps",
+		err := c.Call(context.Background(), "goposix.ps",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},
@@ -150,7 +150,7 @@ func TestTier3_Id(t *testing.T) {
 
 	t.Run("id returns user identity info", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.id",
+		err := c.Call(context.Background(), "goposix.id",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},
@@ -180,7 +180,7 @@ func TestTier3_Hostname(t *testing.T) {
 
 	t.Run("hostname returns host name", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.hostname",
+		err := c.Call(context.Background(), "goposix.hostname",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},
@@ -207,7 +207,7 @@ func TestTier3_Whoami(t *testing.T) {
 
 	t.Run("whoami returns current user", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.whoami",
+		err := c.Call(context.Background(), "goposix.whoami",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},
@@ -234,7 +234,7 @@ func TestTier3_Pwd(t *testing.T) {
 
 	t.Run("pwd returns current directory", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.pwd",
+		err := c.Call(context.Background(), "goposix.pwd",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},
@@ -261,7 +261,7 @@ func TestTier3_Uname(t *testing.T) {
 
 	t.Run("uname returns system info", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.uname",
+		err := c.Call(context.Background(), "goposix.uname",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},
@@ -288,7 +288,7 @@ func TestTier3_Kill(t *testing.T) {
 
 	t.Run("kill with missing PID returns structured error", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.kill",
+		err := c.Call(context.Background(), "goposix.kill",
 			map[string]interface{}{
 				"flags": []interface{}{},
 			},

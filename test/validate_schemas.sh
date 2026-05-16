@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# validate_schemas.sh — Validate korego --json output against published JSON schemas.
+# validate_schemas.sh — Validate goposix --json output against published JSON schemas.
 # Usage: make validate-schemas   or   bash test/validate_schemas.sh
 set -euo pipefail
 
-KOREGO=${KOREGO:-./korego}
+GOPOSIX=${GOPOSIX:-./goposix}
 SCHEMA_DIR="test/schemas"
 GOLDEN_DIR="$SCHEMA_DIR/golden"
 PASS=0
@@ -31,7 +31,7 @@ validate() {
   fi
 }
 
-echo "=== KoreGo Schema Validation ==="
+echo "=== GoPOSIX Schema Validation ==="
 echo ""
 
 # Validate all schemas against golden fixtures

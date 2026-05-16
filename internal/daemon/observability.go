@@ -120,33 +120,33 @@ func (o *ObservabilityServer) handleMetrics(w http.ResponseWriter, r *http.Reque
 	sessionCount := len(o.sessionMgr.List())
 	rateLimited := atomic.LoadInt64(&o.metrics.rateLimitedTotal)
 
-	fmt.Fprintf(w, "# HELP korego_requests_total Total number of RPC requests processed.\n")
-	fmt.Fprintf(w, "# TYPE korego_requests_total counter\n")
-	fmt.Fprintf(w, "korego_requests_total %d\n", total)
+	fmt.Fprintf(w, "# HELP goposix_requests_total Total number of RPC requests processed.\n")
+	fmt.Fprintf(w, "# TYPE goposix_requests_total counter\n")
+	fmt.Fprintf(w, "goposix_requests_total %d\n", total)
 
-	fmt.Fprintf(w, "# HELP korego_workers_active Number of currently executing workers.\n")
-	fmt.Fprintf(w, "# TYPE korego_workers_active gauge\n")
-	fmt.Fprintf(w, "korego_workers_active %d\n", active)
+	fmt.Fprintf(w, "# HELP goposix_workers_active Number of currently executing workers.\n")
+	fmt.Fprintf(w, "# TYPE goposix_workers_active gauge\n")
+	fmt.Fprintf(w, "goposix_workers_active %d\n", active)
 
-	fmt.Fprintf(w, "# HELP korego_workers_max Configured worker pool size.\n")
-	fmt.Fprintf(w, "# TYPE korego_workers_max gauge\n")
-	fmt.Fprintf(w, "korego_workers_max %d\n", o.workersMax)
+	fmt.Fprintf(w, "# HELP goposix_workers_max Configured worker pool size.\n")
+	fmt.Fprintf(w, "# TYPE goposix_workers_max gauge\n")
+	fmt.Fprintf(w, "goposix_workers_max %d\n", o.workersMax)
 
-	fmt.Fprintf(w, "# HELP korego_uptime_seconds Daemon uptime in seconds.\n")
-	fmt.Fprintf(w, "# TYPE korego_uptime_seconds gauge\n")
-	fmt.Fprintf(w, "korego_uptime_seconds %d\n", uptimeSec)
+	fmt.Fprintf(w, "# HELP goposix_uptime_seconds Daemon uptime in seconds.\n")
+	fmt.Fprintf(w, "# TYPE goposix_uptime_seconds gauge\n")
+	fmt.Fprintf(w, "goposix_uptime_seconds %d\n", uptimeSec)
 
-	fmt.Fprintf(w, "# HELP korego_sessions_active Number of active sessions.\n")
-	fmt.Fprintf(w, "# TYPE korego_sessions_active gauge\n")
-	fmt.Fprintf(w, "korego_sessions_active %d\n", sessionCount)
+	fmt.Fprintf(w, "# HELP goposix_sessions_active Number of active sessions.\n")
+	fmt.Fprintf(w, "# TYPE goposix_sessions_active gauge\n")
+	fmt.Fprintf(w, "goposix_sessions_active %d\n", sessionCount)
 
-	fmt.Fprintf(w, "# HELP korego_rate_limited_total Total number of rate-limited requests.\n")
-	fmt.Fprintf(w, "# TYPE korego_rate_limited_total counter\n")
-	fmt.Fprintf(w, "korego_rate_limited_total %d\n", rateLimited)
+	fmt.Fprintf(w, "# HELP goposix_rate_limited_total Total number of rate-limited requests.\n")
+	fmt.Fprintf(w, "# TYPE goposix_rate_limited_total counter\n")
+	fmt.Fprintf(w, "goposix_rate_limited_total %d\n", rateLimited)
 
-	fmt.Fprintf(w, "# HELP korego_shutting_down 1 if daemon is draining, 0 otherwise.\n")
-	fmt.Fprintf(w, "# TYPE korego_shutting_down gauge\n")
-	fmt.Fprintf(w, "korego_shutting_down %d\n", shutdown)
+	fmt.Fprintf(w, "# HELP goposix_shutting_down 1 if daemon is draining, 0 otherwise.\n")
+	fmt.Fprintf(w, "# TYPE goposix_shutting_down gauge\n")
+	fmt.Fprintf(w, "goposix_shutting_down %d\n", shutdown)
 
 	// Per-method duration aggregates.
 	o.metrics.mu.Lock()
@@ -162,15 +162,15 @@ func (o *ObservabilityServer) handleMetrics(w http.ResponseWriter, r *http.Reque
 	o.metrics.mu.Unlock()
 
 	if len(methods) > 0 {
-		fmt.Fprintf(w, "# HELP korego_rpc_duration_ms_count Count of RPC calls per method.\n")
-		fmt.Fprintf(w, "# TYPE korego_rpc_duration_ms_count counter\n")
+		fmt.Fprintf(w, "# HELP goposix_rpc_duration_ms_count Count of RPC calls per method.\n")
+		fmt.Fprintf(w, "# TYPE goposix_rpc_duration_ms_count counter\n")
 		for _, m := range methods {
-			fmt.Fprintf(w, "korego_rpc_duration_ms_count{method=\"%s\"} %d\n", m.method, m.count)
+			fmt.Fprintf(w, "goposix_rpc_duration_ms_count{method=\"%s\"} %d\n", m.method, m.count)
 		}
-		fmt.Fprintf(w, "# HELP korego_rpc_duration_ms_sum Sum of RPC call durations per method in milliseconds.\n")
-		fmt.Fprintf(w, "# TYPE korego_rpc_duration_ms_sum counter\n")
+		fmt.Fprintf(w, "# HELP goposix_rpc_duration_ms_sum Sum of RPC call durations per method in milliseconds.\n")
+		fmt.Fprintf(w, "# TYPE goposix_rpc_duration_ms_sum counter\n")
 		for _, m := range methods {
-			fmt.Fprintf(w, "korego_rpc_duration_ms_sum{method=\"%s\"} %.2f\n", m.method, m.sum)
+			fmt.Fprintf(w, "goposix_rpc_duration_ms_sum{method=\"%s\"} %.2f\n", m.method, m.sum)
 		}
 	}
 }

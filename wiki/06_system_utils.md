@@ -60,19 +60,19 @@ Implement 14 system/process utilities. These require deeper OS interaction via `
 
 ## Milestone 06
 
-- [x] `korego ps --json` returns process list from `/proc`
-- [x] `korego find --json -name "*.go" ./` returns structured file list
-- [x] `korego df --json -h` returns filesystem usage
-- [x] `korego du --json -sh ./` returns directory size
+- [x] `goposix ps --json` returns process list from `/proc`
+- [x] `goposix find --json -name "*.go" ./` returns structured file list
+- [x] `goposix df --json -h` returns filesystem usage
+- [x] `goposix du --json -sh ./` returns directory size
 - [x] All accessible via both CLI and daemon RPC
 - [x] >80% test coverage on all Tier 4 utilities
 
 ## How to Verify
 
 ```bash
-./korego ps --json | head -5
-./korego df --json -h
-./korego find --json -name "*.go" -type f ./pkg/
-./korego date --json -u
-./korego id --json
+./goposix ps --json | head -5
+./goposix df --json -h
+./goposix find --json -name "*.go" -type f ./pkg/
+./goposix date --json -u
+./goposix id --json
 ```

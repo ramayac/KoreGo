@@ -1,17 +1,17 @@
-// Package shell implements the shell command for KoreGo.
+// Package shell implements the shell command for GoPOSIX.
 //
 // The shell command wraps internal/shell.Exec() (which uses mvdan.cc/sh/v3)
 // and exposes it as a CLI utility. It registers both "shell" and "sh" as
 // dispatch commands, supporting:
 //
-//   - Script file:   korego shell /etc/rc
-//   - Inline script:  korego shell -c "echo hello"
-//   - Stdin pipe:     echo "ls" | korego shell
-//   - Interactive:    korego shell   (when stdin is a terminal)
+//   - Script file:   goposix shell /etc/rc
+//   - Inline script:  goposix shell -c "echo hello"
+//   - Stdin pipe:     echo "ls" | goposix shell
+//   - Interactive:    goposix shell   (when stdin is a terminal)
 //
 // Shebang handling:
 // The Linux kernel passes everything after #! as a single argument with a
-// leading space.  #!/bin/koregoos shell → exec("/bin/koregoos", " shell", "/etc/rc")
+// leading space.  #!/bin/goposixos shell → exec("/bin/goposixos", " shell", "/etc/rc")
 // We trim leading whitespace from the first argument to handle this.
 package shell
 
@@ -22,8 +22,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/internal/shell"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/internal/shell"
 )
 
 func run(args []string, out io.Writer) int {
@@ -173,8 +173,8 @@ func init() {
 		Run:   run,
 	})
 	// NOTE: "sh" is intentionally NOT registered.
-	// Registering "sh" would cause --list-commands to generate a sh -> korego
+	// Registering "sh" would cause --list-commands to generate a sh -> goposix
 	// symlink, shadowing the system /bin/sh and breaking the BusyBox test
 	// harness (which runs test cases via "sh -x -e testcase").
-	// KoreGoOS can manually create this symlink if needed.
+	// GoPOSIXOS can manually create this symlink if needed.
 }

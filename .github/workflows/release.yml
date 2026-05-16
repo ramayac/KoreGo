@@ -61,9 +61,9 @@ jobs:
       - name: Sign container image with Cosign
         run: |
           cosign sign --yes \
-            "ghcr.io/ramayac/korego:${{ steps.version.outputs.version }}"
+            "ghcr.io/ramayac/goposix:${{ steps.version.outputs.version }}"
           cosign sign --yes \
-            "ghcr.io/ramayac/korego:latest"
+            "ghcr.io/ramayac/goposix:latest"
 
       - name: Generate artifact hashes for SLSA provenance
         id: hash
@@ -73,7 +73,7 @@ jobs:
           sha256sum dist/*.tar.gz dist/*.zip 2>/dev/null > hashes.txt || true
           if [ ! -s hashes.txt ]; then
             # fallback: hash the binary itself
-            sha256sum dist/*/korego 2>/dev/null > hashes.txt || sha256sum dist/korego_* 2>/dev/null > hashes.txt
+            sha256sum dist/*/goposix 2>/dev/null > hashes.txt || sha256sum dist/goposix_* 2>/dev/null > hashes.txt
           fi
           echo "hashes=$(base64 -w0 hashes.txt)" >> "$GITHUB_OUTPUT"
 
@@ -87,5 +87,5 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
       base64-subjects: ${{ needs.goreleaser.outputs.hashes }}
-      provenance-name: korego-${{ github.ref_name }}.intoto.jsonl
+      provenance-name: goposix-${{ github.ref_name }}.intoto.jsonl
       upload-assets: true

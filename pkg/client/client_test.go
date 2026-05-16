@@ -9,29 +9,29 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/korego/internal/daemon"
+	"github.com/ramayac/goposix/internal/daemon"
 
 	// Register utilities needed by tests.
-	_ "github.com/ramayac/korego/pkg/basename"
-	_ "github.com/ramayac/korego/pkg/cat"
-	_ "github.com/ramayac/korego/pkg/diff"
-	_ "github.com/ramayac/korego/pkg/echo"
-	_ "github.com/ramayac/korego/pkg/grep"
-	_ "github.com/ramayac/korego/pkg/head"
-	_ "github.com/ramayac/korego/pkg/tail"
-	_ "github.com/ramayac/korego/pkg/rm"
-	_ "github.com/ramayac/korego/pkg/mkdir"
-	_ "github.com/ramayac/korego/pkg/touch"
-	_ "github.com/ramayac/korego/pkg/ls"
-	_ "github.com/ramayac/korego/pkg/pwd"
-	_ "github.com/ramayac/korego/pkg/stat"
-	_ "github.com/ramayac/korego/pkg/truefalse"
-	_ "github.com/ramayac/korego/pkg/wc"
+	_ "github.com/ramayac/goposix/pkg/basename"
+	_ "github.com/ramayac/goposix/pkg/cat"
+	_ "github.com/ramayac/goposix/pkg/diff"
+	_ "github.com/ramayac/goposix/pkg/echo"
+	_ "github.com/ramayac/goposix/pkg/grep"
+	_ "github.com/ramayac/goposix/pkg/head"
+	_ "github.com/ramayac/goposix/pkg/tail"
+	_ "github.com/ramayac/goposix/pkg/rm"
+	_ "github.com/ramayac/goposix/pkg/mkdir"
+	_ "github.com/ramayac/goposix/pkg/touch"
+	_ "github.com/ramayac/goposix/pkg/ls"
+	_ "github.com/ramayac/goposix/pkg/pwd"
+	_ "github.com/ramayac/goposix/pkg/stat"
+	_ "github.com/ramayac/goposix/pkg/truefalse"
+	_ "github.com/ramayac/goposix/pkg/wc"
 )
 
 func startDaemon(t *testing.T) (string, func()) {
 	t.Helper()
-	socket := filepath.Join(t.TempDir(), "korego-test.sock")
+	socket := filepath.Join(t.TempDir(), "goposix-test.sock")
 	srv := daemon.NewServer(socket, 4, "")
 	if err := srv.Start(); err != nil {
 		t.Fatalf("start daemon: %v", err)
@@ -205,9 +205,9 @@ func TestBatch(t *testing.T) {
 	ctx := context.Background()
 
 	reqs := []BatchRequest{
-		{Method: "korego.echo", Params: map[string]string{"text": "a"}},
-		{Method: "korego.echo", Params: map[string]string{"text": "b"}},
-		{Method: "korego.ping", Params: nil},
+		{Method: "goposix.echo", Params: map[string]string{"text": "a"}},
+		{Method: "goposix.echo", Params: map[string]string{"text": "b"}},
+		{Method: "goposix.ping", Params: nil},
 	}
 
 	resps, err := c.Batch(ctx, reqs)
@@ -237,7 +237,7 @@ func TestNotification(t *testing.T) {
 	ctx := context.Background()
 
 	// Notifications receive no response — just verify no error.
-	if err := c.Notify(ctx, "korego.true", nil); err != nil {
+	if err := c.Notify(ctx, "goposix.true", nil); err != nil {
 		t.Fatalf("Notify: %v", err)
 	}
 }
@@ -250,7 +250,7 @@ func TestCallRaw(t *testing.T) {
 	defer c.Close()
 	ctx := context.Background()
 
-	raw, err := c.CallRaw(ctx, "korego.ping", nil)
+	raw, err := c.CallRaw(ctx, "goposix.ping", nil)
 	if err != nil {
 		t.Fatalf("CallRaw: %v", err)
 	}
@@ -267,7 +267,7 @@ func TestErrorMethodNotFound(t *testing.T) {
 	defer c.Close()
 	ctx := context.Background()
 
-	err := c.Call(ctx, "korego.nonexistent", nil, nil)
+	err := c.Call(ctx, "goposix.nonexistent", nil, nil)
 	if err == nil {
 		t.Fatal("expected error for unknown method")
 	}
@@ -388,7 +388,7 @@ func TestCallGeneric(t *testing.T) {
 
 	// Test the generic Call method for backward compatibility.
 	var result map[string]interface{}
-	err := c.Call(context.Background(), "korego.ping", nil, &result)
+	err := c.Call(context.Background(), "goposix.ping", nil, &result)
 	if err != nil {
 		t.Fatalf("Call: %v", err)
 	}

@@ -1,4 +1,4 @@
-# KoreGo — Project Roadmap & State
+# GoPOSIX — Project Roadmap & State
 
 > **Version:** 4.0 | **Date:** 2026-05-16 | **Tier:** GOLD (5/5 Gold gaps resolved)
 
@@ -15,12 +15,12 @@ All build phases (00–10) and post-MVP cleanups (11–14c) are **COMPLETED**. T
 | Utilities implemented | 55 (all POSIX except `awk`) |
 | JSON-RPC daemon coverage | 55/55 utilities (100%) |
 | Supply chain security | SBOM + Cosign + SLSA L3 + Trivy |
-| Shell security model | Documented + tested (KOREGO_SHELL_TIMEOUT, SecurePath, 128MB limits) |
+| Shell security model | Documented + tested (GOPOSIX_SHELL_TIMEOUT, SecurePath, 128MB limits) |
 
 ### Architecture
 
 ```
-korego binary (single static ELF, <12MB)
+goposix binary (single static ELF, <12MB)
 ├── Multicall Dispatch (os.Args[0] or subcommand)
 ├── CLI Wrappers (--json flag → JSON envelope)
 ├── Daemon Mode (JSON-RPC 2.0 over Unix socket)

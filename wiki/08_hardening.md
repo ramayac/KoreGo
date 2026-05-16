@@ -15,13 +15,13 @@ Harden the daemon and container for production use. Security audit, resource lim
 ### 08.1 — Security Audit
 
 - [x] **Path traversal:** All file operations validate paths. No `../../etc/shadow` escapes.
-- [x] **Shell sandbox (design + implementation):** `korego.shell.exec` runs with:
+- [x] **Shell sandbox (design + implementation):** `goposix.shell.exec` runs with:
   - No network access (no `net.Dial` exposed)
   - Restricted filesystem (configurable allowed paths via `SecurePath`)
   - Execution timeout (30s hardcoded in `interpreter.go`)
   - Memory limit (128MB per stream via `LimitWriter`)
   > **Note:** The sandbox is implemented but lacks tests and formal documentation.
-  > Wiring `KOREGO_SHELL_TIMEOUT` from env, writing `internal/shell/interpreter_test.go`,
+  > Wiring `GOPOSIX_SHELL_TIMEOUT` from env, writing `internal/shell/interpreter_test.go`,
   > and creating `docs/SECURITY.md` are tracked in [12_road_to_gold.md](12_road_to_gold.md) (12.2).
 - [x] **Rate limiting:** Max 100 RPC requests/sec per connection (configurable)
 - [x] **Input validation:** All RPC params validated against expected types/ranges
@@ -29,9 +29,9 @@ Harden the daemon and container for production use. Security audit, resource lim
 
 ### 08.2 — Non-Root Container
 
-- [x] Create user `korego:1000` in builder stage
+- [x] Create user `goposix:1000` in builder stage
 - [x] Copy `/etc/passwd` and `/etc/group` to scratch image
-- [x] `USER korego` in Dockerfile
+- [x] `USER goposix` in Dockerfile
 - [x] Socket created with proper group permissions
 - [x] Test: daemon works as non-root
 
@@ -71,16 +71,16 @@ Harden the daemon and container for production use. Security audit, resource lim
 
 ```bash
 # Soak test
-./korego daemon --socket /tmp/korego.sock &
+./goposix daemon --socket /tmp/goposix.sock &
 go test -run TestSoak -timeout 25h ./test/integration/
 
 # Fuzz
 go test -fuzz FuzzJSONRPC -fuzztime 10m ./pkg/common/
 
 # Memory profile
-curl --unix-socket /tmp/korego.sock http://localhost/debug/pprof/heap > heap.prof
+curl --unix-socket /tmp/goposix.sock http://localhost/debug/pprof/heap > heap.prof
 go tool pprof heap.prof
 
 # Non-root test
-docker run --rm --user korego korego:prod whoami  # → korego
+docker run --rm --user goposix goposix:prod whoami  # → goposix
 ```

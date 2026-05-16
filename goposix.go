@@ -1,5 +1,5 @@
-// Package korego is the public API entry point for building multicall binaries
-// that compose KoreGo utilities with custom commands.
+// Package goposix is the public API entry point for building multicall binaries
+// that compose GoPOSIX utilities with custom commands.
 //
 // Downstream projects (e.g., a bootable distro) import this package, blank-import
 // utility packages to trigger their registration, and call Main() or Run().
@@ -9,11 +9,11 @@
 //	import (
 //	    "os"
 //
-//	    "github.com/ramayac/korego"
+//	    "github.com/ramayac/goposix"
 //
-//	    // KoreGo's standard utilities
-//	    _ "github.com/ramayac/korego/pkg/ls"
-//	    _ "github.com/ramayac/korego/pkg/cat"
+//	    // GoPOSIX's standard utilities
+//	    _ "github.com/ramayac/goposix/pkg/ls"
+//	    _ "github.com/ramayac/goposix/pkg/cat"
 //	    // ...
 //
 //	    // Custom downstream utilities
@@ -22,10 +22,10 @@
 //	)
 //
 //	func main() {
-//	    korego.WellKnownNames = append(korego.WellKnownNames, "koreboot")
-//	    os.Exit(korego.Main())
+//	    goposix.WellKnownNames = append(goposix.WellKnownNames, "koreboot")
+//	    os.Exit(goposix.Main())
 //	}
-package korego
+package goposix
 
 import (
 	"fmt"
@@ -33,27 +33,27 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/goposix/internal/dispatch"
 )
 
 // Version is set by ldflags at build time:
 //
-//	-X github.com/ramayac/korego.Version=$(VERSION)
+//	-X github.com/ramayac/goposix.Version=$(VERSION)
 var Version = "0.1.0"
 
 // WellKnownNames lists binary names that trigger subcommand dispatch.
 // When argv[0] matches one of these names, argv[1] is treated as the
-// command to run (e.g., "korego ls"). Any other name triggers symlink
+// command to run (e.g., "goposix ls"). Any other name triggers symlink
 // dispatch where the binary name IS the command (e.g., "/bin/ls").
 //
 // Downstream projects should append their binary name before calling
 // Main() to enable subcommand-style invocation.
-var WellKnownNames = []string{"korego", "busybox"}
+var WellKnownNames = []string{"goposix", "busybox"}
 
 // Main is the standard entry point for a multicall binary.
 // It calls Run(os.Args) and is suitable as the entire body of main():
 //
-//	func main() { os.Exit(korego.Main()) }
+//	func main() { os.Exit(goposix.Main()) }
 func Main() int {
 	return Run(os.Args)
 }

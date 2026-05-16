@@ -7,17 +7,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramayac/korego/pkg/client"
-	_ "github.com/ramayac/korego/pkg/cut"
-	_ "github.com/ramayac/korego/pkg/diff"
-	_ "github.com/ramayac/korego/pkg/find"
-	_ "github.com/ramayac/korego/pkg/grep"
-	_ "github.com/ramayac/korego/pkg/head"
-	_ "github.com/ramayac/korego/pkg/printf"
-	_ "github.com/ramayac/korego/pkg/sort"
-	_ "github.com/ramayac/korego/pkg/tail"
-	_ "github.com/ramayac/korego/pkg/uniq"
-	_ "github.com/ramayac/korego/pkg/wc"
+	"github.com/ramayac/goposix/pkg/client"
+	_ "github.com/ramayac/goposix/pkg/cut"
+	_ "github.com/ramayac/goposix/pkg/diff"
+	_ "github.com/ramayac/goposix/pkg/find"
+	_ "github.com/ramayac/goposix/pkg/grep"
+	_ "github.com/ramayac/goposix/pkg/head"
+	_ "github.com/ramayac/goposix/pkg/printf"
+	_ "github.com/ramayac/goposix/pkg/sort"
+	_ "github.com/ramayac/goposix/pkg/tail"
+	_ "github.com/ramayac/goposix/pkg/uniq"
+	_ "github.com/ramayac/goposix/pkg/wc"
 )
 
 func TestTier2_Grep(t *testing.T) {
@@ -33,7 +33,7 @@ func TestTier2_Grep(t *testing.T) {
 
 	t.Run("grep finds matches", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.grep",
+		err := c.Call(context.Background(), "goposix.grep",
 			map[string]interface{}{
 				// grep takes: pattern [file...]
 				"flags": []interface{}{"hello", fpath},
@@ -53,7 +53,7 @@ func TestTier2_Grep(t *testing.T) {
 
 	t.Run("grep -v inverts match", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.grep",
+		err := c.Call(context.Background(), "goposix.grep",
 			map[string]interface{}{
 				"flags": []interface{}{"-v", "hello", fpath},
 			},
@@ -78,7 +78,7 @@ func TestTier2_Find(t *testing.T) {
 
 	t.Run("find locates files by name", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.find",
+		err := c.Call(context.Background(), "goposix.find",
 			map[string]interface{}{
 				"flags": []interface{}{tmp, "-name", "findme.txt"},
 			},
@@ -115,7 +115,7 @@ func TestTier2_Sort(t *testing.T) {
 
 	t.Run("sort orders lines", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.sort",
+		err := c.Call(context.Background(), "goposix.sort",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},
@@ -152,7 +152,7 @@ func TestTier2_Uniq(t *testing.T) {
 
 	t.Run("uniq deduplicates adjacent lines", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.uniq",
+		err := c.Call(context.Background(), "goposix.uniq",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},
@@ -188,7 +188,7 @@ func TestTier2_Wc(t *testing.T) {
 
 	t.Run("wc counts lines words bytes", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.wc",
+		err := c.Call(context.Background(), "goposix.wc",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},
@@ -231,7 +231,7 @@ func TestTier2_Head(t *testing.T) {
 
 	t.Run("head returns first 10 lines", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.head",
+		err := c.Call(context.Background(), "goposix.head",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},
@@ -272,7 +272,7 @@ func TestTier2_Tail(t *testing.T) {
 
 	t.Run("tail returns last 10 lines", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.tail",
+		err := c.Call(context.Background(), "goposix.tail",
 			map[string]interface{}{
 				"flags": []interface{}{fpath},
 			},
@@ -306,7 +306,7 @@ func TestTier2_Cut(t *testing.T) {
 
 	t.Run("cut -f1 -d: extracts first field", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.cut",
+		err := c.Call(context.Background(), "goposix.cut",
 			map[string]interface{}{
 				"flags": []interface{}{"-f1", "-d:", fpath},
 			},
@@ -340,7 +340,7 @@ func TestTier2_Diff(t *testing.T) {
 
 	t.Run("diff detects differences", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.diff",
+		err := c.Call(context.Background(), "goposix.diff",
 			map[string]interface{}{
 				"flags": []interface{}{f1, f2},
 			},
@@ -366,7 +366,7 @@ func TestTier2_Diff(t *testing.T) {
 
 	t.Run("diff identical files exits 0", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.diff",
+		err := c.Call(context.Background(), "goposix.diff",
 			map[string]interface{}{
 				"flags": []interface{}{f1, f1},
 			},
@@ -386,7 +386,7 @@ func TestTier2_Printf(t *testing.T) {
 
 	t.Run("printf formats string", func(t *testing.T) {
 		var result ResultWrapper
-		err := c.Call(context.Background(), "korego.printf",
+		err := c.Call(context.Background(), "goposix.printf",
 			map[string]interface{}{
 				"flags": []interface{}{"hello %s", "world"},
 			},

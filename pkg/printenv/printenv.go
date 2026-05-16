@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 // PrintenvResult is the structured result for --json mode.

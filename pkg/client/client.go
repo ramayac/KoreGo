@@ -1,11 +1,11 @@
-// Package client provides a Go JSON-RPC 2.0 client for the korego daemon.
+// Package client provides a Go JSON-RPC 2.0 client for the goposix daemon.
 //
 // Features:
 //   - Connection pooling with configurable pool size
 //   - Batch request support
 //   - Retry with exponential backoff on transient errors
 //   - Context propagation on every call
-//   - Typed helper methods for all korego utilities
+//   - Typed helper methods for all goposix utilities
 package client
 
 import (
@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-// Client is a JSON-RPC 2.0 client connected to a korego daemon.
+// Client is a JSON-RPC 2.0 client connected to a goposix daemon.
 type Client struct {
 	socketPath string
 	pool       *connPool

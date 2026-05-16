@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/chgrp.schema.json",
-  "title": "KoreGo chgrp --json output",
-  "description": "Validates the complete JSON output of korego chgrp --json.",
+  "$id": "https://goposix.dev/schemas/chgrp.schema.json",
+  "title": "GoPOSIX chgrp --json output",
+  "description": "Validates the complete JSON output of goposix chgrp --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

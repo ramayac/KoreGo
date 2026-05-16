@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/uniq.schema.json",
-  "title": "KoreGo uniq --json output",
-  "description": "Validates the complete JSON output of korego uniq --json.",
+  "$id": "https://goposix.dev/schemas/uniq.schema.json",
+  "title": "GoPOSIX uniq --json output",
+  "description": "Validates the complete JSON output of goposix uniq --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

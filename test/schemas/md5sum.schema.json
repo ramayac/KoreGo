@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/md5sum.schema.json",
-  "title": "KoreGo md5sum --json output",
-  "description": "Validates the complete JSON output of korego md5sum --json.",
+  "$id": "https://goposix.dev/schemas/md5sum.schema.json",
+  "title": "GoPOSIX md5sum --json output",
+  "description": "Validates the complete JSON output of goposix md5sum --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

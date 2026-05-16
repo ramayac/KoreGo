@@ -6,7 +6,7 @@
 
 ## Context
 
-KoreGo MVP and all post-MVP cleanup phases (00–11a) are complete or near-complete.
+GoPOSIX MVP and all post-MVP cleanup phases (00–11a) are complete or near-complete.
 The project is assessed at **Strong Silver / borderline Gold**.
 
 This phase documents the specific gaps preventing a Gold rating and the tasks required
@@ -32,7 +32,7 @@ to close them, ordered by impact. Completing items 12.0–12.4 achieves Gold. It
 | 12.1 | No supply chain security (SBOM, Cosign, SLSA, scanning) | High — infra tooling supply chain attacks are common | Release trust |
 | 12.2 | Shell security model undocumented, timeout hardcoded | High — tool explicitly targets AI agents with untrusted input | Adoption blocker |
 | 12.3 | Coverage gate is informational (warns at 50%, never fails); actual coverage 41.6% | Medium — a patch can drop coverage to 0% and pass CI | Code quality |
-| 12.4 | CI/local BusyBox test discrepancy | Medium — old-style tests pass via system BusyBox on CI, not KoreGo | Test reliability |
+| 12.4 | CI/local BusyBox test discrepancy | Medium — old-style tests pass via system BusyBox on CI, not GoPOSIX | Test reliability |
 | 12.5 | `awk` not implemented | Low (MVP scope excluded it) — qualifies the "100% POSIX" claim | Compliance claim |
 
 ---
@@ -64,7 +64,7 @@ GOOS=linux CGO_ENABLED=0 go build ./...    # must still exit 0 (no regression)
 
 ## 12.1 — Supply Chain Security
 
-**Why it matters:** KoreGo is distributed as a container image and binary. Without provenance
+**Why it matters:** GoPOSIX is distributed as a container image and binary. Without provenance
 and signing, consumers cannot verify artifacts were built from the declared source. This is
 increasingly table stakes for infrastructure tooling.
 
@@ -83,35 +83,35 @@ no image signing, no vulnerability scanning, no provenance attestation.
 
 ```bash
 # Verify a release image is signed
-cosign verify ghcr.io/ramayac/korego:latest --certificate-identity-regexp='.*' --certificate-oidc-issuer='https://token.actions.githubusercontent.com'
+cosign verify ghcr.io/ramayac/goposix:latest --certificate-identity-regexp='.*' --certificate-oidc-issuer='https://token.actions.githubusercontent.com'
 
 # Inspect SBOM
-docker buildx imagetools inspect ghcr.io/ramayac/korego:latest --format '{{ json .SBOM }}'
+docker buildx imagetools inspect ghcr.io/ramayac/goposix:latest --format '{{ json .SBOM }}'
 ```
 
 ---
 
 ## 12.2 — Shell Security Model
 
-**Why it matters:** `korego.shell.exec` is the highest-risk surface in the entire codebase.
+**Why it matters:** `goposix.shell.exec` is the highest-risk surface in the entire codebase.
 The daemon is explicitly positioned for AI agent use — agents may pass partially
 untrusted or model-generated shell scripts. Without a documented and tested security
 contract, operators cannot safely expose the daemon.
 
 **Current state:** `internal/shell/interpreter.go` wraps `mvdan.cc/sh` with a hardcoded 30s
-timeout (the `KOREGO_SHELL_TIMEOUT` env var is documented but **not actually read by the code** —
+timeout (the `GOPOSIX_SHELL_TIMEOUT` env var is documented but **not actually read by the code** —
 found during code audit) and a `LimitWriter` cap of 128 MB per stream. `SecurePath` confines
 file opens to the session CWD. No tests enforce these limits. No `docs/SECURITY.md` exists.
 
-**Code audit finding:** The wiki previously stated `KOREGO_SHELL_TIMEOUT` was configurable,
+**Code audit finding:** The wiki previously stated `GOPOSIX_SHELL_TIMEOUT` was configurable,
 but `interpreter.go` hardcodes `30*time.Second`. This needs to be wired up (see tasks).
 
 ### Tasks
 
-- [x] Wire `KOREGO_SHELL_TIMEOUT` env var in `internal/shell/interpreter.go` (was hardcoded 30s)
+- [x] Wire `GOPOSIX_SHELL_TIMEOUT` env var in `internal/shell/interpreter.go` (was hardcoded 30s)
 - [x] Write `docs/SECURITY.md` defining the security model (trust level, accessible resources, limits, deployment posture, artifact verification)
 - [x] Add tests in `internal/shell/interpreter_test.go` (10 tests: timeout enforcement ×2, path escape, path allow, env vars, stderr, exit codes, syntax error, output limits)
-- [ ] Verify `KOREGO_SHELL_TIMEOUT` default (30s) is documented in README and `docs/RPC_API.md` — deferred
+- [ ] Verify `GOPOSIX_SHELL_TIMEOUT` default (30s) is documented in README and `docs/RPC_API.md` — deferred
 - [ ] Consider whether `shell.exec` should require an explicit session — deferred (design discussion)
 
 ### Acceptance
@@ -119,8 +119,8 @@ but `interpreter.go` hardcodes `30*time.Second`. This needs to be wired up (see 
 ```bash
 # Timeout is enforced
 echo '{"jsonrpc":"2.0","method":"shell.exec","params":{"script":"sleep 60"},"id":1}' \
-  | nc -U /tmp/korego.sock
-# → must return error within KOREGO_SHELL_TIMEOUT seconds, not hang
+  | nc -U /tmp/goposix.sock
+# → must return error within GOPOSIX_SHELL_TIMEOUT seconds, not hang
 
 go test ./internal/shell/... -v -run TestTimeout
 go test ./internal/shell/... -v -run TestResourceLimits
@@ -176,21 +176,21 @@ make cover-pct   # must show ≥60% overall
 ## 12.4 — Fix BusyBox CI / Local Discrepancy
 
 **Why it matters:** Old-style BusyBox tests (in `test/busybox_testsuite/<applet>/`) call
-`busybox <applet>` which resolves to the **system BusyBox** on CI (Ubuntu), not KoreGo.
-This means CI passes those tests regardless of KoreGo's behavior — a silent blind spot.
+`busybox <applet>` which resolves to the **system BusyBox** on CI (Ubuntu), not GoPOSIX.
+This means CI passes those tests regardless of GoPOSIX's behavior — a silent blind spot.
 
-**Current state:** RESOLVED. `runtest` now creates a global `busybox → korego` symlink
+**Current state:** RESOLVED. `runtest` now creates a global `busybox → goposix` symlink
 in a temp directory (`BBDIR`) prepended to PATH before any tests run. All old-style
-`busybox <applet>` calls resolve to KoreGo on both CI and local.
+`busybox <applet>` calls resolve to GoPOSIX on both CI and local.
 
-**New baseline:** The current KoreGo BusyBox pass rate is **477 passed, 3 failed, 10 skipped**
+**New baseline:** The current GoPOSIX BusyBox pass rate is **477 passed, 3 failed, 10 skipped**
 (99.4%). Early baseline after discrepancy fix was 409/71/10 (83.5%), resolved to 477/3/10
 through fixes across 25+ utilities. The CI gate now enforces ≥477.
 
 ### Tasks
 
 - [x] Audit which old-style tests exist — confirmed: per-applet dirs in `test/busybox_testsuite/`
-- [x] Route ALL `busybox` calls to KoreGo via global `BBDIR` symlink (Option A)
+- [x] Route ALL `busybox` calls to GoPOSIX via global `BBDIR` symlink (Option A)
 - [x] Simplify old-style test PATH blocks (per-applet `case` removed; single shared PATH)
 - [x] Update CI baseline from 479 to 409 (`ci.yml`)
 - [x] Document the resolution in `todos.md` and close the discrepancy note
@@ -213,7 +213,7 @@ through fixes across 25+ utilities. The CI gate now enforces ≥477.
 ```
 [x] 12.0 — macOS builds cleanly (GOOS=darwin go build ./... exits 0)
 [x] 12.1 — SBOM + Cosign + SLSA + trivy in release/CI pipeline
-[x] 12.2 — Shell security model documented + KOREGO_SHELL_TIMEOUT wired + tests passing
+[x] 12.2 — Shell security model documented + GOPOSIX_SHELL_TIMEOUT wired + tests passing
 [x] 12.3 — Coverage gate hard-fails CI at 70% via `Makefile` (current: 70.5%) — see [coverage policy](13_coverage_and_hardening.md)
 [x] 12.4 — CI/local BusyBox discrepancy resolved; baselines match
 [ ] 12.5 — awk implemented, BusyBox awk tests pass (Platinum gate)
@@ -231,13 +231,13 @@ Completing 12.0–12.5 = **Platinum**.
 GOOS=darwin CGO_ENABLED=0 go build ./...   # must exit 0
 
 # Supply chain
-cosign verify ghcr.io/ramayac/korego:latest \
+cosign verify ghcr.io/ramayac/goposix:latest \
   --certificate-identity-regexp='.*' \
   --certificate-oidc-issuer='https://token.actions.githubusercontent.com'
-docker buildx imagetools inspect ghcr.io/ramayac/korego:latest --format '{{ json .SBOM }}'
+docker buildx imagetools inspect ghcr.io/ramayac/goposix:latest --format '{{ json .SBOM }}'
 
 # Shell security
-KOREGO_SHELL_TIMEOUT=5s go test ./internal/shell/... -v -run TestTimeout
+GOPOSIX_SHELL_TIMEOUT=5s go test ./internal/shell/... -v -run TestTimeout
 go test ./internal/shell/... -v -run TestResourceLimits
 
 # Coverage gate
@@ -247,5 +247,5 @@ make cover-pct   # ≥70% enforced; see coverage policy in wiki/13_coverage_and_
 make testsuite   # same result locally and in CI
 
 # awk (Platinum) — see 07a_awk.md for full criteria
-echo "hello world" | ./korego awk '{print $1}'
+echo "hello world" | ./goposix awk '{print $1}'
 ```

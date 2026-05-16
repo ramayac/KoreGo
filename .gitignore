@@ -1,6 +1,6 @@
 .config
-korego
-!cmd/korego/korego
+/goposix
+/korego
 test/busybox_testsuite/runtest-tempdir-links/
 test/busybox_testsuite/.tmpdir.*/
 test/busybox_testsuite/grep.testdir/

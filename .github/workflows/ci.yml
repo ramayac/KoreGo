@@ -44,7 +44,7 @@ jobs:
         run: make build
 
       - name: Verify --list-commands
-        run: ./korego --list-commands
+        run: ./goposix --list-commands
 
       - name: Validate JSON schemas
         run: make validate-schemas
@@ -58,12 +58,12 @@ jobs:
       - name: Tag image for vulnerability scan
         run: |
           VERSION=$(git describe --tags --always 2>/dev/null || echo "0.0.0-dev")
-          docker tag korego:${VERSION} korego:ci-scan
+          docker tag goposix:${VERSION} goposix:ci-scan
 
       - name: Vulnerability scan (Trivy)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: korego:ci-scan
+          image-ref: goposix:ci-scan
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
@@ -113,13 +113,13 @@ jobs:
       - name: Build production Docker image (multi-arch test)
         run: |
           VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
-          docker buildx build --platform linux/amd64,linux/arm64 -t korego:${VERSION} -f docker/Dockerfile .
+          docker buildx build --platform linux/amd64,linux/arm64 -t goposix:${VERSION} -f docker/Dockerfile .
 
       - name: Check image size (amd64)
         run: |
           VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
-          docker buildx build --platform linux/amd64 --load -t korego:${VERSION} -f docker/Dockerfile .
-          SIZE=$(docker image inspect "korego:${VERSION}" --format '{{.Size}}')
+          docker buildx build --platform linux/amd64 --load -t goposix:${VERSION} -f docker/Dockerfile .
+          SIZE=$(docker image inspect "goposix:${VERSION}" --format '{{.Size}}')
           MB=$(( SIZE / 1024 / 1024 ))
           echo "Image size: ${MB} MB (${SIZE} bytes)"
           if [ "${SIZE}" -gt 20971520 ]; then

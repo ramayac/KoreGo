@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/dirname.schema.json",
-  "title": "KoreGo dirname --json output",
-  "description": "Validates the complete JSON output of korego dirname --json.",
+  "$id": "https://goposix.dev/schemas/dirname.schema.json",
+  "title": "GoPOSIX dirname --json output",
+  "description": "Validates the complete JSON output of goposix dirname --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

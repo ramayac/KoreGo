@@ -9,9 +9,9 @@ import (
 
 // TestAgentWorkflow simulates a real agentic workflow via RPC.
 func TestAgentWorkflow(t *testing.T) {
-	conn, err := net.Dial("unix", "/tmp/korego.sock")
+	conn, err := net.Dial("unix", "/tmp/goposix.sock")
 	if err != nil {
-		t.Skipf("daemon not running at /tmp/korego.sock, skipping agent test: %v", err)
+		t.Skipf("daemon not running at /tmp/goposix.sock, skipping agent test: %v", err)
 		return
 	}
 	defer conn.Close()
@@ -42,31 +42,31 @@ func TestAgentWorkflow(t *testing.T) {
 	}
 
 	// 1. Create session
-	res := rpcCall("korego.session.create", nil)
+	res := rpcCall("goposix.session.create", nil)
 	sessionData := res["result"].(map[string]interface{})
 	sessionId := sessionData["sessionId"].(string)
 
 	// 2. Create temp directory on host to test with
-	tmpDir, err := os.MkdirTemp("", "korego-agent-test")
+	tmpDir, err := os.MkdirTemp("", "goposix-agent-test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tmpDir)
 
 	// 3. Set CWD
-	rpcCall("korego.session.setCwd", map[string]interface{}{
+	rpcCall("goposix.session.setCwd", map[string]interface{}{
 		"sessionId": sessionId,
 		"path":      tmpDir,
 	})
 
 	// 4. Write a file (via shell.exec)
-	rpcCall("korego.shell.exec", map[string]interface{}{
+	rpcCall("goposix.shell.exec", map[string]interface{}{
 		"sessionId": sessionId,
 		"script":    "echo 'hello world' > test.txt",
 	})
 
 	// 5. Read the file back (cat)
-	res = rpcCall("korego.cat", map[string]interface{}{
+	res = rpcCall("goposix.cat", map[string]interface{}{
 		"sessionId": sessionId,
 		"path":      "test.txt",
 	})
@@ -75,7 +75,7 @@ func TestAgentWorkflow(t *testing.T) {
 	}
 
 	// 6. Grep for a pattern
-	res = rpcCall("korego.grep", map[string]interface{}{
+	res = rpcCall("goposix.grep", map[string]interface{}{
 		"sessionId": sessionId,
 		"flags":     []string{"hello"},
 		"path":      "test.txt",
@@ -85,7 +85,7 @@ func TestAgentWorkflow(t *testing.T) {
 	}
 
 	// 7. Get checksum (sha256sum)
-	res = rpcCall("korego.sha256sum", map[string]interface{}{
+	res = rpcCall("goposix.sha256sum", map[string]interface{}{
 		"sessionId": sessionId,
 		"path":      "test.txt",
 	})
@@ -94,7 +94,7 @@ func TestAgentWorkflow(t *testing.T) {
 	}
 
 	// 8. Destroy session
-	rpcCall("korego.session.destroy", map[string]interface{}{
+	rpcCall("goposix.session.destroy", map[string]interface{}{
 		"sessionId": sessionId,
 	})
 }

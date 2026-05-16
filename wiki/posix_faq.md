@@ -1,7 +1,7 @@
 # POSIX Compliance FAQ
 
 > **Purpose:** Demystify what "POSIX-compliant" actually means, what utilities are
-> mandatory vs. optional, and where KoreGo sits on the compliance spectrum.
+> mandatory vs. optional, and where GoPOSIX sits on the compliance spectrum.
 
 ---
 
@@ -23,7 +23,7 @@ cover different layers of the system:
 | POSIX.1c              | Threads (pthreads)                        |
 
 When people say "POSIX-compliant userland" they almost always mean
-**POSIX.2 — the Shell & Utilities volume**, which is what KoreGo targets.
+**POSIX.2 — the Shell & Utilities volume**, which is what GoPOSIX targets.
 
 ---
 
@@ -135,7 +135,7 @@ passing, earns the right to use the **UNIX®** trademark. Examples:
 ### 2. De Facto POSIX-Compatible
 The system implements the POSIX interfaces faithfully but hasn't been formally
 certified. This is where Linux, FreeBSD, and most BSDs sit. This is also the
-realistic target for KoreGo.
+realistic target for GoPOSIX.
 
 ### 3. POSIX-Subset / POSIX-Inspired
 The system implements a useful subset of POSIX utilities with compatible behavior
@@ -149,9 +149,9 @@ ways. Think Plan 9 from Bell Labs, or Toybox in some edge cases.
 
 ---
 
-## What Does KoreGo Need to Claim?
+## What Does GoPOSIX Need to Claim?
 
-KoreGo doesn't need to be certified POSIX. Its target audience is **agentic
+GoPOSIX doesn't need to be certified POSIX. Its target audience is **agentic
 runtimes in containers**, not general-purpose Unix workstations. The practical
 goals are:
 
@@ -161,7 +161,7 @@ goals are:
 
 For these goals, the right positioning is:
 
-> **KoreGo targets POSIX.2 Shell & Utilities compatibility for all implemented
+> **GoPOSIX targets POSIX.2 Shell & Utilities compatibility for all implemented
 > utilities, while prioritizing the utilities most commonly used in container
 > and automation contexts.**
 
@@ -174,7 +174,7 @@ This means:
 
 ---
 
-## The POSIX Utility Tiers for KoreGo
+## The POSIX Utility Tiers for GoPOSIX
 
 Here's how the full POSIX utility set breaks down by practical importance for
 a container/agentic runtime:
@@ -210,10 +210,10 @@ Rarely needed in container/agentic contexts:
 | Question                                            | Answer |
 |-----------------------------------------------------|--------|
 | Is `awk` required by the POSIX standard?            | **Yes** |
-| Can KoreGo be useful without it?                    | Yes, for simple scripts |
+| Can GoPOSIX be useful without it?                    | Yes, for simple scripts |
 | Will real-world scripts break without it?            | **Many will, yes** |
 | Is it the hardest utility to implement?              | It's among the hardest (it's a full language) |
-| Should KoreGo implement it?                          | **Yes**, as a capstone utility |
+| Should GoPOSIX implement it?                          | **Yes**, as a capstone utility |
 | Does it need to be done first?                       | No — it can come after the simpler utilities |
 
 `awk` is to POSIX what a compiler is to a programming language — technically you

@@ -38,13 +38,13 @@ Comprehensive wiki+docs cleanup post-v1.0 Gold release:
 
 **Cross-references verified:** no broken internal links.
 
-## [2026-05-16] design | KoreGoOS — bootable distro design document
+## [2026-05-16] design | GoPOSIXOS — bootable distro design document
 
-Created `wiki/koregoos.md` — comprehensive design for a separate project
-that imports KoreGo as a Go module and builds a bootable Linux distro.
+Created `wiki/goposixos.md` — comprehensive design for a separate project
+that imports GoPOSIX as a Go module and builds a bootable Linux distro.
 Architecture: Linux kernel + initramfs containing a single multicall binary
-(korego 56 utilities + ~25 boot/system utilities). Boot process: PID 1 init
-→ /etc/rc (korego shell interpreter) → getty on /dev/console.
+(goposix 56 utilities + ~25 boot/system utilities). Boot process: PID 1 init
+→ /etc/rc (goposix shell interpreter) → getty on /dev/console.
 
 Three tiers of new utilities: boot-critical (init, mount, umount, mknod,
 reboot, poweroff, halt, ~400 LOC), usable system (getty, login, passwd,
@@ -52,7 +52,7 @@ ifconfig, route, dhclient, ping, dmesg, ~600 LOC), real distro (modprobe,
 syslogd, crond, fsck, mkfs, fdisk, ~800 LOC).
 
 Design decisions: separate repo (layer boundary, independent cadence,
-different test profiles), korego shell for /etc/rc (already has resource
+different test profiles), goposix shell for /etc/rc (already has resource
 limits + path confinement), devtmpfs over static /dev, no package manager
 (build pipeline IS the update mechanism).
 
@@ -60,38 +60,38 @@ Three milestones: M0 proof-of-concept (QEMU boots, 1-2 days), M1 usable
 system (multi-user + networking + BusyBox gate, 3-5 days), M2 real distro
 (persistent storage + fsck + releases, 1-2 weeks).
 
-Named KoreGoOS for the inevitable Goose mascot.
+Named GoPOSIXOS for the inevitable Goose mascot.
 
 Added to wiki/index.md Design section.
 
-## [2026-05-16] feature | Public multicall API — korego.Main() + korego.Run()
+## [2026-05-16] feature | Public multicall API — goposix.Main() + goposix.Run()
 
-Extracted the dispatch entry point from `cmd/korego/main.go` into a public
-`korego.go` at the module root (`package korego`). Downstream projects can now
-import KoreGo as a library and build custom multicall binaries:
+Extracted the dispatch entry point from `cmd/goposix/main.go` into a public
+`goposix.go` at the module root (`package goposix`). Downstream projects can now
+import GoPOSIX as a library and build custom multicall binaries:
 
 ```go
 package main
 import (
     "os"
-    "github.com/ramayac/korego"
-    _ "github.com/ramayac/korego/pkg/ls"
+    "github.com/ramayac/goposix"
+    _ "github.com/ramayac/goposix/pkg/ls"
     _ "github.com/ramayac/koreboot/pkg/init"  // custom utilities
 )
 func main() {
-    korego.WellKnownNames = append(korego.WellKnownNames, "koreboot")
-    os.Exit(korego.Main())
+    goposix.WellKnownNames = append(goposix.WellKnownNames, "koreboot")
+    os.Exit(goposix.Main())
 }
 ```
 
 API surface:
-- `korego.Version` — set via ldflags `-X github.com/ramayac/korego.Version=...`
-- `korego.WellKnownNames` — binary names that trigger subcommand dispatch
-- `korego.Main()` → `korego.Run(os.Args)` — dispatch entry point
+- `goposix.Version` — set via ldflags `-X github.com/ramayac/goposix.Version=...`
+- `goposix.WellKnownNames` — binary names that trigger subcommand dispatch
+- `goposix.Main()` → `goposix.Run(os.Args)` — dispatch entry point
 
-Updated `cmd/korego/main.go` (now 14 lines of logic + blank imports).
+Updated `cmd/goposix/main.go` (now 14 lines of logic + blank imports).
 Updated LDFLAGS in Makefile, docker/Dockerfile, docker/Dockerfile.debug,
-and .goreleaser.yml: `-X main.Version=...` → `-X github.com/ramayac/korego.Version=...`.
+and .goreleaser.yml: `-X main.Version=...` → `-X github.com/ramayac/goposix.Version=...`.
 Updated wiki/02_docker_ci.md LDFLAGS reference.
 
 ## [2026-05-16] maintain | 02 — Docker docs refreshed to current state
@@ -147,8 +147,8 @@ changes needed there.
 ## [2026-05-15] plan | 14 + 14a — XML output support + gap fill
 
 Created wiki/14_xml_output.md — plan to add `--xml` structured output to all 52
-registered KoreGo utilities, consistent with the existing `--json` / `-j` system.
-XML envelope mirrors JSON envelope: <korego> with command/version/schemaVersion/
+registered GoPOSIX utilities, consistent with the existing `--json` / `-j` system.
+XML envelope mirrors JSON envelope: <goposix> with command/version/schemaVersion/
 exitCode attrs, <data> innerxml payload, <error> block. Uses `encoding/xml` from
 stdlib. Five phases: foundation (output.go XMLElement), Core batch (18 utilities),
 Remaining batch (26), Gap-fill batch (12 including the 8 missing --json), and
@@ -175,16 +175,16 @@ Speed, Docker. Updated wiki/index.md to match.
 
 ## [2026-05-13] design | 16 — MCP Server design (replaces Phase 14)
 
-Created `wiki/16_mcp_server.md` — design for exposing KoreGo as an MCP (Model
+Created `wiki/16_mcp_server.md` — design for exposing GoPOSIX as an MCP (Model
 Context Protocol) server. External agents (Claude Desktop, Claude Code, Cursor,
-Continue) drive KoreGo as their sandboxed Linux environment via stdio or HTTP/SSE
+Continue) drive GoPOSIX as their sandboxed Linux environment via stdio or HTTP/SSE
 transport. Six curated tools: shell.exec, file.read, file.write, file.edit,
 file.list, workspace.set. Reuses existing shell interpreter, session manager,
 worker pool, and SecurePath. No new external dependencies — MCP uses JSON-RPC 2.0.
 
-Rejected `wiki/14_agent_architecture.md` — KoreGo's natural role is as a tool
+Rejected `wiki/14_agent_architecture.md` — GoPOSIX's natural role is as a tool
 backend for external agents, not as an agent itself. Building an LLM agent inside
-KoreGo duplicates what external agents already do well. Phase 16 is a protocol
+GoPOSIX duplicates what external agents already do well. Phase 16 is a protocol
 adapter (~600 lines) vs Phase 14's full agent engine (~3000+ lines).
 
 Updated wiki/index.md, wiki/phases.md.
@@ -192,7 +192,7 @@ Updated wiki/index.md, wiki/phases.md.
 ## [2026-05-13] plan | 15 — Coverage Ramp plan (50% → 75%)
 
 Created `wiki/15_coverage_ramp.md` — 3-stage plan targeting 75% overall coverage.
-Stage 1 targets `internal/daemon` (3.3%), `cmd/korego` (0%), `pkg/client` (44.9%),
+Stage 1 targets `internal/daemon` (3.3%), `cmd/goposix` (0%), `pkg/client` (44.9%),
 and `pkg/daemon` (5.9%) to reach 60%. Stage 2 closes the `run()` gap across 24
 utilities via dispatch-call tests with `testdata/` fixtures to reach 68%. Stage 3
 refactors `run()` signatures to accept interfaces, pushing to 75%. Includes per-package
@@ -228,7 +228,7 @@ acknowledge pkg/agent and go-git dependency as planned additions.
 ## [2026-05-13] design | Agent Architecture design document
 
 Created `wiki/agent_architecture.md` — a detailed design for an autonomous coding
-agent compiled into the KoreGo binary. Covers: ReAct agent loop, go-git integration,
+agent compiled into the GoPOSIX binary. Covers: ReAct agent loop, go-git integration,
 LLM provider interface (OpenAI / Anthropic / local), CLI + JSON-RPC dual interface,
 workspace management, security model, Docker compose integration, and state machine.
 No code changes; design-only phase. (Later promoted to Phase 14.)
@@ -257,7 +257,7 @@ README update) to 07a_awk.md.
 Resolved shell security contradictions: 08_hardening.md claimed sandbox complete
 but code had hardcoded timeout and no tests/docs. Added cross-references between
 08 (design done), 11a.3 (deferred), and 12.2 (remaining work). Updated 12.2 with
-code audit finding (KOREGO_SHELL_TIMEOUT not env-driven).
+code audit finding (GOPOSIX_SHELL_TIMEOUT not env-driven).
 
 Resolved coverage gate inconsistency: 11a.4 claimed gate was done but 12.3/13.3
 showed it's informational only (warns, exits 0). Clarified 11a.4 as "step added,
@@ -284,7 +284,7 @@ Verified: GOOS=darwin CGO_ENABLED=0 go build ./... exits 0. Full test suite pass
 
 ## [2026-05-13] implement | 12.2 — Shell security model
 
-Wired KOREGO_SHELL_TIMEOUT env var in internal/shell/interpreter.go (was hardcoded
+Wired GOPOSIX_SHELL_TIMEOUT env var in internal/shell/interpreter.go (was hardcoded
 30s). Created internal/shell/interpreter_test.go with 10 tests: TestExecBasic,
 TestTimeout (×2 env var scenarios), TestOutputWithinLimits, TestPathEscape,
 TestPathEscapeBlocked (via shell redirection), TestEnvVarInjection, TestStderrCapture,
@@ -295,9 +295,9 @@ verification.
 ## [2026-05-13] implement | 12.4 — Fix BusyBox CI/local discrepancy
 
 Old-style BusyBox tests called 'busybox <applet>' which resolved to system BusyBox
-on CI (Ubuntu), not KoreGo — inflating the pass rate from 83.5% real to 97.9% fake.
+on CI (Ubuntu), not GoPOSIX — inflating the pass rate from 83.5% real to 97.9% fake.
 Fixed test/busybox_testsuite/runtest: added global BBDIR temp directory with
-busybox→korego symlink prepended to PATH. Removed per-applet case block (tar/gzip).
+busybox→goposix symlink prepended to PATH. Removed per-applet case block (tar/gzip).
 Simplified old-style test PATH to a single shared block. Updated CI baseline in
 .github/workflows/ci.yml from 479 to 409. Updated todos.md discrepancy note to
 RESOLVED. True baseline: 409 passed, 71 failed, 10 skipped (83.5%).

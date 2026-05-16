@@ -14,9 +14,9 @@ Build the persistent JSON-RPC 2.0 daemon that listens on a Unix socket, routes m
 
 ### 05.1 — Daemon Entry Point
 
-`korego daemon --socket /var/run/korego.sock --workers 4 --log-level info`
+`goposix daemon --socket /var/run/goposix.sock --workers 4 --log-level info`
 
-- [x] PID file at `/var/run/korego.pid`
+- [x] PID file at `/var/run/goposix.pid`
 - [x] Signal handling: `SIGTERM`/`SIGINT` → graceful shutdown (drain in-flight, close socket, remove PID)
 - [x] `SIGHUP` → reload config (future)
 
@@ -29,11 +29,11 @@ Build the persistent JSON-RPC 2.0 daemon that listens on a Unix socket, routes m
 
 ### 05.3 — JSON-RPC Router
 
-Method naming: `korego.<utility>` (e.g., `korego.ls`, `korego.echo`)
+Method naming: `goposix.<utility>` (e.g., `goposix.ls`, `goposix.echo`)
 
 ```json
 // Request
-{"jsonrpc":"2.0","method":"korego.ls","params":{"path":"/tmp","flags":["-la"]},"id":1}
+{"jsonrpc":"2.0","method":"goposix.ls","params":{"path":"/tmp","flags":["-la"]},"id":1}
 
 // Success Response
 {"jsonrpc":"2.0","result":{"files":[...]},"id":1}
@@ -85,13 +85,13 @@ func (wp *WorkerPool) Submit(ctx context.Context, fn func()) error {
 
 ### 05.6 — Health Check
 
-`korego.ping` → `{"pong":true, "uptime":"2h30m", "version":"0.3.0", "workers":{"active":2,"total":4}}`
+`goposix.ping` → `{"pong":true, "uptime":"2h30m", "version":"0.3.0", "workers":{"active":2,"total":4}}`
 
 ### 05.7 — Client Library (`pkg/client/`)
 
 ```go
-client, _ := koregoclient.Dial("/var/run/korego.sock")
-result, _ := client.Call("korego.ls", map[string]interface{}{"path": "/tmp"})
+client, _ := goposixclient.Dial("/var/run/goposix.sock")
+result, _ := client.Call("goposix.ls", map[string]interface{}{"path": "/tmp"})
 ```
 
 - [x] Go client for tests and future integrations
@@ -100,31 +100,31 @@ result, _ := client.Call("korego.ls", map[string]interface{}{"path": "/tmp"})
 
 ## Milestone 05
 
-- [x] `korego daemon` starts and listens on Unix socket
-- [x] `korego.ls` over socket returns file list without binary restart
+- [x] `goposix daemon` starts and listens on Unix socket
+- [x] `goposix.ls` over socket returns file list without binary restart
 - [x] Batch of 10 commands returns 10 results
 - [x] 100 concurrent requests complete without errors
-- [x] `korego.ping` returns health status
+- [x] `goposix.ping` returns health status
 - [x] Graceful shutdown completes within 5s
 
 ## How to Verify
 
 ```bash
 # Start daemon
-./korego daemon --socket /tmp/korego.sock &
+./goposix daemon --socket /tmp/goposix.sock &
 
 # RPC via socat
-echo '{"jsonrpc":"2.0","method":"korego.ls","params":{"path":"/"},"id":1}' \
-  | socat - UNIX-CONNECT:/tmp/korego.sock
+echo '{"jsonrpc":"2.0","method":"goposix.ls","params":{"path":"/"},"id":1}' \
+  | socat - UNIX-CONNECT:/tmp/goposix.sock
 
 # Batch
-echo '[{"jsonrpc":"2.0","method":"korego.echo","params":{"text":"a"},"id":1},
-       {"jsonrpc":"2.0","method":"korego.echo","params":{"text":"b"},"id":2}]' \
-  | socat - UNIX-CONNECT:/tmp/korego.sock
+echo '[{"jsonrpc":"2.0","method":"goposix.echo","params":{"text":"a"},"id":1},
+       {"jsonrpc":"2.0","method":"goposix.echo","params":{"text":"b"},"id":2}]' \
+  | socat - UNIX-CONNECT:/tmp/goposix.sock
 
 # Health
-echo '{"jsonrpc":"2.0","method":"korego.ping","id":99}' \
-  | socat - UNIX-CONNECT:/tmp/korego.sock
+echo '{"jsonrpc":"2.0","method":"goposix.ping","id":99}' \
+  | socat - UNIX-CONNECT:/tmp/goposix.sock
 
 # Load test
 go test -run TestDaemonConcurrent -timeout 60s ./test/integration/

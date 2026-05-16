@@ -76,12 +76,12 @@ Implement the 10 text processing utilities. These are critical for agentic pipel
 
 ## Milestone 04
 
-- [x] `echo "hello world" | korego wc --json` → `{"lines":1,"words":2,"bytes":12}`
-- [x] `korego grep --json -rn "TODO" ./` returns structured matches
-- [x] `korego sort -rn file.txt` sorts numerically in reverse
-- [x] `korego sed 's/old/new/g' file.txt` performs substitution
+- [x] `echo "hello world" | goposix wc --json` → `{"lines":1,"words":2,"bytes":12}`
+- [x] `goposix grep --json -rn "TODO" ./` returns structured matches
+- [x] `goposix sort -rn file.txt` sorts numerically in reverse
+- [x] `goposix sed 's/old/new/g' file.txt` performs substitution
 - [x] All Tier 3 utilities have >80% test coverage
-- [x] Pipes work: `korego cat f | korego grep pat | korego wc -l`
+- [x] Pipes work: `goposix cat f | goposix grep pat | goposix wc -l`
 
 ## How to Verify
 
@@ -90,9 +90,9 @@ Implement the 10 text processing utilities. These are critical for agentic pipel
 go test -v -cover ./pkg/grep/ ./pkg/sed/ ./pkg/wc/ ...
 
 # Pipe chain
-echo -e "foo\nbar\nfoo\nbaz" | ./korego sort | ./korego uniq --json
+echo -e "foo\nbar\nfoo\nbaz" | ./goposix sort | ./goposix uniq --json
 # → {"lines":["bar","baz","foo"],"count":3}
 
 # grep JSON
-./korego grep --json -rn "func " ./pkg/
+./goposix grep --json -rn "func " ./pkg/
 ```

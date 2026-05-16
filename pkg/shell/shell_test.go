@@ -98,7 +98,7 @@ func TestShellPipeMode(t *testing.T) {
 
 func TestShellShebangSpaceQuirk(t *testing.T) {
 	// Simulate shebang invocation where the kernel passes " shell"
-	// (with leading space) as the first argument after #!/bin/koregoos shell.
+	// (with leading space) as the first argument after #!/bin/goposixos shell.
 	// The dispatch layer strips the command name, but the space may
 	// still be present in args[0] for symlink-mode invocation.
 	var stdout, stderr bytes.Buffer

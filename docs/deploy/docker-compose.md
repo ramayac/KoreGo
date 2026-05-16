@@ -1,16 +1,16 @@
 # Docker Compose
 
-Run KoreGo as a Unix socket sidecar alongside an application container.
+Run GoPOSIX as a Unix socket sidecar alongside an application container.
 
 ## Architecture
 
 ```
 ┌──────────────────┐     ┌──────────────────┐
-│   app container  │────▶│ korego container │
+│   app container  │────▶│ goposix container │
 │  (Python / Node) │     │  (daemon mode)   │
 └──────────────────┘     └────────┬─────────┘
                                   │
-                    /var/run/korego/korego.sock
+                    /var/run/goposix/goposix.sock
                     (shared emptyDir volume)
 ```
 
@@ -26,15 +26,15 @@ docker compose -f examples/docker-compose.yml up --build
 
 | Path | Purpose |
 |------|---------|
-| `/var/run/korego/` | Shared Unix socket directory (must be writable by both containers) |
+| `/var/run/goposix/` | Shared Unix socket directory (must be writable by both containers) |
 
 ## Configuration
 
 | Env var | Default | Purpose |
 |---------|---------|---------|
-| `KOREGO_SOCKET` | `/var/run/korego/korego.sock` | Socket path to connect to |
-| `KOREGO_WORKERS` | `4` | Worker pool size for the daemon |
-| `KOREGO_SHELL_TIMEOUT` | `30` | Shell execution timeout in seconds |
+| `GOPOSIX_SOCKET` | `/var/run/goposix/goposix.sock` | Socket path to connect to |
+| `GOPOSIX_WORKERS` | `4` | Worker pool size for the daemon |
+| `GOPOSIX_SHELL_TIMEOUT` | `30` | Shell execution timeout in seconds |
 
 ## Healthcheck
 
@@ -45,7 +45,7 @@ healthcheck:
       "CMD",
       "sh",
       "-c",
-      "echo '{\"jsonrpc\":\"2.0\",\"method\":\"korego.ping\",\"id\":1}' | nc -U /var/run/korego/korego.sock",
+      "echo '{\"jsonrpc\":\"2.0\",\"method\":\"goposix.ping\",\"id\":1}' | nc -U /var/run/goposix/goposix.sock",
     ]
   interval: 10s
   timeout: 3s

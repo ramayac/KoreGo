@@ -1,12 +1,12 @@
 # Agent Integration Guide
 
-How to use KoreGo as a tool-execution backend for AI agents.
+How to use GoPOSIX as a tool-execution backend for AI agents.
 
 ## Overview
 
-KoreGo exposes a Unix socket-based JSON-RPC 2.0 API that lets an AI agent:
+GoPOSIX exposes a Unix socket-based JSON-RPC 2.0 API that lets an AI agent:
 
-1. Start a KoreGo daemon (lightweight, ~8 MB container image)
+1. Start a GoPOSIX daemon (lightweight, ~8 MB container image)
 2. Create isolated sessions with per-session working directories
 3. Execute POSIX utilities and shell scripts
 4. Receive structured JSON output (no scraping stdout)
@@ -24,8 +24,8 @@ This runs `examples/agent/main.go` — a self-contained Go program that demonstr
 
 ```
 ┌──────────────┐    Unix socket     ┌─────────────────┐
-│  AI Agent    │ ◄──── JSON-RPC ───► │  KoreGo Daemon  │
-│  (your code) │                    │  (korego daemon) │
+│  AI Agent    │ ◄──── JSON-RPC ───► │  GoPOSIX Daemon  │
+│  (your code) │                    │  (goposix daemon) │
 └──────────────┘                    └────────┬────────┘
                                              │
                                     ┌────────▼────────┐
@@ -40,7 +40,7 @@ This runs `examples/agent/main.go` — a self-contained Go program that demonstr
 ### 1. Start the Daemon
 
 ```bash
-korego daemon -s /tmp/korego.sock -w 4
+goposix daemon -s /tmp/goposix.sock -w 4
 ```
 
 Flags:
@@ -51,7 +51,7 @@ Flags:
 ### 2. Connect
 
 ```go
-conn, _ := net.DialTimeout("unix", "/tmp/korego.sock", 5*time.Second)
+conn, _ := net.DialTimeout("unix", "/tmp/goposix.sock", 5*time.Second)
 ```
 
 All communication is newline-delimited JSON over a Unix socket. Each request gets one response.
@@ -59,7 +59,7 @@ All communication is newline-delimited JSON over a Unix socket. Each request get
 ### 3. Ping (Health Check)
 
 ```json
-→ {"jsonrpc":"2.0", "method":"korego.ping", "id":1}
+→ {"jsonrpc":"2.0", "method":"goposix.ping", "id":1}
 ← {"jsonrpc":"2.0", "result":{"pong":true, "uptime":"5s", "version":"0.1.0"}, "id":1}
 ```
 
@@ -68,14 +68,14 @@ All communication is newline-delimited JSON over a Unix socket. Each request get
 Sessions isolate state — each has its own CWD and environment variables.
 
 ```json
-→ {"jsonrpc":"2.0", "method":"korego.session.create", "id":2}
+→ {"jsonrpc":"2.0", "method":"goposix.session.create", "id":2}
 ← {"jsonrpc":"2.0", "result":{"sessionId":"a1b2c3d4", "cwd":"/", "env":{}, "lastActive":"..."}, "id":2}
 ```
 
 ### 5. Set Working Directory
 
 ```json
-→ {"jsonrpc":"2.0", "method":"korego.session.setCwd", "params":{"sessionId":"a1b2c3d4", "path":"/etc"}, "id":3}
+→ {"jsonrpc":"2.0", "method":"goposix.session.setCwd", "params":{"sessionId":"a1b2c3d4", "path":"/etc"}, "id":3}
 ← {"jsonrpc":"2.0", "result":true, "id":3}
 ```
 
@@ -83,15 +83,15 @@ Paths are validated to prevent traversal outside the session CWD. The default CW
 
 ### 6. Execute Utilities
 
-All 42 JSON-enabled utilities are available as `korego.<name>` methods:
+All 42 JSON-enabled utilities are available as `goposix.<name>` methods:
 
 ```json
-→ {"jsonrpc":"2.0", "method":"korego.ls", "params":{"sessionId":"a1b2c3d4"}, "id":4}
+→ {"jsonrpc":"2.0", "method":"goposix.ls", "params":{"sessionId":"a1b2c3d4"}, "id":4}
 ← {"jsonrpc":"2.0", "result":{"exitCode":0, "data":{"path":"/etc", "files":[...], "total":16}}, "id":4}
 ```
 
 ```json
-→ {"jsonrpc":"2.0", "method":"korego.wc", "params":{"sessionId":"a1b2c3d4", "path":"hosts"}, "id":5}
+→ {"jsonrpc":"2.0", "method":"goposix.wc", "params":{"sessionId":"a1b2c3d4", "path":"hosts"}, "id":5}
 ← {"jsonrpc":"2.0", "result":{"exitCode":0, "data":{"lines":11, "words":46, "bytes":225, "chars":225}}, "id":5}
 ```
 
@@ -100,7 +100,7 @@ Standard params: `sessionId` (string), `path` (string), `flags` ([]string), `tex
 ### 7. Execute Shell Scripts
 
 ```json
-→ {"jsonrpc":"2.0", "method":"korego.shell.exec", "params":{"sessionId":"a1b2c3d4", "script":"echo hello from agent"}, "id":6}
+→ {"jsonrpc":"2.0", "method":"goposix.shell.exec", "params":{"sessionId":"a1b2c3d4", "script":"echo hello from agent"}, "id":6}
 ← {"jsonrpc":"2.0", "result":{"stdout":"hello from agent\n", "stderr":"", "exitCode":0}, "id":6}
 ```
 
@@ -109,7 +109,7 @@ The shell interpreter runs with a 30-second timeout and 128 MB memory limit per 
 ### 8. Destroy the Session
 
 ```json
-→ {"jsonrpc":"2.0", "method":"korego.session.destroy", "params":{"sessionId":"a1b2c3d4"}, "id":7}
+→ {"jsonrpc":"2.0", "method":"goposix.session.destroy", "params":{"sessionId":"a1b2c3d4"}, "id":7}
 ← {"jsonrpc":"2.0", "result":true, "id":7}
 ```
 
@@ -125,8 +125,8 @@ Send an array of requests to execute multiple calls in one round-trip:
 
 ```json
 → [
-    {"jsonrpc":"2.0", "method":"korego.echo", "params":{"text":"a"}, "id":1},
-    {"jsonrpc":"2.0", "method":"korego.echo", "params":{"text":"b"}, "id":2}
+    {"jsonrpc":"2.0", "method":"goposix.echo", "params":{"text":"a"}, "id":1},
+    {"jsonrpc":"2.0", "method":"goposix.echo", "params":{"text":"b"}, "id":2}
   ]
 ← [
     {"jsonrpc":"2.0", "result":{"exitCode":0, "data":{"text":"a"}}, "id":1},
@@ -158,10 +158,10 @@ The full example at `examples/agent/main.go` demonstrates:
 2. Ping
 3. Create session
 4. Set CWD to `/etc`
-5. List files with `korego.ls`
-6. Count lines with `korego.wc`
-7. Run shell command with `korego.shell.exec`
-8. Read file contents with `korego.cat`
+5. List files with `goposix.ls`
+6. Count lines with `goposix.wc`
+7. Run shell command with `goposix.shell.exec`
+8. Read file contents with `goposix.cat`
 9. Destroy session
 10. Stop daemon
 

@@ -1,0 +1,70 @@
+// goposix is the goposix multicall binary.
+// It dispatches to registered commands by argv[0] (symlink mode) or argv[1]
+// (subcommand mode).
+package main
+
+import (
+	"os"
+
+	"github.com/ramayac/goposix"
+
+	// Import all utilities to trigger their init() registrations.
+	_ "github.com/ramayac/goposix/pkg/basename"
+	_ "github.com/ramayac/goposix/pkg/cat"
+	_ "github.com/ramayac/goposix/pkg/chgrp"
+	_ "github.com/ramayac/goposix/pkg/chmod"
+	_ "github.com/ramayac/goposix/pkg/chown"
+	_ "github.com/ramayac/goposix/pkg/cp"
+	_ "github.com/ramayac/goposix/pkg/cut"
+	_ "github.com/ramayac/goposix/pkg/daemon"
+	_ "github.com/ramayac/goposix/pkg/date"
+	_ "github.com/ramayac/goposix/pkg/df"
+	_ "github.com/ramayac/goposix/pkg/dirname"
+	_ "github.com/ramayac/goposix/pkg/du"
+	_ "github.com/ramayac/goposix/pkg/echo"
+	_ "github.com/ramayac/goposix/pkg/env"
+	_ "github.com/ramayac/goposix/pkg/find"
+	_ "github.com/ramayac/goposix/pkg/grep"
+	_ "github.com/ramayac/goposix/pkg/head"
+	_ "github.com/ramayac/goposix/pkg/hostname"
+	_ "github.com/ramayac/goposix/pkg/id"
+	_ "github.com/ramayac/goposix/pkg/kill"
+	_ "github.com/ramayac/goposix/pkg/ln"
+	_ "github.com/ramayac/goposix/pkg/ls"
+	_ "github.com/ramayac/goposix/pkg/mkdir"
+	_ "github.com/ramayac/goposix/pkg/mv"
+	_ "github.com/ramayac/goposix/pkg/printenv"
+	_ "github.com/ramayac/goposix/pkg/ps"
+	_ "github.com/ramayac/goposix/pkg/pwd"
+	_ "github.com/ramayac/goposix/pkg/readlink"
+	_ "github.com/ramayac/goposix/pkg/rm"
+	_ "github.com/ramayac/goposix/pkg/rmdir"
+	_ "github.com/ramayac/goposix/pkg/sed"
+	_ "github.com/ramayac/goposix/pkg/shell"
+	_ "github.com/ramayac/goposix/pkg/sha256sum"
+	_ "github.com/ramayac/goposix/pkg/sleep"
+	_ "github.com/ramayac/goposix/pkg/sort"
+	_ "github.com/ramayac/goposix/pkg/stat"
+	_ "github.com/ramayac/goposix/pkg/tail"
+	_ "github.com/ramayac/goposix/pkg/tar"
+	_ "github.com/ramayac/goposix/pkg/tee"
+	_ "github.com/ramayac/goposix/pkg/touch"
+	_ "github.com/ramayac/goposix/pkg/tr"
+	_ "github.com/ramayac/goposix/pkg/truefalse"
+	_ "github.com/ramayac/goposix/pkg/uname"
+	_ "github.com/ramayac/goposix/pkg/uniq"
+	_ "github.com/ramayac/goposix/pkg/wc"
+	_ "github.com/ramayac/goposix/pkg/whoami"
+	_ "github.com/ramayac/goposix/pkg/xargs"
+	_ "github.com/ramayac/goposix/pkg/yes"
+	_ "github.com/ramayac/goposix/pkg/printf"
+	_ "github.com/ramayac/goposix/pkg/expr"
+	_ "github.com/ramayac/goposix/pkg/gzip"
+	_ "github.com/ramayac/goposix/pkg/diff"
+	_ "github.com/ramayac/goposix/pkg/testcmd"
+	_ "github.com/ramayac/goposix/pkg/md5sum"
+)
+
+func main() {
+	os.Exit(goposix.Main())
+}

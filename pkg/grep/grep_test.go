@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 // =============================================================================

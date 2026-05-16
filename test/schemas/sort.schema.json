@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://korego.dev/schemas/sort.schema.json",
-  "title": "KoreGo sort --json output",
-  "description": "Validates the complete JSON output of korego sort --json.",
+  "$id": "https://goposix.dev/schemas/sort.schema.json",
+  "title": "GoPOSIX sort --json output",
+  "description": "Validates the complete JSON output of goposix sort --json.",
   "type": "object",
   "required": ["command", "version", "schemaVersion", "exitCode", "data", "error"],
   "properties": {

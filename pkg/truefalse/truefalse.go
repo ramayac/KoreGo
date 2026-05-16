@@ -7,8 +7,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/ramayac/korego/internal/dispatch"
-	"github.com/ramayac/korego/pkg/common"
+	"github.com/ramayac/goposix/internal/dispatch"
+	"github.com/ramayac/goposix/pkg/common"
 )
 
 // BoolResult is the structured result for --json mode.

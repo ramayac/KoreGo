@@ -42,12 +42,12 @@ func Lookup(name string) (Command, bool) {
 
 ---
 
-### 01.2 — Multicall Entry Point (`cmd/korego/main.go`)
+### 01.2 — Multicall Entry Point (`cmd/goposix/main.go`)
 
 **Logic flow:**
 ```
 1. name = filepath.Base(os.Args[0])
-2. if name == "korego" AND len(os.Args) > 1:
+2. if name == "goposix" AND len(os.Args) > 1:
        name = os.Args[1]
        os.Args = os.Args[1:]  // shift
 3. cmd, ok = dispatch.Lookup(name)
@@ -56,23 +56,23 @@ func Lookup(name string) (Command, bool) {
 6. os.Exit(exitCode)
 ```
 
-- [x] Symlink dispatch: `/bin/ls` → `/bin/korego` → runs `ls`
-- [x] Subcommand dispatch: `korego ls -la` → runs `ls`
+- [x] Symlink dispatch: `/bin/ls` → `/bin/goposix` → runs `ls`
+- [x] Subcommand dispatch: `goposix ls -la` → runs `ls`
 - [x] Unknown command → exit code 127 (POSIX standard)
-- [x] `korego --help` lists all registered commands
-- [x] `korego --version` prints version string
+- [x] `goposix --help` lists all registered commands
+- [x] `goposix --version` prints version string
 
 **Test cases:**
 ```bash
 # Symlink test (manual)
-ln -s ./korego ./echo
+ln -s ./goposix ./echo
 ./echo hello       # prints "hello"
 
 # Subcommand test
-./korego echo hello  # prints "hello"
+./goposix echo hello  # prints "hello"
 
 # Unknown command
-./korego nonexist    # exit 127
+./goposix nonexist    # exit 127
 ```
 
 ---
@@ -107,12 +107,12 @@ Each utility follows this pattern:
 
 ## Milestone 01
 
-- [x] `korego echo hello` prints `hello`
-- [x] `korego echo --json hello` prints `{"command":"echo","data":{"text":"hello"},...}`
-- [x] `korego true` exits 0
-- [x] `korego false` exits 1
-- [x] `korego --help` lists all 10 commands
-- [x] Symlink dispatch works (`ln -s korego echo && ./echo hi`)
+- [x] `goposix echo hello` prints `hello`
+- [x] `goposix echo --json hello` prints `{"command":"echo","data":{"text":"hello"},...}`
+- [x] `goposix true` exits 0
+- [x] `goposix false` exits 1
+- [x] `goposix --help` lists all 10 commands
+- [x] Symlink dispatch works (`ln -s goposix echo && ./echo hi`)
 - [x] Unknown commands exit 127
 - [x] All Tier 1 utilities have unit tests passing
 
@@ -120,20 +120,20 @@ Each utility follows this pattern:
 
 ```bash
 # Build
-CGO_ENABLED=0 go build -o korego ./cmd/korego/
+CGO_ENABLED=0 go build -o goposix ./cmd/goposix/
 
 # Unit tests
 go test -v -cover ./pkg/echo/ ./pkg/whoami/ ./pkg/uname/ ...
 
 # Manual smoke tests
-./korego true ; echo $?                  # 0
-./korego false ; echo $?                 # 1
-./korego echo hello                      # hello
-./korego echo --json hello               # JSON envelope
-./korego uname --json                    # structured uname
-./korego whoami --json                   # {"user":"...","uid":...}
-./korego nonexist ; echo $?             # 127
+./goposix true ; echo $?                  # 0
+./goposix false ; echo $?                 # 1
+./goposix echo hello                      # hello
+./goposix echo --json hello               # JSON envelope
+./goposix uname --json                    # structured uname
+./goposix whoami --json                   # {"user":"...","uid":...}
+./goposix nonexist ; echo $?             # 127
 
 # Symlink test
-ln -sf ./korego ./pwd && ./pwd           # prints cwd
+ln -sf ./goposix ./pwd && ./pwd           # prints cwd
 ```

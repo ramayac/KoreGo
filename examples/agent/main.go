@@ -1,6 +1,6 @@
-// Agent example: demonstrates a minimal AI-agent integration with the korego daemon.
+// Agent example: demonstrates a minimal AI-agent integration with the goposix daemon.
 //
-// This program starts a korego daemon, creates a session, executes a multi-step
+// This program starts a goposix daemon, creates a session, executes a multi-step
 // file-inspection task using the JSON-RPC API, then cleans up.
 //
 // Build: go build -o agent ./examples/agent
@@ -40,13 +40,13 @@ type rpcError struct {
 	Data    json.RawMessage `json:"data,omitempty"`
 }
 
-// daemonResult wraps the korego daemon's embedded result envelope.
+// daemonResult wraps the goposix daemon's embedded result envelope.
 type daemonResult struct {
 	ExitCode int             `json:"exitCode"`
 	Data     json.RawMessage `json:"data"`
 }
 
-// sessionInfo is returned by korego.session.create.
+// sessionInfo is returned by goposix.session.create.
 type sessionInfo struct {
 	SessionID  string            `json:"sessionId"`
 	CWD        string            `json:"cwd"`
@@ -56,22 +56,22 @@ type sessionInfo struct {
 
 func main() {
 	log.SetFlags(log.Ltime)
-	log.Println("=== KoreGo Agent Example ===")
+	log.Println("=== GoPOSIX Agent Example ===")
 	log.Println()
 
-	tmpDir, err := os.MkdirTemp("", "korego-agent-*")
+	tmpDir, err := os.MkdirTemp("", "goposix-agent-*")
 	if err != nil {
 		log.Fatalf("failed to create temp dir: %v", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
-	socketPath := filepath.Join(tmpDir, "korego.sock")
-	daemonPath := "./korego"
+	socketPath := filepath.Join(tmpDir, "goposix.sock")
+	daemonPath := "./goposix"
 
 	// Build daemon if we have the source available.
 	if _, err := os.Stat(daemonPath); os.IsNotExist(err) {
-		log.Println("Building korego...")
-		out, err := exec.Command("go", "build", "-o", daemonPath, "./cmd/korego").CombinedOutput()
+		log.Println("Building goposix...")
+		out, err := exec.Command("go", "build", "-o", daemonPath, "./cmd/goposix").CombinedOutput()
 		if err != nil {
 			log.Fatalf("build failed: %v\n%s", err, out)
 		}
@@ -100,7 +100,7 @@ func main() {
 	conn, id := dial(socketPath)
 	log.Println("Connected to daemon.")
 
-	result := call(conn, id, "korego.ping", nil)
+	result := call(conn, id, "goposix.ping", nil)
 	ping := struct {
 		Pong    bool   `json:"pong"`
 		Uptime  string `json:"uptime"`
@@ -111,14 +111,14 @@ func main() {
 
 	// Step 3 — create a session.
 	id++
-	result = call(conn, id, "korego.session.create", nil)
+	result = call(conn, id, "goposix.session.create", nil)
 	var session sessionInfo
 	mustUnmarshal(result, &session)
 	log.Printf("Session created: %s (cwd=%s)", session.SessionID, session.CWD)
 
 	// Step 4 — set session CWD for local-path commands.
 	id++
-	callVoid(conn, id, "korego.session.setCwd", map[string]string{
+	callVoid(conn, id, "goposix.session.setCwd", map[string]string{
 		"sessionId": session.SessionID,
 		"path":      "/etc",
 	})
@@ -126,7 +126,7 @@ func main() {
 	// Step 5 — run a file-inspection task using relative paths within CWD.
 	// 5a. List files in /etc (via session CWD).
 	id++
-	result = call(conn, id, "korego.ls", map[string]interface{}{
+	result = call(conn, id, "goposix.ls", map[string]interface{}{
 		"sessionId": session.SessionID,
 	})
 	var lsResult struct {
@@ -145,7 +145,7 @@ func main() {
 
 	// 5b. Count lines in hosts (relative to session CWD /etc).
 	id++
-	result = call(conn, id, "korego.wc", map[string]interface{}{
+	result = call(conn, id, "goposix.wc", map[string]interface{}{
 		"sessionId": session.SessionID,
 		"path":      "hosts",
 	})
@@ -163,7 +163,7 @@ func main() {
 
 	// 5c. Use shell.exec to run a shell command in the session.
 	id++
-	result = call(conn, id, "korego.shell.exec", map[string]interface{}{
+	result = call(conn, id, "goposix.shell.exec", map[string]interface{}{
 		"sessionId": session.SessionID,
 		"script":    "echo hello from agent",
 	})
@@ -179,7 +179,7 @@ func main() {
 	log.Println()
 	log.Println("--- Inspecting host.conf ---")
 	id++
-	result = call(conn, id, "korego.cat", map[string]interface{}{
+	result = call(conn, id, "goposix.cat", map[string]interface{}{
 		"sessionId": session.SessionID,
 		"path":      "host.conf",
 	})
@@ -197,7 +197,7 @@ func main() {
 
 	// Step 7 — destroy the session.
 	id++
-	callVoid(conn, id, "korego.session.destroy", map[string]string{
+	callVoid(conn, id, "goposix.session.destroy", map[string]string{
 		"sessionId": session.SessionID,
 	})
 	log.Println("Session destroyed.")

@@ -1,4 +1,4 @@
-package korego
+package goposix
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ramayac/korego/internal/dispatch"
+	"github.com/ramayac/goposix/internal/dispatch"
 )
 
 func init() {
@@ -51,7 +51,7 @@ func captureStderr(f func()) string {
 }
 
 func TestRun_SubcommandDispatch(t *testing.T) {
-	exit := Run([]string{"korego", "test-hello"})
+	exit := Run([]string{"goposix", "test-hello"})
 	if exit != 0 {
 		t.Errorf("expected exit 0, got %d", exit)
 	}
@@ -66,12 +66,12 @@ func TestRun_SymlinkDispatch(t *testing.T) {
 
 func TestRun_UnknownCommand(t *testing.T) {
 	err := captureStderr(func() {
-		exit := Run([]string{"korego", "no-such-cmd"})
+		exit := Run([]string{"goposix", "no-such-cmd"})
 		if exit != 127 {
 			t.Errorf("expected exit 127, got %d", exit)
 		}
 	})
-	if !strings.Contains(err, "korego: unknown command: no-such-cmd") {
+	if !strings.Contains(err, "goposix: unknown command: no-such-cmd") {
 		t.Errorf("unexpected stderr: %q", err)
 	}
 }
@@ -95,28 +95,28 @@ func TestRun_Version(t *testing.T) {
 
 	// Can't easily capture stdout here since Run uses os.Stdout directly,
 	// but we can verify it doesn't panic and returns 0.
-	exit := Run([]string{"korego", "--version"})
+	exit := Run([]string{"goposix", "--version"})
 	if exit != 0 {
 		t.Errorf("expected exit 0, got %d", exit)
 	}
 }
 
 func TestRun_ListCommands(t *testing.T) {
-	exit := Run([]string{"korego", "--list-commands"})
+	exit := Run([]string{"goposix", "--list-commands"})
 	if exit != 0 {
 		t.Errorf("expected exit 0, got %d", exit)
 	}
 }
 
 func TestRun_Help(t *testing.T) {
-	exit := Run([]string{"korego", "--help"})
+	exit := Run([]string{"goposix", "--help"})
 	if exit != 0 {
 		t.Errorf("expected exit 0, got %d", exit)
 	}
 }
 
 func TestRun_NoArgsShowsHelp(t *testing.T) {
-	exit := Run([]string{"korego"})
+	exit := Run([]string{"goposix"})
 	if exit != 0 {
 		t.Errorf("expected exit 0, got %d", exit)
 	}
@@ -130,7 +130,7 @@ func TestRun_BusyboxMode(t *testing.T) {
 }
 
 func TestRun_CommandExitCode(t *testing.T) {
-	exit := Run([]string{"korego", "test-exit"})
+	exit := Run([]string{"goposix", "test-exit"})
 	if exit != 42 {
 		t.Errorf("expected exit 42, got %d", exit)
 	}
@@ -139,15 +139,15 @@ func TestRun_CommandExitCode(t *testing.T) {
 func TestRun_ArgForwarding(t *testing.T) {
 	// test-echo-args writes its args to stdout separated by spaces.
 	// We can't easily capture stdout but we can verify it doesn't crash.
-	exit := Run([]string{"korego", "test-echo-args", "a", "b", "c"})
+	exit := Run([]string{"goposix", "test-echo-args", "a", "b", "c"})
 	if exit != 0 {
 		t.Errorf("expected exit 0, got %d", exit)
 	}
 }
 
 func TestWellKnownNames(t *testing.T) {
-	if !isWellKnown("korego") {
-		t.Error("expected 'korego' to be well-known")
+	if !isWellKnown("goposix") {
+		t.Error("expected 'goposix' to be well-known")
 	}
 	if !isWellKnown("busybox") {
 		t.Error("expected 'busybox' to be well-known")

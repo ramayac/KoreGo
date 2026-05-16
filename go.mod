@@ -1,4 +1,4 @@
-module github.com/ramayac/korego
+module github.com/ramayac/goposix
 
 go 1.26.0
 

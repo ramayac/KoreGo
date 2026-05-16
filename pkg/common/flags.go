@@ -1,4 +1,4 @@
-// Package common provides shared utilities for korego utilities.
+// Package common provides shared utilities for goposix utilities.
 package common
 
 import (

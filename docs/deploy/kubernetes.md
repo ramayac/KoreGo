@@ -1,6 +1,6 @@
 # Kubernetes
 
-Run KoreGo as a sidecar container sharing a Unix socket via `emptyDir` volume.
+Run GoPOSIX as a sidecar container sharing a Unix socket via `emptyDir` volume.
 
 ## Pod Manifest (Minimal)
 
@@ -8,43 +8,43 @@ Run KoreGo as a sidecar container sharing a Unix socket via `emptyDir` volume.
 apiVersion: v1
 kind: Pod
 metadata:
-  name: app-with-korego
+  name: app-with-goposix
 spec:
   containers:
     - name: app
       image: my-app:latest
       volumeMounts:
-        - name: korego-socket
-          mountPath: /var/run/korego
+        - name: goposix-socket
+          mountPath: /var/run/goposix
       env:
-        - name: KOREGO_SOCKET
-          value: /var/run/korego/korego.sock
+        - name: GOPOSIX_SOCKET
+          value: /var/run/goposix/goposix.sock
 
-    - name: korego
-      image: ghcr.io/ramayac/korego:latest
-      command: ["korego", "daemon", "-s", "/var/run/korego/korego.sock"]
+    - name: goposix
+      image: ghcr.io/ramayac/goposix:latest
+      command: ["goposix", "daemon", "-s", "/var/run/goposix/goposix.sock"]
       securityContext:
         runAsUser: 65534
         readOnlyRootFilesystem: true
       volumeMounts:
-        - name: korego-socket
-          mountPath: /var/run/korego
+        - name: goposix-socket
+          mountPath: /var/run/goposix
 
   volumes:
-    - name: korego-socket
+    - name: goposix-socket
       emptyDir: {}
 ```
 
 ## Init Container Pattern
 
-For workloads that need file inspection before the app starts, run KoreGo as an init container:
+For workloads that need file inspection before the app starts, run GoPOSIX as an init container:
 
 ```yaml
 spec:
   initContainers:
     - name: setup
-      image: ghcr.io/ramayac/korego:latest
-      command: ["korego", "ls", "--json", "/config"]
+      image: ghcr.io/ramayac/goposix:latest
+      command: ["goposix", "ls", "--json", "/config"]
       volumeMounts:
         - name: config
           mountPath: /config
@@ -61,18 +61,18 @@ For node-level daemons that serve multiple pods:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: korego-node
+  name: goposix-node
 spec:
   selector:
     matchLabels:
-      app: korego-node
+      app: goposix-node
   template:
     spec:
       hostNetwork: true
       containers:
-        - name: korego
-          image: ghcr.io/ramayac/korego:latest
-          command: ["korego", "daemon", "-s", "/var/run/korego.sock"]
+        - name: goposix
+          image: ghcr.io/ramayac/goposix:latest
+          command: ["goposix", "daemon", "-s", "/var/run/goposix.sock"]
           securityContext:
             privileged: false
             readOnlyRootFilesystem: true
@@ -123,7 +123,7 @@ readinessProbe:
       - sh
       - -c
       - |
-        echo '{"jsonrpc":"2.0","method":"korego.ping","id":1}' | nc -U /var/run/korego/korego.sock
+        echo '{"jsonrpc":"2.0","method":"goposix.ping","id":1}' | nc -U /var/run/goposix/goposix.sock
   initialDelaySeconds: 2
   periodSeconds: 5
 ```
