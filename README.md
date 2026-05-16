@@ -1,14 +1,21 @@
 # KoreGo
 
-A Go-native, single-binary POSIX userland (>97% BusyBox test compatibility). KoreGo replaces
-GNU Coreutils in Docker `FROM scratch` containers, featuring native `--json` structured output
-in every tool (`--xml` in progress — see [Phase 14](wiki/14_xml_output.md)).
+A Go-native, single-binary POSIX userland (96.2% BusyBox test compatibility). KoreGo replaces
+GNU Coreutils in Docker `FROM scratch` containers, featuring structured `--json` output in
+every utility and a persistent JSON-RPC daemon to eliminate process-spawning overhead.
+
+**Status: Gold.** All five Gold gaps resolved ([Phase 12](wiki/12_road_to_gold.md)). `awk` is the
+Platinum gate ([Phase 07a](wiki/07a_awk.md)).
 
 Key Features:
- - Machine-Readable by Default: Every utility supports a `--json` flag for structured output (`--xml` planned — [Phase 14](wiki/14_xml_output.md)).
- - Low-Overhead Execution: A persistent JSON-RPC 2.0 daemon eliminates continuous process-spawning overhead.
- - Portable Scripting: Includes a fully sandboxed shell interpreter (mvdan.cc/sh).
- - High Compatibility: 97.9% pass rate against the BusyBox test suite (479 passed, 1 failed, 10 skipped).
+- **Machine-Readable by Default:** Every utility supports `--json` for structured output
+  ([JSON Schema](docs/JSON_SCHEMA.md)). `--xml` is in progress ([Phase 14](wiki/14_xml_output.md)).
+- **Low-Overhead Execution:** A persistent JSON-RPC 2.0 daemon with session management
+  ([RPC API](docs/RPC_API.md)).
+- **Portable Scripting:** Sandboxed shell interpreter via `mvdan.cc/sh` with configurable timeout
+  and resource limits ([Security Model](docs/SECURITY.md)).
+- **High Compatibility:** 96.2% BusyBox test pass rate (76/79 non-skipped).
+- **CI Gate:** ≥70% overall code coverage enforced on every push.
 
 ## Quickstart
 
@@ -24,9 +31,11 @@ make all
 ./korego --list-commands
 ```
 
-### Run POSIX Tests
+### Run Tests
 ```bash
-make testsuite
+make test          # unit tests
+make testsuite     # BusyBox integration tests (gates every commit)
+make ci            # full pipeline (test + testsuite + coverage + docker)
 ```
 
 ### Start Daemon
@@ -40,28 +49,51 @@ make testsuite
 |----------|---------|-------------|
 | `KOREGO_SHELL_TIMEOUT` | `30s` | Shell execution timeout (Go duration format, e.g. `60s`, `5m`) |
 
-> `KOREGO_SHELL_TIMEOUT` controls how long `korego.shell.exec` RPC calls will run before being terminated. See [Security Model](docs/SECURITY.md) for details.
-
 ## Documentation
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Schema](docs/JSON_SCHEMA.md)
 - [RPC API](docs/RPC_API.md)
-- [POSIX Coverage](wiki/posix_coverage.md)
+- [Agent Integration Guide](docs/AGENT_INTEGRATION.md)
+- [Security Model](docs/SECURITY.md)
+- [POSIX Coverage Matrix](wiki/posix_coverage.md)
+- [POSIX FAQ](wiki/posix_faq.md)
+- [Road to Gold](wiki/12_road_to_gold.md)
 
 ## Status
 
-KoreGo MVP is complete with **49 POSIX utilities implemented** (100% of target scope).
+**53 POSIX utilities implemented** (100% of target scope). Gold complete. `awk` deferred to Platinum.
 
-**BusyBox Test Suite:** 479 passed, 1 failed, 10 skipped (97.9% effective pass rate out of 490 tests)
+**BusyBox Test Suite:** 76 passed, 3 failed, 10 skipped (96.2% effective pass rate)
 
-| Utility | Status | Notes |
-|---------|--------|-------|
-| Core & Env (10) | ✅ | echo, env, pwd, true, false, whoami, hostname, basename, dirname, printenv |
-| Filesystem (11) | ✅ | ls, cat, mkdir, rmdir, rm, cp, mv, touch, ln, stat, readlink |
-| Text (10) | ✅ | head, tail, wc, sort, uniq, tr, cut, tee, grep, sed |
-| System (13) | ✅ | ps, kill, sleep, date, id, groups, chmod, chown, chgrp, df, du, find, xargs |
-| Agent (7) | ✅ | diff, tar, gzip, printf, expr, sha256sum, md5sum |
+All 3 remaining failures are in `date` (2 Go POSIX TZ limitations, 1 cosmetic error-format mismatch).
+The 10 skipped tests require external tools (bzip2, xz, uudecode) or PAX extended header support.
 
-**All Phases Complete (00–10).** The single remaining test failure (`tar writing into read-only dir`) is umask-dependent and passes with umask 022. All 10 skipped tests require external compression tools (bzip2, xz) or PAX extended header support.
+### Implemented Utilities
 
-`awk` is deferred to a post-MVP release (see [POSIX FAQ](wiki/posix_faq.md)).
+| Category | Package | Utilities |
+|----------|---------|-----------|
+| Core & Env | 12 | echo, env, pwd, true/false, whoami, hostname, basename, dirname, yes, printenv, uname |
+| Filesystem | 11 | ls, cat, mkdir, rmdir, rm, cp, mv, touch, ln, stat, readlink |
+| Text Processing | 10 | head, tail, wc, sort, uniq, tr, cut, tee, grep, sed |
+| System & Process | 11 | ps, kill, sleep, date, id, chmod, chown, chgrp, df, du, find |
+| Pipeline | 2 | xargs, printf |
+| Agent-Ready | 7 | diff, tar, gzip, sha256sum, md5sum, expr, shell |
+
+### Phase Status
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| 00–10 | ✅ Complete | Foundation through POSIX Framework |
+| 11 | ✅ Complete | Post-MVP: JSON schemas, client library, agent example |
+| 12 | ✅ Complete | Road to Gold — all 5 gaps resolved |
+| 13 | ✅ Complete | Coverage ramp (50%→70%) + hardening |
+| 14 | ⏳ In Progress | XML output support ([plan](wiki/14_xml_output.md)) |
+| Platinum | ⏳ Deferred | `awk` implementation ([plan](wiki/07a_awk.md)) |
+
+## Project Principles
+
+- **No CGO:** Static compilation for `FROM scratch` containers (`CGO_ENABLED=0`).
+- **Zero Dependencies:** No external Go modules for flag parsing, output, or utility logic.
+- **Multicall Binary:** Single binary dispatched via symlink or subcommand (`korego ls`).
+- **`--json` Only:** Structured output via `--json` long flag only — no short-form collision with POSIX flags.
+- **POSIX Flag Parsing:** Custom parser in `pkg/common/flags.go` with escape hatches for free-form utilities.
