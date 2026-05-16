@@ -31,6 +31,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ramayac/korego/internal/dispatch"
 )
@@ -92,7 +93,7 @@ func Run(argv []string) int {
 			dispatch.ListCommands()
 			return 0
 		}
-		cmdName = argv[1]
+		cmdName = strings.TrimSpace(argv[1])
 		argv = argv[1:] // shift so cmd sees argv[0] == cmdName
 	}
 
