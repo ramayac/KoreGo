@@ -170,3 +170,45 @@ func TestTarMissingArgs(t *testing.T) {
 		t.Errorf("should fail with multiple modes")
 	}
 }
+
+// BusyBox hardening: extracting into a location where the original dir was read-only.
+func TestTarExtractReadOnlyDir(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "tar-readonly-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	srcDir := filepath.Join(tmpDir, "input_dir")
+	os.Mkdir(srcDir, 0755)
+	os.WriteFile(filepath.Join(srcDir, "input_file"), []byte("hello"), 0644)
+	os.Chmod(srcDir, 0550) // read-only
+
+	// Create archive
+	archivePath := filepath.Join(tmpDir, "test.tar")
+	createOut := &bytes.Buffer{}
+	code := run(append([]string{"-c", "-f", archivePath, "-C", tmpDir}, "input_dir"), createOut)
+	if code != 0 {
+		t.Fatalf("tar create exited with %d, want 0: %s", code, createOut.String())
+	}
+
+	// Make dir writable and remove originals
+	os.Chmod(srcDir, 0770)
+	os.RemoveAll(srcDir)
+
+	// Extract
+	extractOut := &bytes.Buffer{}
+	code = run([]string{"-x", "-f", archivePath, "-C", tmpDir}, extractOut)
+	if code != 0 {
+		t.Fatalf("tar extract exited with %d, want 0: %s", code, extractOut.String())
+	}
+
+	// Verify extracted file exists and is readable
+	data, err := os.ReadFile(filepath.Join(srcDir, "input_file"))
+	if err != nil {
+		t.Fatalf("extracted file not readable: %v", err)
+	}
+	if string(data) != "hello" {
+		t.Errorf("file content: %q, want 'hello'", string(data))
+	}
+}

@@ -21,6 +21,7 @@ var spec = common.FlagSpec{
 		{Short: "I", Long: "replace", Type: common.FlagValue},
 		{Short: "t", Long: "verbose", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Short: "0", Long: "null", Type: common.FlagBool},
 	},
 }
 
@@ -75,9 +76,14 @@ func run(args []string, out io.Writer) int {
 		baseSize += len(a) + 1
 	}
 
+	nullDelim := flags.Has("0")
+
 	scanner := bufio.NewScanner(os.Stdin)
 	// When -I is used, read entire lines (not words).
-	if replaceStr != "" {
+	// When -0 is used, split on NUL bytes.
+	if nullDelim {
+		scanner.Split(scanNulls)
+	} else if replaceStr != "" {
 		scanner.Split(bufio.ScanLines)
 	} else {
 		scanner.Split(bufio.ScanWords)
@@ -180,6 +186,19 @@ func run(args []string, out io.Writer) int {
 	}
 
 	return exitCode
+}
+
+// scanNulls is a bufio.SplitFunc that splits on NUL (\0) bytes.
+func scanNulls(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	for i, b := range data {
+		if b == 0 {
+			return i + 1, data[:i], nil
+		}
+	}
+	if atEOF && len(data) > 0 {
+		return len(data), data, nil
+	}
+	return 0, nil, nil
 }
 
 func init() {

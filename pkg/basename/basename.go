@@ -24,10 +24,12 @@ var spec = common.FlagSpec{
 }
 
 // Run returns the base name of path, optionally stripping suffix.
+// POSIX: suffix is only stripped if it is NOT identical to the entire
+// remaining string AND it matches a suffix of that string.
 func Run(path, suffix string) BasenameResult {
 	base := filepath.Base(path)
-	if suffix != "" {
-		base = strings.TrimSuffix(base, suffix)
+	if suffix != "" && suffix != base && strings.HasSuffix(base, suffix) {
+		base = base[:len(base)-len(suffix)]
 	}
 	return BasenameResult{Result: base}
 }

@@ -198,7 +198,15 @@ func sortFiles(files []FileInfo, byTime, bySize, reverse bool) []FileInfo {
 		case bySize:
 			less = files[i].Size > files[j].Size
 		default:
-			less = strings.ToLower(files[i].Name) < strings.ToLower(files[j].Name)
+			// Byte-order comparison (LC_ALL=C / POSIX default).
+			// Dotfiles sort first.
+			a, b := files[i].Name, files[j].Name
+			adot, bdot := strings.HasPrefix(a, "."), strings.HasPrefix(b, ".")
+			if adot != bdot {
+				less = adot
+			} else {
+				less = a < b
+			}
 		}
 		if reverse {
 			return !less
@@ -270,23 +278,45 @@ func run(args []string, out io.Writer) int {
 	for _, res := range results {
 		files := sortFiles(res.Files, byTime, bySize, reverse)
 		if multiPath {
-			fmt.Printf("%s:\n", res.Path)
+			fmt.Fprintf(out, "%s:\n", res.Path)
+		}
+		// Emit "total NNN" line when -l or -s is active (POSIX).
+		if longFmt || (showBlocks && !longFmt) {
+			var totalBlocks int64
+			for _, fi := range files {
+				totalBlocks += fi.Blocks / 2
+			}
+			fmt.Fprintf(out, "total %d\n", totalBlocks)
 		}
 		for _, fi := range files {
+			name := fi.Name
+			if fi.Target != "" {
+				name = fmt.Sprintf("%s -> %s", fi.Name, fi.Target)
+			}
+
 			switch {
 			case longFmt:
 				printLong(fi, showInode, showBlocks, humanReadable)
 			case onePer:
-				fmt.Println(fi.Name)
-			default:
 				if showInode {
-					fmt.Printf("%7d ", fi.Inode)
+					fmt.Fprintf(out, "%7d ", fi.Inode)
 				}
-				fmt.Print(fi.Name + "  ")
+				if showBlocks {
+					fmt.Fprintf(out, "%4d ", fi.Blocks/2)
+				}
+				fmt.Fprintln(out, name)
+			default:
+				// Default mode: one-per-line when not a terminal (piped).
+				// Multi-column would require terminal width; for busytest
+				// and pipes, one-per-line is the expected behavior.
+				if showInode {
+					fmt.Fprintf(out, "%7d ", fi.Inode)
+				}
+				if showBlocks {
+					fmt.Fprintf(out, "%4d ", fi.Blocks/2)
+				}
+				fmt.Fprintln(out, name)
 			}
-		}
-		if !longFmt && !onePer {
-			fmt.Println()
 		}
 		if multiPath {
 			fmt.Println()

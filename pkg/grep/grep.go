@@ -305,10 +305,11 @@ func grepRun(args []string, out, errOut io.Writer, stdinR io.Reader) int {
 
 	// Determine filename prefix policy: -H forces prefix, -h suppresses it.
 	// Without either, prefix is shown when multiple files are searched.
+	// With -r (recursive), always show prefix (could expand to many files).
 	printPrefix := flags.Has("H")
 	noPrefix := flags.Has("h")
 	if !noPrefix && !printPrefix {
-		printPrefix = len(paths) > 1 || len(readers) > 1
+		printPrefix = len(paths) > 1 || recursive
 	}
 
 	for _, path := range readers {

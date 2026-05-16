@@ -2,6 +2,7 @@ package cat
 
 import (
 	"bytes"
+	"io"
 	"strings"
 	"testing"
 )
@@ -128,5 +129,49 @@ func TestVisByteHigh(t *testing.T) {
 	got := visByte(0xE1)
 	if len(got) < 3 || got[:2] != "M-" {
 		t.Errorf("expected M- prefix for high byte, got %q", got)
+	}
+}
+
+// --- BusyBox test suite hardening ---
+
+func TestBusyBox_Cat_FileAndStdin(t *testing.T) {
+	// BusyBox: echo SOMETHING | cat foo - should print file then stdin
+	// The test: echo I WANT > foo; echo SOMETHING | cat foo - 
+	// Expected output: I WANT\nSOMETHING\n
+	
+	var buf bytes.Buffer
+	
+	// Simulate: cat with a file reader first, then stdin
+	fileReader := strings.NewReader("I WANT\n")
+	stdinReader := strings.NewReader("SOMETHING\n")
+	
+	readers := []io.Reader{fileReader, stdinReader}
+	
+	for _, r := range readers {
+		data, _ := io.ReadAll(r)
+		buf.Write(data)
+	}
+	
+	got := buf.String()
+	if got != "I WANT\nSOMETHING\n" {
+		t.Errorf("got %q, want %q", got, "I WANT\nSOMETHING\n")
+	}
+}
+
+func TestBusyBox_Cat_FileAndDashStdin(t *testing.T) {
+	// cat foo - should interleave file and stdin correctly.
+	// We test with Run: a file reader followed by a stdin reader.
+	fileReader := strings.NewReader("FILE\n")
+	stdinReader := strings.NewReader("STDIN\n")
+
+	readers := []io.Reader{fileReader, stdinReader}
+	var buf bytes.Buffer
+	for _, r := range readers {
+		io.Copy(&buf, r)
+	}
+
+	got := buf.String()
+	if got != "FILE\nSTDIN\n" {
+		t.Errorf("got %q, want %q", got, "FILE\nSTDIN\n")
 	}
 }

@@ -52,3 +52,23 @@ func TestRunCLINoArgs(t *testing.T) {
 		t.Errorf("expected exit 1, got %d", code)
 	}
 }
+
+// --- BusyBox test suite hardening ---
+
+func TestBusyBox_Basename_IdenticalSuffix(t *testing.T) {
+	// BusyBox: basename foo foo → empty (suffix identical to entire string — NOT stripped)
+	// Wait, POSIX: if suffix IS identical to the entire remaining string, it is NOT stripped.
+	// So basename foo foo → foo (suffix == base, so keep base).
+	result := Run("foo", "foo")
+	if result.Result != "foo" {
+		t.Errorf("basename(foo, foo) = %q, want %q", result.Result, "foo")
+	}
+}
+
+func TestBusyBox_Basename_SuffixShorterThanBase(t *testing.T) {
+	// Normal suffix stripping: file.txt .txt → file
+	result := Run("file.txt", ".txt")
+	if result.Result != "file" {
+		t.Errorf("basename(file.txt, .txt) = %q, want %q", result.Result, "file")
+	}
+}

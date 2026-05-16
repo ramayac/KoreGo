@@ -3,6 +3,7 @@ package gzip
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -136,4 +137,102 @@ func TestGzipJSON(t *testing.T) {
 	if stat["newSize"].(float64) == 0 {
 		t.Errorf("new size is zero")
 	}
+}
+
+// --- BusyBox hardening tests ---
+
+func TestBusyBox_Gunzip_DoesntExist(t *testing.T) {
+	tmpDir := t.TempDir()
+	// Create a valid gzip file
+	file1 := filepath.Join(tmpDir, "hello.txt")
+	os.WriteFile(file1, []byte("HELLO\n"), 0644)
+	var buf bytes.Buffer
+	code := runGzip([]string{"-k", file1}, &buf)
+	if code != 0 {
+		t.Fatalf("gzip failed: %d", code)
+	}
+	gzFile := file1 + ".gz"
+
+	// gunzip with non-existent file first, then valid gz
+	stderr := captureStderr(func() {
+		runGunzip([]string{filepath.Join(tmpDir, "z"), gzFile}, &bytes.Buffer{})
+	})
+
+	// Should mention the non-existent file
+	if !strings.Contains(stderr, "z: No such file or directory") {
+		t.Errorf("expected 'No such file or directory' error, got: %q", stderr)
+	}
+	if !strings.Contains(stderr, "gunzip:") {
+		t.Errorf("expected gunzip: prefix, got: %q", stderr)
+	}
+}
+
+func TestBusyBox_Gunzip_UnknownSuffix(t *testing.T) {
+	tmpDir := t.TempDir()
+	// Create valid gz and a non-gz file
+	file1 := filepath.Join(tmpDir, "hello.txt")
+	os.WriteFile(file1, []byte("HELLO\n"), 0644)
+	var buf bytes.Buffer
+	code := runGzip([]string{"-k", file1}, &buf)
+	if code != 0 {
+		t.Fatalf("gzip failed: %d", code)
+	}
+	notGz := filepath.Join(tmpDir, "t.zz")
+	os.WriteFile(notGz, []byte{}, 0644)
+
+	stderr := captureStderr(func() {
+		runGunzip([]string{notGz, file1 + ".gz"}, &bytes.Buffer{})
+	})
+
+	if !strings.Contains(stderr, "t.zz: unknown suffix") {
+		t.Errorf("expected 'unknown suffix' error, got: %q", stderr)
+	}
+}
+
+func TestBusyBox_Gunzip_AlreadyExists(t *testing.T) {
+	tmpDir := t.TempDir()
+	file1 := filepath.Join(tmpDir, "t1.txt")
+	file2 := filepath.Join(tmpDir, "t2.txt")
+	os.WriteFile(file1, []byte("DATA1\n"), 0644)
+	os.WriteFile(file2, []byte("DATA2\n"), 0644)
+	var buf bytes.Buffer
+	code := runGzip([]string{"-k", file1}, &buf)
+	if code != 0 {
+		t.Fatalf("gzip t1 failed: %d", code)
+	}
+	code = runGzip([]string{"-k", file2}, &buf)
+	if code != 0 {
+		t.Fatalf("gzip t2 failed: %d", code)
+	}
+
+	// Create file that would conflict with uncompressed output
+	os.WriteFile(filepath.Join(tmpDir, "t1.txt"), []byte("preexisting"), 0644)
+
+	stderr := captureStderr(func() {
+		runGunzip([]string{file1 + ".gz", file2 + ".gz"}, &bytes.Buffer{})
+	})
+
+	if !strings.Contains(stderr, "can't open 't1.txt': File exists") &&
+		!strings.Contains(stderr, "can't open") {
+		t.Errorf("expected 'File exists' error, got: %q", stderr)
+	}
+}
+
+// captureStderr redirects os.Stderr temporarily to capture output.
+func captureStderr(fn func()) string {
+	orig := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	done := make(chan string)
+	go func() {
+		var buf bytes.Buffer
+		io.Copy(&buf, r)
+		done <- buf.String()
+	}()
+
+	fn()
+	w.Close()
+	os.Stderr = orig
+	return <-done
 }

@@ -60,3 +60,12 @@ func TestBuildExecArgsMultiplePlaceholders(t *testing.T) {
 		t.Errorf("expected 6 args, got %d: %v", len(args), args)
 	}
 }
+
+// BusyBox hardening: find -xdev should be accepted as a valid flag.
+func TestFindXdevFlag(t *testing.T) {
+	var out bytes.Buffer
+	code := run([]string{".", "-xdev"}, &out)
+	if code != 0 {
+		t.Fatalf("find -xdev exited with %d, want 0", code)
+	}
+}

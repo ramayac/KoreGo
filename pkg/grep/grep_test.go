@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
@@ -673,5 +675,29 @@ func TestCLI_NoArgsStdin(t *testing.T) {
 	}
 	if !strings.Contains(errStr, "missing pattern") {
 		t.Errorf("expected missing pattern error, got: %q", errStr)
+	}
+}
+
+// BusyBox hardening: grep -r on symlink to dir should show filename prefix.
+func TestGrepRecursiveOnSymlinkToDir(t *testing.T) {
+	// Create test dir structure
+	testDir, err := os.MkdirTemp("", "grep-symlink-test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(testDir)
+
+	fooDir := filepath.Join(testDir, "foo")
+	os.Mkdir(fooDir, 0755)
+	os.WriteFile(filepath.Join(fooDir, "file"), []byte("bar\n"), 0644)
+	os.Symlink("foo", filepath.Join(testDir, "symfoo"))
+
+	var out bytes.Buffer
+	code := run([]string{"-r", ".", filepath.Join(testDir, "symfoo")}, &out)
+	if code != 0 {
+		t.Fatalf("grep -r exited with %d, want 0", code)
+	}
+	if !strings.Contains(out.String(), "file:bar") {
+		t.Errorf("expected filename prefix in output, got: %q", out.String())
 	}
 }
