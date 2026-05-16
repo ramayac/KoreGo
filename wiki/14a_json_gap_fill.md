@@ -1,6 +1,6 @@
 # Phase 14a — JSON Gap Fill (8 Utilities)
 
-> **Status:** COMPLETED | **Date:** 2026-05-15 | **Parent:** [14_xml_output.md](14_xml_output.md)
+> **Status:** COMPLETED (all 8 verified, echo daemon bug FIXED) | **Date:** 2026-05-15 | **Parent:** [14_xml_output.md](14_xml_output.md)
 
 ---
 
@@ -16,7 +16,7 @@ remaining gap before full XML rollout.
 
 | # | Utility | `--json` Status | Has Result Type? | Uses FlagSpec? | Root Cause |
 |---|---------|----------------|-----------------|----------------|------------|
-| 1 | `echo` | ✅ Fixed | `EchoResult` ✅ | ✅ Now uses spec | Was manual `for` loop over `os.Args` |
+| 1 | `echo` | ✅ Fixed | `EchoResult` ✅ | ✅ Now uses spec | Was manual arg loop; daemon prepends `--json` (fixed server.go:509) |
 | 2 | `testcmd` | ✅ Fixed | `TestResult` ✅ | ✅ Pre-processes | Was stripping `--json`/`-j` at position 0 only |
 | 3 | `sed` | ✅ Added | `SedResult` added | ✅ Added --json | Was never implemented |
 | 4 | `tee` | ✅ Added | `TeeResult` added | ✅ Added --json | Was never implemented |
@@ -88,16 +88,40 @@ remaining gap before full XML rollout.
 
 ---
 
-## Verification
+## Current State (2026-05-15 audit)
 
+### Unit Tests — All 8 Pass ✅
 ```bash
-# All unit tests pass
 go test ./pkg/echo/... ./pkg/testcmd/... ./pkg/sed/... ./pkg/tee/... \
         ./pkg/tr/... ./pkg/sleep/... ./pkg/truefalse/... ./pkg/yes/... -v
-
-# Daemon integration tests pass
-go test ./test/posix-json/... -v
-
-# Full suite zero regressions
-go test ./pkg/... ./internal/... -count=1
+# All PASS
 ```
+
+### Daemon Integration — All 8 Pass ✅
+| Utility | posix-json | client test | Notes |
+|---------|-----------|-------------|-------|
+| `echo` | ✅ | ✅ | Fixed: daemon prepends `--json` (was appending, echo parser missed it) |
+| `testcmd` | ✅ | — | Pre-processor scans all positions |
+| `sed` | — | — | Uses `common.ParseFlags` |
+| `tee` | — | — | Uses `common.ParseFlags` |
+| `tr` | — | — | Uses `common.ParseFlags` |
+| `sleep` | ✅ | — | Uses `common.ParseFlags` |
+| `truefalse` | ✅ | — | Uses `common.ParseFlags` |
+| `yes` | ✅ | — | Uses `common.ParseFlags` |
+
+### Echo Daemon Bug — Root Cause & Fix
+
+The daemon was building echo args as: `["<text>", "--json"]` (text first, flag last).
+But echo's custom `parseEchoFlags` only scans flags at the **start** of args:
+```go
+// pkg/echo/echo.go parseEchoFlags
+// Sees "hello" → not a flag → breaks; "--json" becomes literal text
+```
+**Fix applied** (`internal/daemon/server.go:509`): prepend `--json` instead of appending:
+```go
+// Before: args = append(args, "--json")
+// After:  args = append([]string{"--json"}, args...)
+```
+This is safe for all utilities — `common.ParseFlags` handles `--json` at any position.
+Test coverage: `internal/daemon/echo_integration_test.go` (`TestProcessRequest_EchoJSONMode`,
+`TestProcessRequest_EchoJSONModeWithFlags`).

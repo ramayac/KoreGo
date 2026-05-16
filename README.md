@@ -1,13 +1,14 @@
 # KoreGo
 
-A 100% Go-native, POSIX-compliant userland tailored for Docker FROM `scratch` containers and Agentic Runtimes.
-Compiled into a single multicall binary (like BusyBox), KoreGo serves as a modern, machine-first replacement for GNU Coreutils.
+A Go-native, single-binary POSIX userland (>97% BusyBox test compatibility). KoreGo replaces
+GNU Coreutils in Docker `FROM scratch` containers, featuring native `--json` structured output
+in every tool (`--xml` in progress — see [Phase 14](wiki/14_xml_output.md)).
 
-Key Features:  
- - Machine-Readable by Default: Every utility supports structured output via a --json flag.
+Key Features:
+ - Machine-Readable by Default: Every utility supports a `--json` flag for structured output (`--xml` planned — [Phase 14](wiki/14_xml_output.md)).
  - Low-Overhead Execution: A persistent JSON-RPC 2.0 daemon eliminates continuous process-spawning overhead.
  - Portable Scripting: Includes a fully sandboxed shell interpreter (mvdan.cc/sh).
- - High Compatibility: Achieves a 97.9% pass rate against the BusyBox test suite (479 passed, 1 failed, 10 skipped).
+ - High Compatibility: 97.9% pass rate against the BusyBox test suite (479 passed, 1 failed, 10 skipped).
 
 ## Quickstart
 
@@ -59,7 +60,7 @@ KoreGo MVP is complete with **49 POSIX utilities implemented** (100% of target s
 | Filesystem (11) | ✅ | ls, cat, mkdir, rmdir, rm, cp, mv, touch, ln, stat, readlink |
 | Text (10) | ✅ | head, tail, wc, sort, uniq, tr, cut, tee, grep, sed |
 | System (13) | ✅ | ps, kill, sleep, date, id, groups, chmod, chown, chgrp, df, du, find, xargs |
-| Agent (5) | ✅ | diff, tar, gzip, printf, expr, sha256sum, md5sum |
+| Agent (7) | ✅ | diff, tar, gzip, printf, expr, sha256sum, md5sum |
 
 **All Phases Complete (00–10).** The single remaining test failure (`tar writing into read-only dir`) is umask-dependent and passes with umask 022. All 10 skipped tests require external compression tools (bzip2, xz) or PAX extended header support.
 

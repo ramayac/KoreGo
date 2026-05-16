@@ -35,6 +35,7 @@ var spec = common.FlagSpec{
 		{Short: "u", Long: "unified", Type: common.FlagBool},
 		{Short: "U", Long: "unified-context", Type: common.FlagValue},
 		{Short: "b", Long: "ignore-space-change", Type: common.FlagBool},
+		{Short: "w", Long: "ignore-all-space", Type: common.FlagBool},
 		{Short: "B", Long: "ignore-blank-lines", Type: common.FlagBool},
 		{Short: "q", Long: "brief", Type: common.FlagBool},
 		{Short: "r", Long: "recursive", Type: common.FlagBool},
@@ -74,6 +75,21 @@ func normalizeSpace(lines []string) []string {
 			} else {
 				b.WriteByte(c)
 				inSpace = false
+			}
+		}
+		out[i] = b.String()
+	}
+	return out
+}
+
+func stripAllSpace(lines []string) []string {
+	out := make([]string, len(lines))
+	for i, l := range lines {
+		var b strings.Builder
+		for j := 0; j < len(l); j++ {
+			c := l[j]
+			if c != ' ' && c != '\t' && c != '\r' && c != '\n' {
+				b.WriteByte(c)
 			}
 		}
 		out[i] = b.String()
@@ -343,7 +359,7 @@ func BuildHunks(script []diffItem, context int, newline1, newline2 bool) []Hunk 
 }
 
 // GenerateDiff compares two file contents and produces hunks and a differ boolean.
-func GenerateDiff(content1, content2 string, contextLines int, ignoreSpace, ignoreBlankLines bool) (bool, []Hunk) {
+func GenerateDiff(content1, content2 string, contextLines int, ignoreSpace, ignoreAllSpace, ignoreBlankLines bool) (bool, []Hunk) {
 	lines1 := strings.Split(content1, "\n")
 	if len(lines1) > 0 && lines1[len(lines1)-1] == "" {
 		lines1 = lines1[:len(lines1)-1]
@@ -360,10 +376,13 @@ func GenerateDiff(content1, content2 string, contextLines int, ignoreSpace, igno
 		lines2 = nil
 	}
 	
-	// Normalize for -b
+	// Normalize for -b (space-change) or -w (all-space)
 	compLines1 := lines1
 	compLines2 := lines2
-	if ignoreSpace {
+	if ignoreAllSpace {
+		compLines1 = stripAllSpace(lines1)
+		compLines2 = stripAllSpace(lines2)
+	} else if ignoreSpace {
 		compLines1 = normalizeSpace(lines1)
 		compLines2 = normalizeSpace(lines2)
 	}
@@ -451,13 +470,14 @@ func run(args []string, out io.Writer) int {
 	// Directory diff: if -r is set and both paths exist as dirs.
 	recursive := flags.Has("r")
 	treatNew := flags.Has("N")
-	ignoreSpace := flags.Has("b")
+	ignoreSpace := flags.Has("b") || flags.Has("w")
+	ignoreAllSpace := flags.Has("w")
 	ignoreBlankLines := flags.Has("B")
 	if recursive {
 		s1, e1 := os.Stat(files[0])
 		s2, e2 := os.Stat(files[1])
 		if e1 == nil && e2 == nil && s1.IsDir() && s2.IsDir() {
-			return diffDirs(files[0], files[1], contextLines, ignoreSpace, ignoreBlankLines, treatNew, jsonMode, out)
+			return diffDirs(files[0], files[1], contextLines, ignoreSpace, ignoreAllSpace, ignoreBlankLines, treatNew, jsonMode, out)
 		}
 		// One is dir, other is file: look for file's basename inside the dir.
 		// E.g., "diff -ur dir1 dir2/subdir/-" → diff "dir1/-" vs "dir2/subdir/-"
@@ -505,7 +525,7 @@ func run(args []string, out io.Writer) int {
 		return 2
 	}
 
-	differ, hunks := GenerateDiff(string(b1), string(b2), contextLines, ignoreSpace, ignoreBlankLines)
+	differ, hunks := GenerateDiff(string(b1), string(b2), contextLines, ignoreSpace, ignoreAllSpace, ignoreBlankLines)
 
 	res := DiffResult{
 		Files:  []string{files[0], files[1]},
@@ -572,7 +592,7 @@ func joinPreserving(dir, rel string) string {
 }
 
 // diffDirs recursively compares two directories and outputs unified diffs.
-func diffDirs(dir1, dir2 string, contextLines int, ignoreSpace, ignoreBlankLines, treatNew, jsonMode bool, out io.Writer) int {
+func diffDirs(dir1, dir2 string, contextLines int, ignoreSpace, ignoreAllSpace, ignoreBlankLines, treatNew, jsonMode bool, out io.Writer) int {
 	// Collect all relative paths from both directories.
 	paths1 := make(map[string]string) // rel → abs
 	paths2 := make(map[string]string)
@@ -675,7 +695,7 @@ func diffDirs(dir1, dir2 string, contextLines int, ignoreSpace, ignoreBlankLines
 			}
 			b1, _ := os.ReadFile(p1)
 			b2, _ := os.ReadFile(p2)
-			differ, hunks := GenerateDiff(string(b1), string(b2), contextLines, ignoreSpace, ignoreBlankLines)
+			differ, hunks := GenerateDiff(string(b1), string(b2), contextLines, ignoreSpace, ignoreAllSpace, ignoreBlankLines)
 			if differ || !treatNew {
 				if differ {
 					exitCode = 1
@@ -716,7 +736,7 @@ func diffDirs(dir1, dir2 string, contextLines int, ignoreSpace, ignoreBlankLines
 			if treatNew {
 				// -N: treat missing file as empty, diff against empty.
 				b1, _ := os.ReadFile(p1)
-				differ, hunks := GenerateDiff(string(b1), "", contextLines, ignoreSpace, ignoreBlankLines)
+				differ, hunks := GenerateDiff(string(b1), "", contextLines, ignoreSpace, ignoreAllSpace, ignoreBlankLines)
 				if differ || !treatNew {
 					if differ {
 						exitCode = 1
@@ -761,7 +781,7 @@ func diffDirs(dir1, dir2 string, contextLines int, ignoreSpace, ignoreBlankLines
 			if treatNew {
 				// -N: treat missing file as empty, diff against empty.
 				b2, _ := os.ReadFile(p2)
-				differ, hunks := GenerateDiff("", string(b2), contextLines, ignoreSpace, ignoreBlankLines)
+				differ, hunks := GenerateDiff("", string(b2), contextLines, ignoreSpace, ignoreAllSpace, ignoreBlankLines)
 				if differ || !treatNew {
 					if differ {
 						exitCode = 1

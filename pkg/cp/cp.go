@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/ramayac/korego/internal/dispatch"
 	"github.com/ramayac/korego/pkg/common"
@@ -317,11 +318,10 @@ func run(args []string, out io.Writer) int {
 	return exitCode
 }
 
-// devID returns a stable key for a file's device+inode identity using
-// the platform-specific Sys() interface.
+// devID returns a stable key for a file's device+inode identity.
 func devID(fi os.FileInfo) string {
-	// Use format string of the Sys() value as a fingerprint.
-	return fmt.Sprintf("%v", fi.Sys())
+	st := fi.Sys().(*syscall.Stat_t)
+	return fmt.Sprintf("%d:%d", st.Dev, st.Ino)
 }
 
 func init() {

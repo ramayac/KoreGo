@@ -217,3 +217,12 @@ func TestBusyBox_Date_FormatPercentYPercentm(t *testing.T) {
 		t.Errorf("got %q, want '199901'", strings.TrimSpace(out.String()))
 	}
 }
+
+func TestBusyBox_Date_RejectsExtraArgs(t *testing.T) {
+	// date -d 012311332000.30 %+c → should reject extra non-format arg
+	var buf bytes.Buffer
+	code := run([]string{"-d", "012311332000.30", "%+c"}, &buf)
+	if code != 1 {
+		t.Fatalf("exit code %d, want 1", code)
+	}
+}

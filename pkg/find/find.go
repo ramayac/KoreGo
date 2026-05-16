@@ -24,6 +24,7 @@ var spec = common.FlagSpec{
 		// -xdev: stay on this filesystem (no-op in korego; filepath.WalkDir
 		// already respects filesystem boundaries).
 		{Short: "x", Long: "xdev", Type: common.FlagBool},
+		{Short: "m", Long: "mtime", Type: common.FlagValue},
 	},
 }
 

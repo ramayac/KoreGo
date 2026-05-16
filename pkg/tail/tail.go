@@ -87,6 +87,19 @@ func Run(r io.Reader, w io.Writer, linesCount int, bytesCount int, fromStart boo
 }
 
 func run(args []string, out io.Writer) int {
+	// Preprocess: convert traditional "-N" (where N is a number) to "-n N"
+	cleanArgs := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if len(a) >= 2 && a[0] == '-' && a[1] >= '0' && a[1] <= '9' {
+			// -N → -n N
+			cleanArgs = append(cleanArgs, "-n", a[1:])
+		} else {
+			cleanArgs = append(cleanArgs, a)
+		}
+	}
+	args = cleanArgs
+
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "tail: %v\n", err)

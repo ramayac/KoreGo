@@ -195,6 +195,12 @@ func run(args []string, out io.Writer) int {
 	jsonMode := flags.Has("j")
 	dateStr := flags.Get("d")
 
+	// POSIX: reject unexpected positional arguments
+	for _, p := range flags.Positional {
+		fmt.Fprintf(os.Stderr, "date: invalid date '%s'\n", p)
+		return 1
+	}
+
 	var now time.Time
 	var loc *time.Location
 

@@ -85,12 +85,15 @@ func Run(short, domain, fqdn bool) (HostnameResult, error) {
 				dotIdx := strings.IndexByte(name, '.')
 				if dotIdx != -1 {
 					result.Domain = name[dotIdx+1:]
-				} else {
-					// Also try /etc/resolv.conf search domain or similar
-					result.Domain = "(none)"
 				}
+				// Leave empty if no domain; "(none)" breaks BusyBox tests
 			}
 		}
+	}
+
+	// POSIX: -f returns the FQDN. The test harness appends its own dot.
+	if fqdn && result.FQDN == "" {
+		result.FQDN = name
 	}
 
 	return result, nil

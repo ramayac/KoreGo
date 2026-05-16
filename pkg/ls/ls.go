@@ -277,11 +277,15 @@ func run(args []string, out io.Writer) int {
 	multiPath := len(results) > 1
 	for _, res := range results {
 		files := sortFiles(res.Files, byTime, bySize, reverse)
-		if multiPath {
+		// Only show path header for directories, not individual files.
+		// System ls: "ls -l file1 dir1" shows "dir1:" header but not "file1:".
+		showHeader := multiPath && !isSingleFile(files, res.Path)
+		if showHeader {
 			fmt.Fprintf(out, "%s:\n", res.Path)
 		}
-		// Emit "total NNN" line when -l or -s is active (POSIX).
-		if longFmt || (showBlocks && !longFmt) {
+		// Emit "total NNN" line when -l or -s is active and we're
+		// listing a directory or multiple items (not a single file).
+		if (longFmt || (showBlocks && !longFmt)) && !isSingleFile(files, res.Path) {
 			var totalBlocks int64
 			for _, fi := range files {
 				totalBlocks += fi.Blocks / 2
@@ -290,6 +294,12 @@ func run(args []string, out io.Writer) int {
 		}
 		for _, fi := range files {
 			name := fi.Name
+			// For single-file arguments, use the original path (GNU ls
+			// preserves the path specified by the user).
+			if isSingleFile(files, res.Path) && res.Path != "" {
+				name = res.Path
+				fi.Name = res.Path // update for printLong too
+			}
 			if fi.Target != "" {
 				name = fmt.Sprintf("%s -> %s", fi.Name, fi.Target)
 			}
@@ -318,11 +328,24 @@ func run(args []string, out io.Writer) int {
 				fmt.Fprintln(out, name)
 			}
 		}
-		if multiPath {
+		if showHeader {
 			fmt.Println()
 		}
 	}
 	return 0
+}
+
+// isSingleFile returns true if the listing is for a single regular file
+// (not a directory or multiple files). Used to suppress "total" header.
+func isSingleFile(files []FileInfo, path string) bool {
+	if len(files) != 1 {
+		return false
+	}
+	fi, err := os.Lstat(path)
+	if err != nil {
+		return false
+	}
+	return !fi.IsDir()
 }
 
 func init() {

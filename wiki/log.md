@@ -2,6 +2,16 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-15] polish | README — refreshed description, note --xml is not yet live
+
+Updated README.md first paragraph and Key Features. Promoted --json structured
+output but correctly notes --xml is in progress (Phase 14, PLANNING) rather
+than claiming it as implemented. Fixed utility table: Agent row corrected from
+(5) to (7). Docker quickstart kept at --json only.
+
+Wiki phases.md and index.md already reflect XML Phase 14; no structural
+changes needed there.
+
 ## [2026-05-15] plan | 14 + 14a — XML output support + gap fill
 
 Created wiki/14_xml_output.md — plan to add `--xml` structured output to all 52

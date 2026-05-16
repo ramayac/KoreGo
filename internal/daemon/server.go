@@ -503,7 +503,10 @@ func (s *Server) processRequest(req Request) *Response {
 		}
 	}
 
-	args = append(args, "--json") // Force JSON mode
+	// Prepend --json so utilities with custom flag parsers (echo) see it first.
+	// common.ParseFlags handles --json at any position; echo's parseEchoFlags only
+	// scans flags at the start of the argument list.
+	args = append([]string{"--json"}, args...)
 
 	var buf bytes.Buffer
 	// 50MB response limit to prevent OOM
