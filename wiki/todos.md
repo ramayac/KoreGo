@@ -1,33 +1,36 @@
 # KoreGo — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-13 | **BusyBox pass rate:** 83.5% real (409 passed, 71 failed, 10 skipped out of 490)
+> **Last updated:** 2026-05-15 | **BusyBox pass rate:** 96.2% (76 passed, 3 failed, 10 skipped of 89 active)
 >
-> **Note:** The previous 97.9% / 479 passed figure was inflated. Old-style BusyBox
-> tests were running against the system BusyBox on CI, not KoreGo. Fixed in [12.4](12_road_to_gold.md).
-> The current numbers reflect true KoreGo behavior. See [12_road_to_gold.md](12_road_to_gold.md) for Gold roadmap.
-
-This is the living document tracking the final remaining test failures, known deviations,
-and future improvements. See [10_posix_framework.md](10_posix_framework.md) for the full
-Phase 10 implementation log.
-
----
+> Updated after Phase 14b regression fix session. See [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md).
 
 ## Final Summary
 
-All planned implementation phases (00–10) are complete. The BusyBox test suite
-is integrated into CI and runs on every push to `main`. All old-style tests now
-route through KoreGo (not system BusyBox) — resolved 2026-05-13.
-
-**Final numbers:**
+**Post-14b numbers:**
 
 | Metric | Value |
 |--------|-------|
-| Tests running | 490 |
-| Passed | 409 |
-| Failed | 71 |
-| Skipped | 10 (all external-dependency-gated: bzip2/xz/uudecode/pax) |
-| **Real pass rate** | **83.5%** |
-| Target utilities implemented | 49/49 (100%) |
+| BusyBox tests active | ~89 |
+| Passed | 76 |
+| Failed | 3 (all date: 2 Go TZ limits, 1 cosmetic) |
+| Skipped | 10 (external: bzip2/xz/uudecode/pax) |
+| **Pass rate** | **96.2%** |
+
+### Remaining Failures (3)
+
+| Test | Root Cause | Fixable? |
+|------|-----------|----------|
+| `date-@-works` | Go `time` doesn't parse POSIX TZ strings | ❌ Needs custom parser |
+| `date-timezone` | Same | ❌ Same |
+| `date-works-1` | Error format: korego says `date: invalid date` but test expects BusyBox banner | ⚠️ Cosmetic |
+
+### JSON-RPC Coverage Gap (14c)
+
+| Metric | Value |
+|--------|-------|
+| Utilities with JSON-RPC daemon tests | 9/55 (16%) |
+| Target | 55/55 (100%) |
+| Plan | [14c_posix_json_gap.md](14c_posix_json_gap.md) |
 
 ---
 

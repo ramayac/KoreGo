@@ -2,6 +2,33 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-15] fix | 14b + 14c — BusyBox regression fix + JSON-RPC coverage gap
+
+### 14b — BusyBox Regression Fix
+
+Ran `make testsuite` and found 79 failures. Root cause: `common.ParseFlags`
+applied uniformly to all utilities, crashing on arguments starting with `-`
+in free-form tools (echo, printf, expr). Two-phase fix session resolved 76
+failures across 25+ utilities. 3 remain (all date: 2 Go TZ limitations,
+1 cosmetic BusyBox error-format mismatch).
+
+Key lessons:
+- Shared infra needs escape hatches (stop-at-first-nonflag mode for ParseFlags)
+- Never use `-j` short for `--json` (collides with tar, free-form data)
+- BusyBox suite gates every commit (catches cascading failures)
+- `devID` formatted a pointer instead of dereferencing Dev:Ino
+
+Added ~75 hardening unit tests across 17 packages.
+Updated wiki/14b_busybox_regression_fix.md with full details.
+
+### 14c — JSON-RPC Coverage Gap
+
+Audited test/posix-json/runner_test.go: only 9 of 55 utility packages
+tested via the JSON-RPC daemon path. Created wiki/14c_posix_json_gap.md
+with priority-ordered fix plan (5 tiers). Target: 100% coverage.
+
+Updated wiki/phases.md, wiki/index.md with 14b/14c entries.
+
 ## [2026-05-15] polish | README — refreshed description, note --xml is not yet live
 
 Updated README.md first paragraph and Key Features. Promoted --json structured
