@@ -9,7 +9,7 @@ import (
 )
 
 func TestDiffEqual(t *testing.T) {
-	differ, hunks := GenerateDiff("a\nb\nc", "a\nb\nc", 3, false, false)
+	differ, hunks := GenerateDiff("a\nb\nc", "a\nb\nc", 3, false, false, false)
 	if differ {
 		t.Errorf("Expected differ to be false")
 	}
@@ -19,7 +19,7 @@ func TestDiffEqual(t *testing.T) {
 }
 
 func TestDiffSimpleDiff(t *testing.T) {
-	differ, hunks := GenerateDiff("a\nb\nc", "a\nx\nc", 3, false, false)
+	differ, hunks := GenerateDiff("a\nb\nc", "a\nx\nc", 3, false, false, false)
 	if !differ {
 		t.Errorf("Expected differ to be true")
 	}
@@ -41,7 +41,7 @@ func TestDiffSimpleDiff(t *testing.T) {
 func TestDiffContextLines(t *testing.T) {
 	a := "1\n2\n3\n4\n5\n6\n7\n8\n9"
 	b := "1\n2\n3\n4\nx\n6\n7\n8\n9"
-	differ, hunks := GenerateDiff(a, b, 2, false, false)
+	differ, hunks := GenerateDiff(a, b, 2, false, false, false)
 	if !differ {
 		t.Errorf("Expected differ to be true")
 	}
@@ -172,21 +172,21 @@ func TestFilterBlankLines(t *testing.T) {
 }
 
 func TestGenerateDiffIgnoreSpace(t *testing.T) {
-	differ, _ := GenerateDiff("hello   world", "hello world", 3, true, false)
+	differ, _ := GenerateDiff("hello   world", "hello world", 3, true, false, false)
 	if differ {
 		t.Error("expected no diff when ignoring whitespace changes")
 	}
 }
 
 func TestGenerateDiffIgnoreBlankLines(t *testing.T) {
-	differ, _ := GenerateDiff("a\n\n\nb", "a\nb", 3, false, true)
+	differ, _ := GenerateDiff("a\n\n\nb", "a\nb", 3, false, false, true)
 	if differ {
 		t.Error("expected no diff when ignoring blank lines")
 	}
 }
 
 func TestGenerateDiffEmptyVsContent(t *testing.T) {
-	differ, hunks := GenerateDiff("", "hello\n", 3, false, false)
+	differ, hunks := GenerateDiff("", "hello\n", 3, false, false, false)
 	if !differ {
 		t.Error("expected differ=true for empty vs content")
 	}
@@ -196,7 +196,7 @@ func TestGenerateDiffEmptyVsContent(t *testing.T) {
 }
 
 func TestGenerateDiffContentVsEmpty(t *testing.T) {
-	differ, hunks := GenerateDiff("hello\n", "", 3, false, false)
+	differ, hunks := GenerateDiff("hello\n", "", 3, false, false, false)
 	if !differ {
 		t.Error("expected differ=true for content vs empty")
 	}
@@ -224,7 +224,7 @@ func TestMinMax(t *testing.T) {
 }
 
 func TestGenerateDiffNoContext(t *testing.T) {
-	differ, hunks := GenerateDiff("a\nb\nc", "a\nx\nc", 0, false, false)
+	differ, hunks := GenerateDiff("a\nb\nc", "a\nx\nc", 0, false, false, false)
 	if !differ {
 		t.Error("expected differ")
 	}
@@ -234,7 +234,7 @@ func TestGenerateDiffNoContext(t *testing.T) {
 }
 
 func TestGenerateDiffMultiHunk(t *testing.T) {
-	differ, hunks := GenerateDiff("a\nb\nc\nd\ne", "a\nx\nc\ny\ne", 1, false, false)
+	differ, hunks := GenerateDiff("a\nb\nc\nd\ne", "a\nx\nc\ny\ne", 1, false, false, false)
 	if !differ {
 		t.Error("expected differ")
 	}

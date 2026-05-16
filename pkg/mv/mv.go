@@ -26,6 +26,7 @@ var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
 		{Short: "f", Long: "force", Type: common.FlagBool},
 		{Short: "i", Long: "interactive", Type: common.FlagBool},
+		{Short: "t", Long: "target-directory", Type: common.FlagValue},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
@@ -80,12 +81,22 @@ func run(args []string, out io.Writer) int {
 		return 2
 	}
 	jsonMode := flags.Has("j")
-	if len(flags.Positional) < 2 {
-		fmt.Fprintln(os.Stderr, "mv: missing file operand")
-		return 1
+	targetDir := flags.Get("t")
+
+	var srcs []string
+	var dst string
+	if targetDir != "" {
+		// GNU -t DIR SOURCE...: target specified before sources.
+		srcs = flags.Positional
+		dst = targetDir
+	} else {
+		if len(flags.Positional) < 2 {
+			fmt.Fprintln(os.Stderr, "mv: missing file operand")
+			return 1
+		}
+		srcs = flags.Positional[:len(flags.Positional)-1]
+		dst = flags.Positional[len(flags.Positional)-1]
 	}
-	srcs := flags.Positional[:len(flags.Positional)-1]
-	dst := flags.Positional[len(flags.Positional)-1]
 	result, err := Run(srcs, dst)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "mv: %v\n", err)

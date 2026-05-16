@@ -53,12 +53,12 @@ func init() {
 	})
 }
 
-func runGzip(args []string, out io.Writer) int {
-	return execute(args, out, false)
+func runGunzip(args []string, out io.Writer) int {
+	return execute(args, out, true, "gunzip")
 }
 
-func runGunzip(args []string, out io.Writer) int {
-	return execute(args, out, true)
+func runGzip(args []string, out io.Writer) int {
+	return execute(args, out, false, "gzip")
 }
 
 // getCompressionLevel returns the compression level from flags, or flate.DefaultCompression.
@@ -72,10 +72,10 @@ func getCompressionLevel(flags *common.ParseResult) int {
 	return flate.DefaultCompression
 }
 
-func execute(args []string, out io.Writer, forceDecompress bool) int {
+func execute(args []string, out io.Writer, forceDecompress bool, cmdName string) int {
 	flags, err := common.ParseFlags(args, spec)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+		fmt.Fprintf(os.Stderr, cmdName+": %v\n", err)
 		return 1
 	}
 
@@ -93,7 +93,7 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 			gr, err := gzip.NewReader(os.Stdin)
 			if err != nil {
 				if !isJSON {
-					fmt.Fprintf(os.Stderr, "gzip: stdin: %v\n", err)
+					fmt.Fprintf(os.Stderr, cmdName+": stdin: %v\n", err)
 				}
 				return 1
 			}
@@ -103,7 +103,7 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 			gw, err := gzip.NewWriterLevel(out, level)
 			if err != nil {
 				if !isJSON {
-					fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+					fmt.Fprintf(os.Stderr, cmdName+": %v\n", err)
 				}
 				return 1
 			}
@@ -123,7 +123,7 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 				gr, err := gzip.NewReader(os.Stdin)
 				if err != nil {
 					if !isJSON {
-						fmt.Fprintf(os.Stderr, "gzip: stdin: %v\n", err)
+						fmt.Fprintf(os.Stderr, cmdName+": stdin: %v\n", err)
 					}
 					return 1
 				}
@@ -133,7 +133,7 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 				gw, err := gzip.NewWriterLevel(out, level)
 				if err != nil {
 					if !isJSON {
-						fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+						fmt.Fprintf(os.Stderr, cmdName+": %v\n", err)
 					}
 					return 1
 				}
@@ -145,9 +145,26 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 
 		inInfo, err := os.Stat(file)
 		if err != nil {
-			common.RenderError("gzip", 1, "STAT_FAIL", err.Error(), isJSON, out)
+			if decompress {
+				// gunzip: file doesn't exist
+				if !isJSON {
+					fmt.Fprintf(os.Stderr, "%s: %s: No such file or directory\n", cmdName, file)
+				}
+				exitCode = 1
+				continue
+			}
+			common.RenderError(cmdName, 1, "STAT_FAIL", err.Error(), isJSON, out)
 			if !isJSON {
-				fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+				fmt.Fprintf(os.Stderr, "%s: %v\n", cmdName, err)
+			}
+			exitCode = 1
+			continue
+		}
+
+		// gunzip: skip non-.gz files (check suffix before trying to open)
+		if decompress && !strings.HasSuffix(file, ".gz") {
+			if !isJSON {
+				fmt.Fprintf(os.Stderr, "%s: %s: unknown suffix - ignored\n", cmdName, file)
 			}
 			exitCode = 1
 			continue
@@ -157,7 +174,7 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 		if err != nil {
 			common.RenderError("gzip", 1, "OPEN_FAIL", err.Error(), isJSON, out)
 			if !isJSON {
-				fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+				fmt.Fprintf(os.Stderr, cmdName+": %v\n", err)
 			}
 			exitCode = 1
 			continue
@@ -181,8 +198,14 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 
 			if !force {
 				if _, err := os.Stat(outName); err == nil {
-					if !isJSON {
-						fmt.Fprintf(os.Stderr, "gzip: %s already exists; use -f to overwrite\n", outName)
+					if decompress {
+						if !isJSON {
+							fmt.Fprintf(os.Stderr, "%s: can't open '%s': File exists\n", cmdName, outName)
+						}
+					} else {
+						if !isJSON {
+							fmt.Fprintf(os.Stderr, "%s: %s already exists; use -f to overwrite\n", cmdName, outName)
+						}
 					}
 					in.Close()
 					exitCode = 1
@@ -194,7 +217,7 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 			if err != nil {
 				common.RenderError("gzip", 1, "CREATE_FAIL", err.Error(), isJSON, out)
 				if !isJSON {
-					fmt.Fprintf(os.Stderr, "gzip: %v\n", err)
+					fmt.Fprintf(os.Stderr, cmdName+": %v\n", err)
 				}
 				in.Close()
 				exitCode = 1
@@ -230,7 +253,7 @@ func execute(args []string, out io.Writer, forceDecompress bool) int {
 		if processErr != nil {
 			common.RenderError("gzip", 1, "PROCESS_FAIL", processErr.Error(), isJSON, out)
 			if !isJSON {
-				fmt.Fprintf(os.Stderr, "gzip: %v\n", processErr)
+				fmt.Fprintf(os.Stderr, cmdName+": %v\n", processErr)
 			}
 			if outFile != nil {
 				os.Remove(outName) // remove incomplete output

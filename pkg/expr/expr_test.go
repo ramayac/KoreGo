@@ -287,3 +287,38 @@ func TestEvalComplexExpression(t *testing.T) {
 		t.Errorf("got %q, want %q", result, "21")
 	}
 }
+
+// --- BusyBox test suite hardening ---
+
+func TestBusyBox_Expr_BigNumbers(t *testing.T) {
+	// BusyBox: expr 0 '<' 3000000000 → 1 (handles >32-bit)
+	result, _, err := Eval([]string{"0", "<", "3000000000"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != "1" {
+		t.Errorf("got %q, want 1", result)
+	}
+}
+
+func TestBusyBox_Expr_BigNegativeNumbers(t *testing.T) {
+	// BusyBox: expr -9223372036854775800 '<' 9223372036854775807 → 1
+	result, _, err := Eval([]string{"-9223372036854775800", "<", "9223372036854775807"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != "1" {
+		t.Errorf("got %q, want 1", result)
+	}
+}
+
+func TestBusyBox_Expr_NegativeArg(t *testing.T) {
+	// Verify that -5 is treated as a positional arg, not a flag
+	result, _, err := Eval([]string{"-5", "+", "3"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result != "-2" {
+		t.Errorf("got %q, want -2", result)
+	}
+}

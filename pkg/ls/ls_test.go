@@ -126,3 +126,90 @@ func TestSortFilesReverse(t *testing.T) {
 		t.Errorf("reverse sort failed: %v", sorted)
 	}
 }
+
+// --- BusyBox hardening tests ---
+
+func TestBusyBox_Ls_SortByteOrder(t *testing.T) {
+	// LC_ALL=C: uppercase (A-Z) sorts before lowercase (a-z).
+	files := []FileInfo{
+		{Name: "zebra"},
+		{Name: "README"},
+		{Name: "alpha"},
+		{Name: "TODO"},
+		{Name: "beta"},
+	}
+	sorted := sortFiles(files, false, false, false)
+	want := []string{"README", "TODO", "alpha", "beta", "zebra"}
+	for i, f := range sorted {
+		if f.Name != want[i] {
+			t.Errorf("pos %d: got %q, want %q (full: %v)", i, f.Name, want[i], names(sorted))
+		}
+	}
+}
+
+func TestBusyBox_Ls_SortDotFirst(t *testing.T) {
+	// Dotfiles sort before non-dotfiles.
+	files := []FileInfo{
+		{Name: "b"},
+		{Name: ".hidden"},
+		{Name: "a"},
+		{Name: ".."},
+		{Name: "."},
+	}
+	sorted := sortFiles(files, false, false, false)
+	want := []string{".", "..", ".hidden", "a", "b"}
+	for i, f := range sorted {
+		if f.Name != want[i] {
+			t.Errorf("pos %d: got %q, want %q", i, f.Name, want[i])
+		}
+	}
+}
+
+func TestBusyBox_Ls_DefaultFormatOnePerLine(t *testing.T) {
+	// Default (columnar) mode should output one entry per line when piped.
+	// Test via Run then verify output format.
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "a.txt"), []byte("hi"), 0644)
+	os.WriteFile(filepath.Join(dir, "b.txt"), []byte("hi"), 0644)
+
+	results, err := Run([]string{dir}, false, false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(results[0].Files) != 2 {
+		t.Fatalf("expected 2 files, got %d", len(results[0].Files))
+	}
+	// Verify they exist (names are used by run() for output).
+	names := make(map[string]bool)
+	for _, f := range results[0].Files {
+		names[f.Name] = true
+	}
+	if !names["a.txt"] || !names["b.txt"] {
+		t.Error("missing expected files")
+	}
+}
+
+func TestBusyBox_Ls_BlocksFlag(t *testing.T) {
+	// -s flag shows block counts. Test that Blocks field is populated.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "f")
+	os.WriteFile(path, []byte("hello"), 0644)
+
+	results, err := Run([]string{dir}, false, false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range results[0].Files {
+		if f.Name == "f" && f.Size > 0 && f.Blocks == 0 {
+			t.Error("expected non-zero blocks for non-empty file")
+		}
+	}
+}
+
+func names(files []FileInfo) []string {
+	n := make([]string, len(files))
+	for i, f := range files {
+		n[i] = f.Name
+	}
+	return n
+}

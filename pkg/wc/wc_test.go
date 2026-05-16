@@ -94,3 +94,18 @@ func TestCount(t *testing.T) {
 		t.Errorf("expected 2 words, got %d", res.Words)
 	}
 }
+
+// --- BusyBox test suite hardening ---
+
+func TestBusyBox_Wc_MaxLineLength(t *testing.T) {
+	// BusyBox: echo "i'm a little teapot" | wc -L → 19
+	// -L returns the length of the longest line.
+	r := strings.NewReader("i'm a little teapot\n")
+	res, err := CountProper(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.MaxLineLength != 19 {
+		t.Errorf("got %d, want 19", res.MaxLineLength)
+	}
+}

@@ -198,7 +198,15 @@ func sortFiles(files []FileInfo, byTime, bySize, reverse bool) []FileInfo {
 		case bySize:
 			less = files[i].Size > files[j].Size
 		default:
-			less = strings.ToLower(files[i].Name) < strings.ToLower(files[j].Name)
+			// Byte-order comparison (LC_ALL=C / POSIX default).
+			// Dotfiles sort first.
+			a, b := files[i].Name, files[j].Name
+			adot, bdot := strings.HasPrefix(a, "."), strings.HasPrefix(b, ".")
+			if adot != bdot {
+				less = adot
+			} else {
+				less = a < b
+			}
 		}
 		if reverse {
 			return !less
@@ -269,30 +277,75 @@ func run(args []string, out io.Writer) int {
 	multiPath := len(results) > 1
 	for _, res := range results {
 		files := sortFiles(res.Files, byTime, bySize, reverse)
-		if multiPath {
-			fmt.Printf("%s:\n", res.Path)
+		// Only show path header for directories, not individual files.
+		// System ls: "ls -l file1 dir1" shows "dir1:" header but not "file1:".
+		showHeader := multiPath && !isSingleFile(files, res.Path)
+		if showHeader {
+			fmt.Fprintf(out, "%s:\n", res.Path)
+		}
+		// Emit "total NNN" line when -l or -s is active and we're
+		// listing a directory or multiple items (not a single file).
+		if (longFmt || (showBlocks && !longFmt)) && !isSingleFile(files, res.Path) {
+			var totalBlocks int64
+			for _, fi := range files {
+				totalBlocks += fi.Blocks / 2
+			}
+			fmt.Fprintf(out, "total %d\n", totalBlocks)
 		}
 		for _, fi := range files {
+			name := fi.Name
+			// For single-file arguments, use the original path (GNU ls
+			// preserves the path specified by the user).
+			if isSingleFile(files, res.Path) && res.Path != "" {
+				name = res.Path
+				fi.Name = res.Path // update for printLong too
+			}
+			if fi.Target != "" {
+				name = fmt.Sprintf("%s -> %s", fi.Name, fi.Target)
+			}
+
 			switch {
 			case longFmt:
 				printLong(fi, showInode, showBlocks, humanReadable)
 			case onePer:
-				fmt.Println(fi.Name)
-			default:
 				if showInode {
-					fmt.Printf("%7d ", fi.Inode)
+					fmt.Fprintf(out, "%7d ", fi.Inode)
 				}
-				fmt.Print(fi.Name + "  ")
+				if showBlocks {
+					fmt.Fprintf(out, "%4d ", fi.Blocks/2)
+				}
+				fmt.Fprintln(out, name)
+			default:
+				// Default mode: one-per-line when not a terminal (piped).
+				// Multi-column would require terminal width; for busytest
+				// and pipes, one-per-line is the expected behavior.
+				if showInode {
+					fmt.Fprintf(out, "%7d ", fi.Inode)
+				}
+				if showBlocks {
+					fmt.Fprintf(out, "%4d ", fi.Blocks/2)
+				}
+				fmt.Fprintln(out, name)
 			}
 		}
-		if !longFmt && !onePer {
-			fmt.Println()
-		}
-		if multiPath {
+		if showHeader {
 			fmt.Println()
 		}
 	}
 	return 0
+}
+
+// isSingleFile returns true if the listing is for a single regular file
+// (not a directory or multiple files). Used to suppress "total" header.
+func isSingleFile(files []FileInfo, path string) bool {
+	if len(files) != 1 {
+		return false
+	}
+	fi, err := os.Lstat(path)
+	if err != nil {
+		return false
+	}
+	return !fi.IsDir()
 }
 
 func init() {

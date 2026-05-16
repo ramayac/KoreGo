@@ -30,6 +30,8 @@
 - [13_coverage_and_hardening.md](13_coverage_and_hardening.md) | Phase 13 — Coverage & Hardening (audit findings + 50%→75% coverage ramp + speed targets)
 - [14_xml_output.md](14_xml_output.md) | Phase 14 — XML Output Support (--xml flag for all 52 utilities + foundation)
 - [14a_json_gap_fill.md](14a_json_gap_fill.md) | Phase 14a — JSON/XML Gap Fill (8 utilities missing --json get both flags)
+- [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md) | Phase 14b — BusyBox Regression Fix (79→3 failures, lessons learned)
+- [14c_posix_json_gap.md](14c_posix_json_gap.md) | Phase 14c — JSON-RPC Coverage Gap (9/55 utilities tested via daemon)
 
 ## Design
 

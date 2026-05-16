@@ -415,14 +415,19 @@ func indexStr(str, chars string) string {
 }
 
 func run(args []string, out io.Writer) int {
-	flags, err := common.ParseFlags(args, spec)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "expr: %v\n", err)
-		return 2
+	// Manual flag parsing: only --json/-j is accepted as a flag.
+	// Everything else (including negative numbers) is positional.
+	jsonMode := false
+	posArgs := make([]string, 0, len(args))
+	for _, a := range args {
+		if a == "--json" || a == "-j" {
+			jsonMode = true
+		} else {
+			posArgs = append(posArgs, a)
+		}
 	}
 
-	jsonMode := flags.Has("json")
-	tokens := flags.Positional
+	tokens := posArgs
 
 	result, exitCode, err := Eval(tokens)
 	if err != nil {

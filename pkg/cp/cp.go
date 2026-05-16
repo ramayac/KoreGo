@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/ramayac/korego/internal/dispatch"
 	"github.com/ramayac/korego/pkg/common"
@@ -36,6 +37,7 @@ const (
 
 var spec = common.FlagSpec{
 	Defs: []common.FlagDef{
+		{Short: "a", Long: "archive", Type: common.FlagBool},
 		{Short: "r", Long: "recursive", Type: common.FlagBool},
 		{Short: "R", Long: "recursive-R", Type: common.FlagBool},
 		{Short: "p", Long: "preserve", Type: common.FlagBool},
@@ -46,6 +48,7 @@ var spec = common.FlagSpec{
 		{Short: "L", Long: "dereference", Type: common.FlagBool},
 		{Short: "H", Long: "dereference-command-line", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
+		{Long: "parents", Type: common.FlagBool},
 	},
 }
 
@@ -199,14 +202,26 @@ func run(args []string, out io.Writer) int {
 		return 2
 	}
 	jsonMode := flags.Has("j")
+
+	// -a (archive) = -dR --preserve
+	archive := flags.Has("a")
+	if archive {
+		// Set implied flags if not explicitly overridden
+		flags.Bools["d"] = true
+		flags.Bools["r"] = true
+		flags.Bools["p"] = true
+	}
+
 	if len(flags.Positional) < 2 {
 		fmt.Fprintln(os.Stderr, "cp: missing file operand")
 		return 1
 	}
+
 	srcs := flags.Positional[:len(flags.Positional)-1]
 	dst := flags.Positional[len(flags.Positional)-1]
 
 	recursive := flags.Has("r") || flags.Has("R")
+	parents := flags.Has("parents")
 
 	// Determine symlink mode; flag precedence: -L > -H > -P/-d > default
 	var mode SymlinkMode
@@ -227,12 +242,68 @@ func run(args []string, out io.Writer) int {
 
 	exitCode := 0
 	var allCopied CpResult
+
+	// Hard link tracking: srcAbs → firstDstPath
+	hardLinkMap := make(map[string]string)
+
 	for _, src := range srcs {
+		if parents {
+			// --parents: recreate directory structure under dst
+			dstInfo, dstErr := os.Stat(dst)
+			if dstErr != nil {
+				fmt.Fprintf(os.Stderr, "cp: %v\n", dstErr)
+				return 1
+			}
+			if !dstInfo.IsDir() {
+				fmt.Fprintf(os.Stderr, "cp: target '%s' is not a directory\n", dst)
+				return 1
+			}
+			// Strip leading "./" and trailing slashes
+			cleanSrc := filepath.Clean(src)
+			// Remove leading "/" if present (relative to cwd)
+			relSrc := cleanSrc
+			if filepath.IsAbs(relSrc) {
+				relSrc = relSrc[1:]
+			}
+			dstTarget := filepath.Join(dst, relSrc)
+			// Create parent directories
+			parent := filepath.Dir(dstTarget)
+			if err := os.MkdirAll(parent, 0755); err != nil {
+				fmt.Fprintf(os.Stderr, "cp: %v\n", err)
+				exitCode = 1
+				continue
+			}
+			var result CpResult
+			if err := copySingle(src, dstTarget, mode, true, flags.Has("p"), recursive, &result); err != nil {
+				fmt.Fprintf(os.Stderr, "cp: %v\n", err)
+				exitCode = 1
+			}
+			allCopied.Copied = append(allCopied.Copied, result.Copied...)
+			continue
+		}
+
 		dstTarget := dst
 		dstInfo, dstErr := os.Stat(dst)
 		if dstErr == nil && dstInfo.IsDir() {
 			dstTarget = filepath.Join(dst, filepath.Base(src))
 		}
+
+		// Hard link preservation: if src shares an inode with a previously
+		// copied file, link the new destination to the first destination copy.
+		// Only applies to regular files (not symlinks or directories).
+		srcFi, srcErr := os.Lstat(src)
+		if srcErr == nil && srcFi.Mode().IsRegular() {
+			srcKey := devID(srcFi)
+			if first, ok := hardLinkMap[srcKey]; ok {
+				os.Remove(dstTarget)
+				if err := os.Link(first, dstTarget); err == nil {
+					allCopied.Copied = append(allCopied.Copied, CopyRecord{From: src, To: dstTarget})
+					continue
+				}
+			}
+			hardLinkMap[srcKey] = dstTarget
+		}
+
 		// All source operands are command-line arguments (-H dereferences all of them)
 		isArg := true
 		var result CpResult
@@ -245,6 +316,12 @@ func run(args []string, out io.Writer) int {
 
 	common.Render("cp", allCopied, jsonMode, out, func() {})
 	return exitCode
+}
+
+// devID returns a stable key for a file's device+inode identity.
+func devID(fi os.FileInfo) string {
+	st := fi.Sys().(*syscall.Stat_t)
+	return fmt.Sprintf("%d:%d", st.Dev, st.Ino)
 }
 
 func init() {

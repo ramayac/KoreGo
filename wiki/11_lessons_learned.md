@@ -166,3 +166,29 @@ The `"schemaVersion": "1.0"` field in every JSON envelope allows consumers to de
 | Wiki sections updated | `11_post_mvp_priorities.md` (all 11.1–11.3 tasks marked `[x]`) |
 | `make` targets added | `validate-schemas`, `example-agent`, `bench` |
 | CI steps added | `Validate JSON schemas` |
+
+---
+
+## 11.4 — BusyBox Regression Fix (2026-05-15)
+
+### Shared infrastructure needs escape hatches
+
+`common.ParseFlags` was applied uniformly to all 50+ utilities. Utilities where arguments can be arbitrary text starting with `-` (echo, printf, expr) silently broke because the flag parser treated user data as flags. One architectural mistake caused **40+ cascading test failures** across unrelated utilities.
+
+**Fix:** Free-form utilities must use manual flag parsing that stops at the first non-flag argument. The `ParseFlags` function should offer a "stop at first non-flag" mode for this class of tool.
+
+### Never use `-j` as short flag for `--json`
+
+It collides with `tar -j` (bzip2 in POSIX), and any utility where `-j` could be legitimate positional data. Use long-form `--json` only.
+
+### Integration tests catch cascading failures
+
+The BusyBox test suite chains utilities: echo creates files → diff compares output → ls lists → find verifies. A bug in echo silently broke 12 diff tests. Without per-commit gating, regressions go undetected.
+
+### DevID pointer trap
+
+`fmt.Sprintf("%v", fi.Sys())` formats a **pointer address**, not the struct value. Two `Lstat` calls return different pointer addresses even for the same file, making inode-based hard link tracking silently broken. Always dereference: `st.Dev:st.Ino`.
+
+### Result
+
+79 → 3 failures (96.2% pass rate). See `wiki/14b_busybox_regression_fix.md` for full details.

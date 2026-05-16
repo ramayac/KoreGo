@@ -16,10 +16,11 @@ import (
 
 // WcResult is the --json output for a file.
 type WcResult struct {
-	Lines int `json:"lines"`
-	Words int `json:"words"`
-	Bytes int `json:"bytes"`
-	Chars int `json:"chars"`
+	Lines         int `json:"lines"`
+	Words         int `json:"words"`
+	Bytes         int `json:"bytes"`
+	Chars         int `json:"chars"`
+	MaxLineLength int `json:"maxLineLength"`
 }
 
 var spec = common.FlagSpec{
@@ -28,6 +29,7 @@ var spec = common.FlagSpec{
 		{Short: "w", Long: "words", Type: common.FlagBool},
 		{Short: "c", Long: "bytes", Type: common.FlagBool},
 		{Short: "m", Long: "chars", Type: common.FlagBool},
+		{Short: "L", Long: "max-line-length", Type: common.FlagBool},
 		{Short: "j", Long: "json", Type: common.FlagBool},
 	},
 }
@@ -101,11 +103,16 @@ func CountProper(r io.Reader) (WcResult, error) {
 	var res WcResult
 	reader := bufio.NewReader(r)
 	inWord := false
+	curLineLen := 0
 
 	for {
 		r, size, err := reader.ReadRune()
 		if err != nil {
 			if err == io.EOF {
+				// Check last line's length (file may not end with newline)
+				if curLineLen > res.MaxLineLength {
+					res.MaxLineLength = curLineLen
+				}
 				break
 			}
 			return res, err
@@ -114,7 +121,14 @@ func CountProper(r io.Reader) (WcResult, error) {
 		res.Chars++
 		if r == '\n' {
 			res.Lines++
+			if curLineLen > res.MaxLineLength {
+				res.MaxLineLength = curLineLen
+			}
+			curLineLen = 0
+			inWord = false
+			continue
 		}
+		curLineLen++
 		if unicode.IsSpace(r) {
 			inWord = false
 		} else if !inWord {
@@ -137,9 +151,10 @@ func run(args []string, out io.Writer) int {
 	showWords := flags.Has("w")
 	showBytes := flags.Has("c")
 	showChars := flags.Has("m")
+	showMaxLine := flags.Has("L")
 
 	// Default POSIX behavior: if no flags are given, print lines, words, bytes
-	if !showLines && !showWords && !showBytes && !showChars {
+	if !showLines && !showWords && !showBytes && !showChars && !showMaxLine {
 		showLines, showWords, showBytes = true, true, true
 	}
 
@@ -185,7 +200,7 @@ func run(args []string, out io.Writer) int {
 		if jsonMode {
 			jsonResults[p] = res
 		} else {
-			printCount(res, p, showLines, showWords, showBytes, showChars)
+			printCount(res, p, showLines, showWords, showBytes, showChars, showMaxLine)
 		}
 	}
 
@@ -193,7 +208,7 @@ func run(args []string, out io.Writer) int {
 		if jsonMode {
 			jsonResults["total"] = total
 		} else {
-			printCount(total, "total", showLines, showWords, showBytes, showChars)
+			printCount(total, "total", showLines, showWords, showBytes, showChars, showMaxLine)
 		}
 	}
 
@@ -210,8 +225,11 @@ func run(args []string, out io.Writer) int {
 	return exitCode
 }
 
-func printCount(res WcResult, name string, showLines, showWords, showBytes, showChars bool) {
+func printCount(res WcResult, name string, showLines, showWords, showBytes, showChars, showMaxLine bool) {
 	out := ""
+	if showMaxLine {
+		out += fmt.Sprintf(" %d", res.MaxLineLength)
+	}
 	if showLines {
 		out += fmt.Sprintf(" %d", res.Lines)
 	}
@@ -226,7 +244,9 @@ func printCount(res WcResult, name string, showLines, showWords, showBytes, show
 	if name != "-" {
 		out += fmt.Sprintf(" %s", name)
 	}
-	fmt.Println(out[1:]) // trim leading space
+	if out != "" {
+		fmt.Println(out[1:]) // trim leading space
+	}
 }
 
 func init() {

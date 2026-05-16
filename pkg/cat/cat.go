@@ -112,7 +112,12 @@ func run(args []string, out io.Writer) int {
 
 	// Collect readers: files or stdin.
 	var readers []io.Reader
-	if len(flags.Positional) == 0 || flags.Stdin {
+	// Only default to stdin when NO positional args are given.
+	// When "-" is explicitly in the positional args, it will be
+	// handled in the loop below. This prevents reading stdin twice
+	// when "-" is present (once from the implicit default, once
+	// from the explicit "-").
+	if len(flags.Positional) == 0 {
 		readers = append(readers, os.Stdin)
 	}
 	for _, path := range flags.Positional {
