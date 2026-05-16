@@ -4,6 +4,10 @@
 >
 > **Note:** Phase 14a (JSON gap fill — 8 utilities) is **COMPLETED** as of 2026-05-15.
 > See [14a_json_gap_fill.md](14a_json_gap_fill.md) for details.
+>
+> **2026-05-15:** Batch 1 (grep + head hardening) **COMPLETED** — overall 51.6% → **55.3%**.
+> grep: 16.5% → **85.3%** (+context flags `-A`/`-B`/`-C`, `-H`/`-h`, `-R`, +29 tests).
+> head: 29.0% → **94.1%** (3 bugs fixed, +22 tests). See commits on `feat/13-coverage`.
 
 ---
 
@@ -50,10 +54,10 @@ Post-Gold, work concentrates on five pillars:
 
 | Metric | Current | Target Stage 1 | Target Stage 2 | Target Stage 3 |
 |--------|---------|---------------|---------------|---------------|
-| Overall coverage | ~50% | 60% | 68% | 75% |
+| Overall coverage | **55.3%** | 60% | 68% | 75% |
 | Packages at 0% | 1 (`cmd/korego`) | 0 | 0 | 0 |
-| Packages at <10% | 4 | 1 | 0 | 0 |
-| Packages at <30% | 10 | 4 | 0 | 0 |
+| Packages at <10% | 2 (`internal/daemon`, `pkg/daemon`) | 1 | 0 | 0 |
+| Packages at <30% | 2 (`tail`, `touch`) | 0 | 0 | 0 |
 
 ### Root Cause
 
@@ -63,9 +67,9 @@ Every package follows the same arch: a public `Run()` (library layer, testable w
 overwhelmingly cover `Run()` but skip `run()` entirely.
 
 ```
-grep:  354 total LOC, 240 in run() →  16.5%  (worst utility)
-head:  181 total LOC, 130 in run() →  29.0%
-tee:   66  total LOC,  44 in run() →   3.3%  (worst overall)
+grep:  354 total LOC, 240 in run() →  85.3%  ✅ (refactored: grepRun injectable)
+head:  181 total LOC, 130 in run() →  94.1%  ✅ (headInput struct, 3 bugs fixed)
+tee:   66  total LOC,  44 in run() →  72.5%  (improved since audit; was 3.3%)
 ```
 
 ### Stage 1 — Critical Foundations (50% → 60%)
@@ -124,7 +128,7 @@ func TestRunViaDispatch(t *testing.T) {
 
 | Utility | Current | Target | Key tests |
 |---------|---------|--------|-----------|
-| `grep` | 16.5% | 45% | `-e`, `-f`, `-v`, `-r`, `-c`, `-l`/`-L`, `-i`, `-w`, `-x` |
+| `grep` | ~~16.5%~~ **85.3%** ✅ | 45% | `-e`, `-f`, `-v`, `-r`, `-c`, `-l`/`-L`, `-i`, `-w`, `-x`, `-A`/`-B`/`-C`, `-H`/`-h`, `-R` |
 | `sed` | 49.1% | 65% | `s/foo/bar/`, `-n`, `d`, `-e`, `-f`, `-i`, address ranges, `y` |
 | `cat` | 37.6% | 55% | `-n`, `-b`, `-s`, `-v`, `-E`, `-A`, stdin `-` |
 | `find` | 50.0% | 65% | `-name`, `-type`, `-size`, `-exec`, `-print`, `-delete`, `-maxdepth` |
@@ -137,7 +141,7 @@ func TestRunViaDispatch(t *testing.T) {
 |---------|---------|--------|-----------|
 | `ls` | 45.8% | 60% | `-l`, `-a`, `-R`, `-h`, `-1` |
 | `wc` | 32.5% | 55% | `-l`, `-w`, `-c`, `-m`, multi-file, stdin |
-| `head` | 29.0% | 55% | `-n` pos/neg, `-c`, multi-file headers |
+| `head` | ~~29.0%~~ **94.1%** ✅ | 55% | `-n` pos/neg, `-c`, multi-file headers, `--json`, `--lines`/`--bytes` long flags |
 | `tail` | 27.6% | 55% | `-n`, `-c`, `-f` (timeout), multi-file headers |
 | `cp` | 49.6% | 65% | file→file, file→dir, dir→dir `-R`, `-a`, error: ENOENT |
 | `rm` | 35.3% | 55% | single, `-r`, `-f`, `--no-preserve-root`, error: ENOENT |
@@ -163,7 +167,7 @@ func TestRunViaDispatch(t *testing.T) {
 
 ### Stage 3 — Refactor & Harden (68% → 75%)
 
-- [ ] **`pkg/grep/`**: Extract `run(args, stdout, stderr io.Writer, stdin io.Reader) int`
+- [x] **`pkg/grep/`**: Extract `run(args, stdout, stderr io.Writer, stdin io.Reader) int` ✅ `grepRun()`
 - [ ] **`pkg/tar/`**: Extract create/extract/list into testable functions
 - [ ] **`pkg/sed/`**: Extract `compileScripts()` and `runEngine()` from file I/O
 - [ ] **`pkg/find/`**: Extract `parsePredicates()` as pure function
@@ -189,7 +193,8 @@ func TestRunViaDispatch(t *testing.T) {
 | Stage | Packages | New Tests | Est. LOC | Cumulative Coverage |
 |-------|----------|-----------|----------|--------------------|
 | **Current** | — | — | — | **~50%** |
-| 1.1 `internal/daemon` | 1 | ~25 | ~400 | 53.2% |
+| ⚡ grep + head hardening | 2 | 51 | ~900 | 55.3% ✅ |
+| 1.1 `internal/daemon` | 1 | ~25 | ~400 | 58.5% |
 | 1.2 `cmd/korego` | 1 | ~8 | ~80 | 53.7% |
 | 1.3 `pkg/client` | 1 | ~15 | ~250 | 55.2% |
 | 1.4 `pkg/daemon` | 1 | ~4 | ~60 | 55.5% |
