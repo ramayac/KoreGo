@@ -1,9 +1,11 @@
 # Phase 13 — Coverage & Hardening (Audit → Action)
 
-> **Status:** In Progress | **Date:** 2026-05-15 | **Supersedes:** 13_code_audit.md, 15_coverage_ramp.md
+> **Status:** In Progress | **Date:** 2026-05-16 | **Supersedes:** 13_code_audit.md, 15_coverage_ramp.md
 >
-> **Note:** Phase 14a (JSON gap fill — 8 utilities) is **COMPLETED** as of 2026-05-15.
-> See [14a_json_gap_fill.md](14a_json_gap_fill.md) for details.
+> **Recent progress:**
+> - Phase 14a (JSON gap fill — 8 utilities) **COMPLETED** (2026-05-15). [14a_json_gap_fill.md](14a_json_gap_fill.md)
+> - Phase 14b (BusyBox regression fix — 79→3 failures) **COMPLETED** (2026-05-15). [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md)
+> - Phase 14c (JSON-RPC daemon coverage — 9/55→55/55 utilities, +46 tests) **COMPLETED** (2026-05-16). [14c_posix_json_gap.md](14c_posix_json_gap.md)
 >
 > **2026-05-15:** Batch 1 (grep + head hardening) **COMPLETED** — overall 51.6% → **55.3%**.
 > grep: 16.5% → **85.3%** (+context flags `-A`/`-B`/`-C`, `-H`/`-h`, `-R`, +29 tests).
@@ -54,10 +56,15 @@ Post-Gold, work concentrates on five pillars:
 
 | Metric | Current | Target Stage 1 | Target Stage 2 | Target Stage 3 |
 |--------|---------|---------------|---------------|---------------|
-| Overall coverage | **55.3%** | 60% | 68% | 75% |
+| Overall coverage | **57.9%** | 60% | 68% | 75% |
 | Packages at 0% | 1 (`cmd/korego`) | 0 | 0 | 0 |
-| Packages at <10% | 2 (`internal/daemon`, `pkg/daemon`) | 1 | 0 | 0 |
-| Packages at <30% | 2 (`tail`, `touch`) | 0 | 0 | 0 |
+| Packages at <10% | 1 (`pkg/daemon`) | 0 | 0 | 0 |
+| Packages at <30% | 4 (`tail`, `touch`, `chmod`, `internal/daemon`) | 2 | 0 | 0 |
+| Packages at ≥80% | 20 | 25 | 30 | 35 |
+
+> Updated 2026-05-16 after Phase 14c completion. Coverage rose from 55.3% → 57.9%
+> primarily from find + uniq bugfix tests and posix-json integration test daemon coverage
+> in `internal/daemon` (19.1%, up from 3.3% audit baseline).
 
 ### Root Cause
 
@@ -67,22 +74,23 @@ Every package follows the same arch: a public `Run()` (library layer, testable w
 overwhelmingly cover `Run()` but skip `run()` entirely.
 
 ```
-grep:  354 total LOC, 240 in run() →  85.3%  ✅ (refactored: grepRun injectable)
-head:  181 total LOC, 130 in run() →  94.1%  ✅ (headInput struct, 3 bugs fixed)
-tee:   66  total LOC,  44 in run() →  72.5%  (improved since audit; was 3.3%)
+grep:          354 total LOC, 240 in run() →  86.3%  ✅ (refactored: grepRun injectable)
+head:          181 total LOC, 130 in run() →  94.1%  ✅ (headInput struct, 3 bugs fixed)
+internal/daemon: 613 total LOC             →  19.1%  (up from 3.3%; posix-json tests)
+tee:            66 total LOC,  44 in run() →  72.5%  (improved since audit; was 3.3%)
 ```
 
 ### Stage 1 — Critical Foundations (50% → 60%)
 
-#### 1.1 `internal/daemon` (3.3% → 35%)
+#### 1.1 `internal/daemon` (19.1% → 35%)
 
 **Why first:** 613 LoC. Handles all RPC dispatch, Unix socket lifecycle, session
 management, rate limiting, observability. This is the backbone of daemon mode.
+Already improved from 3.3%→19.1% via posix-json integration tests (Phase 14c).
 
-- [ ] `server_test.go` — `processRequest`, `handleSingleAsync`, `handleBatch`, `writeError`
+- [ ] `server_test.go` — `processRequest` error paths, `handleBatch` edge cases, graceful shutdown
 - [ ] `session_test.go` — lifecycle: Create/Get/SetCwd/List/Destroy, TTL expiry
 - [ ] `ratelimit_test.go` — verify existing, cover `Allow()` edge cases
-- [ ] `server_test.go` — `NewWorkerPool` / `Submit` / graceful shutdown
 
 **Est. gain:** +3.2% overall, ~400 test LOC.
 
@@ -128,7 +136,7 @@ func TestRunViaDispatch(t *testing.T) {
 
 | Utility | Current | Target | Key tests |
 |---------|---------|--------|-----------|
-| `grep` | ~~16.5%~~ **85.3%** ✅ | 45% | `-e`, `-f`, `-v`, `-r`, `-c`, `-l`/`-L`, `-i`, `-w`, `-x`, `-A`/`-B`/`-C`, `-H`/`-h`, `-R` |
+| `grep` | ~~16.5%~~ **86.3%** ✅ | 45% | `-e`, `-f`, `-v`, `-r`, `-c`, `-l`/`-L`, `-i`, `-w`, `-x`, `-A`/`-B`/`-C`, `-H`/`-h`, `-R` |
 | `sed` | 49.1% | 65% | `s/foo/bar/`, `-n`, `d`, `-e`, `-f`, `-i`, address ranges, `y` |
 | `cat` | 37.6% | 55% | `-n`, `-b`, `-s`, `-v`, `-E`, `-A`, stdin `-` |
 | `find` | 50.0% | 65% | `-name`, `-type`, `-size`, `-exec`, `-print`, `-delete`, `-maxdepth` |
@@ -192,12 +200,13 @@ func TestRunViaDispatch(t *testing.T) {
 
 | Stage | Packages | New Tests | Est. LOC | Cumulative Coverage |
 |-------|----------|-----------|----------|--------------------|
-| **Current** | — | — | — | **~50%** |
+| **Current** | — | — | — | **57.9%** |
 | ⚡ grep + head hardening | 2 | 51 | ~900 | 55.3% ✅ |
-| 1.1 `internal/daemon` | 1 | ~25 | ~400 | 58.5% |
-| 1.2 `cmd/korego` | 1 | ~8 | ~80 | 53.7% |
-| 1.3 `pkg/client` | 1 | ~15 | ~250 | 55.2% |
-| 1.4 `pkg/daemon` | 1 | ~4 | ~60 | 55.5% |
+| 🌐 Phase 14c daemon tests | 46 | 46 | ~2,100 | 57.9% ✅ |
+| 1.1 `internal/daemon` | 1 | ~20 | ~300 | 59.5% |
+| 1.2 `cmd/korego` | 1 | ~8 | ~80 | 60.0% |
+| 1.3 `pkg/client` | 1 | ~15 | ~250 | 61.5% |
+| 1.4 `pkg/daemon` | 1 | ~4 | ~60 | 61.8% |
 | — | — | — | — | **~60%** |
 | 2.1 High-impact | 6 | ~50 | ~800 | 65.0% |
 | 2.2 Medium-impact | 9 | ~35 | ~500 | 67.8% |
@@ -212,9 +221,10 @@ func TestRunViaDispatch(t *testing.T) {
 ## Verification
 
 ```bash
-make cover-pct          # ≥60% (Stage 1), ≥68% (Stage 2), ≥75% (Stage 3)
-make cover-pkg          # no package below 25% / 40% / 55%
+make cover-pct          # 57.9% (current); target ≥60% (Stage 1), ≥68% (Stage 2), ≥75% (Stage 3)
+make cover-pkg          # no package below 5% / 25% / 40% / 55%
 make ci                 # coverage gate hard-fails below threshold
-make testsuite          # 409+ passed, 0 regressions
+make testsuite          # 477 passed, 3 failed (date), 0 regressions
 make smoke-docker       # docker run korego ls -la works
+go test ./test/posix-json/...  # 55/55 utilities JSON-RPC daemon coverage (Phase 14c ✅)
 ```
