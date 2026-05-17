@@ -1,0 +1,465 @@
+package daemon
+
+import (
+	"context"
+	"encoding/json"
+	"net"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+)
+
+// =============================================================================
+// WorkerPool tests
+// =============================================================================
+
+func TestWorkerPool_New(t *testing.T) {
+	wp := NewWorkerPool(5)
+	if wp == nil {
+		t.Fatal("NewWorkerPool returned nil")
+	}
+	if cap(wp.sem) != 5 {
+		t.Errorf("expected capacity 5, got %d", cap(wp.sem))
+	}
+}
+
+func TestWorkerPool_Submit(t *testing.T) {
+	wp := NewWorkerPool(2)
+	var mu sync.Mutex
+	var count int
+
+	for i := 0; i < 5; i++ {
+		err := wp.Submit(context.Background(), func() {
+			time.Sleep(1 * time.Millisecond)
+			mu.Lock()
+			count++
+			mu.Unlock()
+		})
+		if err != nil {
+			t.Fatalf("Submit failed: %v", err)
+		}
+	}
+	time.Sleep(50 * time.Millisecond)
+	mu.Lock()
+	c := count
+	mu.Unlock()
+	if c != 5 {
+		t.Errorf("expected 5 completions, got %d", c)
+	}
+}
+
+func TestWorkerPool_SubmitContextCancel(t *testing.T) {
+	wp := NewWorkerPool(1)
+	wp.sem <- struct{}{} // fill pool
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err := wp.Submit(ctx, func() {})
+	if err == nil {
+		t.Error("expected error from cancelled context")
+	}
+	<-wp.sem // clean up
+}
+
+// =============================================================================
+// Server initialization
+// =============================================================================
+
+func TestNewServer_Basic(t *testing.T) {
+	s := NewServer("/tmp/test_daemon.sock", 4, "")
+	if s == nil {
+		t.Fatal("NewServer returned nil")
+	}
+	if s.workersMax != 4 {
+		t.Errorf("workersMax = %d, want 4", s.workersMax)
+	}
+	if s.socketPath != "/tmp/test_daemon.sock" {
+		t.Errorf("socketPath = %q", s.socketPath)
+	}
+	if s.pool == nil {
+		t.Error("pool is nil")
+	}
+	if s.sm == nil {
+		t.Error("session manager is nil")
+	}
+	if s.metrics == nil {
+		t.Error("metrics is nil")
+	}
+}
+
+func TestNewServer_WithHTTP(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 4, ":9090")
+	if s.obsServer == nil {
+		t.Error("observability server should not be nil when httpAddr is set")
+	}
+}
+
+// =============================================================================
+// writeError
+// =============================================================================
+
+func TestWriteError_WithID(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 1, "")
+	server, client := net.Pipe()
+	defer server.Close()
+	defer client.Close()
+
+	go func() {
+		s.writeError(server, "req-1", -32600, "Invalid Request")
+		server.Close()
+	}()
+
+	var resp Response
+	dec := json.NewDecoder(client)
+	if err := dec.Decode(&resp); err != nil {
+		t.Fatalf("decode failed: %v", err)
+	}
+	if resp.ID != "req-1" {
+		t.Errorf("ID = %v, want req-1", resp.ID)
+	}
+	if resp.Error == nil {
+		t.Fatal("expected error")
+	}
+	if resp.Error.Code != -32600 {
+		t.Errorf("error code = %d, want -32600", resp.Error.Code)
+	}
+}
+
+func TestWriteError_NilID(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 1, "")
+	server, client := net.Pipe()
+	defer server.Close()
+	defer client.Close()
+
+	go func() {
+		s.writeError(server, nil, -32700, "Parse error")
+		server.Close()
+	}()
+
+	var resp Response
+	dec := json.NewDecoder(client)
+	if err := dec.Decode(&resp); err != nil {
+		t.Fatalf("decode failed: %v", err)
+	}
+	if resp.ID != nil {
+		t.Errorf("ID should be nil, got %v", resp.ID)
+	}
+}
+
+// =============================================================================
+// processRequest edge cases
+// =============================================================================
+
+func TestProcessRequest_UnknownMethod(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 1, "")
+	req := Request{JSONRPC: "2.0", Method: "goposix.nonexistent_xyz", ID: "1"}
+	res := s.processRequest(req)
+	if res == nil {
+		t.Fatal("expected response")
+	}
+	if res.Error == nil {
+		t.Fatal("expected error for unknown method")
+	}
+	if res.Error.Code != -32601 {
+		t.Errorf("error code = %d, want -32601 (Method not found)", res.Error.Code)
+	}
+}
+
+func TestProcessRequest_MissingMethod_EmptyString(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 1, "")
+	req := Request{JSONRPC: "2.0", ID: "1", Method: ""}
+	res := s.processRequest(req)
+	if res == nil || res.Error == nil {
+		t.Fatal("expected error for missing method")
+	}
+}
+
+func TestProcessRequest_InvalidJSONParams(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 1, "")
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "goposix.echo",
+		Params:  json.RawMessage(`invalid json {{{`),
+		ID:      "1",
+	}
+	res := s.processRequest(req)
+	if res == nil {
+		t.Fatal("expected response")
+	}
+	if res.Error != nil {
+		t.Fatalf("unexpected error: %v", res.Error.Message)
+	}
+	// With unparseable params, echo runs with no args and succeeds
+	if res.Result == nil {
+		t.Error("expected result")
+	}
+}
+
+func TestProcessRequest_ShellMethod(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 1, "")
+	params, _ := json.Marshal(GoposixParams{Text: "echo hello"})
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "goposix.shell.exec",
+		Params:  params,
+		ID:      "1",
+	}
+	res := s.processRequest(req)
+	if res == nil {
+		t.Fatal("expected response")
+	}
+	if res.Error != nil {
+		t.Fatalf("unexpected error: %v", res.Error.Message)
+	}
+}
+
+func TestProcessRequest_SessionDestroyMissing(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 1, "")
+	params, _ := json.Marshal(GoposixParams{SessionId: "nonexistent"})
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "goposix.session.destroy",
+		Params:  params,
+		ID:      "1",
+	}
+	res := s.processRequest(req)
+	if res == nil || res.Error == nil {
+		t.Fatal("expected error for nonexistent session")
+	}
+	if !strings.Contains(res.Error.Message, "Invalid session") {
+		t.Errorf("error message = %q, want 'Invalid session'", res.Error.Message)
+	}
+}
+
+func TestProcessRequest_SessionSetCwd_Invalid(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 1, "")
+	sess := s.sm.Create()
+	params, _ := json.Marshal(GoposixParams{SessionId: sess.ID, Path: "/tmp"})
+	req := Request{
+		JSONRPC: "2.0",
+		Method:  "goposix.session.setCwd",
+		Params:  params,
+		ID:      "1",
+	}
+	res := s.processRequest(req)
+	if res == nil || res.Error != nil {
+		t.Fatalf("expected success: %+v", res)
+	}
+	got, _ := s.sm.Get(sess.ID)
+	if got.CWD != "/tmp" {
+		t.Errorf("CWD = %q, want /tmp", got.CWD)
+	}
+}
+
+// =============================================================================
+// Batch handling
+// =============================================================================
+
+func TestHandleBatch_AllNotifications(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 1, "")
+	server, client := net.Pipe()
+	defer server.Close()
+	defer client.Close()
+
+	reqs := []Request{
+		{JSONRPC: "2.0", Method: "goposix.echo", Params: json.RawMessage(`{}`)},
+		{JSONRPC: "2.0", Method: "goposix.echo", Params: json.RawMessage(`{}`)},
+	}
+
+	go func() {
+		s.handleBatch(server, reqs)
+		server.Close()
+	}()
+
+	var resp []Response
+	dec := json.NewDecoder(client)
+	err := dec.Decode(&resp)
+	if err == nil {
+		t.Error("expected no response for all-notification batch (EOF)")
+	}
+}
+
+func TestHandleBatch_Mixed(t *testing.T) {
+	s := NewServer("/tmp/test.sock", 1, "")
+	server, client := net.Pipe()
+	defer server.Close()
+	defer client.Close()
+
+	reqs := []Request{
+		{JSONRPC: "2.0", Method: "goposix.echo", Params: json.RawMessage(`{}`), ID: "1"},
+		{JSONRPC: "2.0", Method: "goposix.nonexistent_xyz", Params: json.RawMessage(`{}`), ID: "2"},
+	}
+
+	go func() {
+		s.handleBatch(server, reqs)
+		server.Close()
+	}()
+
+	var resp []Response
+	dec := json.NewDecoder(client)
+	if err := dec.Decode(&resp); err != nil {
+		t.Fatalf("decode failed: %v", err)
+	}
+	if len(resp) != 2 {
+		t.Fatalf("expected 2 responses, got %d", len(resp))
+	}
+	if resp[0].Error != nil {
+		t.Errorf("request 1 should succeed: %v", resp[0].Error)
+	}
+	if resp[1].Error == nil {
+		t.Error("request 2 should fail")
+	}
+}
+
+// =============================================================================
+// Session lifecycle (additional edge cases)
+// =============================================================================
+
+func TestSessionManager_GetNonExistent(t *testing.T) {
+	sm := NewSessionManager(30 * time.Minute)
+	_, ok := sm.Get("nonexistent")
+	if ok {
+		t.Error("Get should return false for nonexistent")
+	}
+}
+
+func TestSessionManager_SetCwdNonExistent(t *testing.T) {
+	sm := NewSessionManager(30 * time.Minute)
+	ok := sm.SetCwd("nonexistent", "/tmp")
+	if ok {
+		t.Error("SetCwd should return false for nonexistent")
+	}
+}
+
+func TestSessionManager_DestroyNonExistent(t *testing.T) {
+	sm := NewSessionManager(30 * time.Minute)
+	ok := sm.Destroy("nonexistent")
+	if ok {
+		t.Error("Destroy should return false for nonexistent")
+	}
+}
+
+func TestSessionManager_ListEmpty(t *testing.T) {
+	sm := NewSessionManager(30 * time.Minute)
+	list := sm.List()
+	if len(list) != 0 {
+		t.Errorf("expected 0 sessions, got %d", len(list))
+	}
+}
+
+func TestSessionManager_TTLExpiry(t *testing.T) {
+	sm := NewSessionManager(50 * time.Millisecond)
+	s := sm.Create()
+
+	_, ok := sm.Get(s.ID)
+	if !ok {
+		t.Fatal("session should exist")
+	}
+
+	time.Sleep(150 * time.Millisecond)
+
+	// Force cleanup similar to cleanupLoop
+	sm.mu.Lock()
+	now := time.Now()
+	for id, sess := range sm.sessions {
+		if now.Sub(sess.LastActive) > sm.ttl {
+			delete(sm.sessions, id)
+		}
+	}
+	sm.mu.Unlock()
+
+	_, ok = sm.Get(s.ID)
+	if ok {
+		t.Error("session should have expired")
+	}
+}
+
+// =============================================================================
+// Observability
+// =============================================================================
+
+func TestMetrics_RecordRequest(t *testing.T) {
+	m := NewMetrics()
+	if m == nil {
+		t.Fatal("NewMetrics returned nil")
+	}
+	m.RecordRequest("echo", 1.5)
+	m.RecordRequest("echo", 2.5)
+	m.mu.Lock()
+	count := m.durationCounts["echo"]
+	sum := m.durationSums["echo"]
+	m.mu.Unlock()
+	if count != 2 {
+		t.Errorf("count = %d, want 2", count)
+	}
+	if sum != 4.0 {
+		t.Errorf("sum = %f, want 4.0", sum)
+	}
+}
+
+func TestMetrics_RecordRateLimited(t *testing.T) {
+	m := NewMetrics()
+	m.RecordRateLimited()
+	m.RecordRateLimited()
+	// rateLimitedTotal is atomic — we just verify it doesn't panic
+	// (internal field not exported, but we can verify the method runs)
+}
+
+// =============================================================================
+// Concurrent stress
+// =============================================================================
+
+func TestWorkerPool_Concurrent(t *testing.T) {
+	wp := NewWorkerPool(10)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var counter int
+
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		wp.Submit(context.Background(), func() {
+			defer wg.Done()
+			mu.Lock()
+			counter++
+			mu.Unlock()
+		})
+	}
+	wg.Wait()
+	mu.Lock()
+	c := counter
+	mu.Unlock()
+	if c != 100 {
+		t.Errorf("expected 100, got %d", c)
+	}
+}
+
+// =============================================================================
+// Rate limiter edge cases
+// =============================================================================
+
+func TestRateLimiter_RefillAfterWait(t *testing.T) {
+	rl := NewRateLimiter(1000.0, 2)
+	rl.Allow()
+	rl.Allow()
+	if rl.Allow() {
+		t.Error("should be empty after burst")
+	}
+	time.Sleep(2 * time.Millisecond)
+	if !rl.Allow() {
+		t.Error("should refill after wait")
+	}
+}
+
+func TestRateLimiter_MaxBurst(t *testing.T) {
+	rl := NewRateLimiter(100.0, 5)
+	count := 0
+	for i := 0; i < 10; i++ {
+		if rl.Allow() {
+			count++
+		}
+	}
+	if count != 5 {
+		t.Errorf("expected max 5 allows, got %d", count)
+	}
+}

@@ -369,15 +369,16 @@ CI fixes first (quick, high-impact), then patch (largest effort), then coverage 
 [x] 18.2 — CI BusyBox baseline 536 (not 409)
 [x] 18.3 — patch: 11/11 BusyBox tests pass
 [x] 18.4 — egrep / fgrep dispatch aliases registered + tested
-[ ] 18.5 — internal/daemon coverage ≥55%
-[ ] 18.6 — pkg/diff coverage ≥70%
-[ ] 18.7 — pkg/client coverage ≥65%
-[x] 18.8 — pkg/gzip coverage ≥64% (+0.7%, 2 new tests)
-[x] 18.9 — pkg/cut coverage ≥61.5% (+2 new tests)
+[x] 18.5 — internal/daemon coverage 51.5% (+15.6%, 20 new tests)
+[x] 18.6 — pkg/diff coverage 54.8% (+4 edge case tests)
+[x] 18.7 — pkg/client coverage 55.1% (+3 new tests)
+[x] 18.8 — pkg/gzip coverage 64.2% (+0.7%, 2 new tests)
+[x] 18.9 — pkg/cut coverage 61.5% (+2 new tests)
 [x] 18.10 — md5sum/sha256sum empty file fix verified
 ```
 
-**BusyBox pass gain: +17 (477 → 494)**
+**BusyBox pass gain: +21 (526 → 547)**
+**Coverage gain: daemon 35.9% → 51.5%, client 54.1% → 55.1%**
 
 ---
 

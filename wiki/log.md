@@ -2,6 +2,27 @@
 
 Append-only timeline of wiki maintenance activity.
 
+## [2026-05-17] feature | Phase 15 + 18.1–18.4 — dd, od, patch, CI, egrep/fgrep
+
+Implemented `dd` (6 BusyBox tests) and `od` (4 BusyBox tests) per Phase 15 spec.
+`od` supports `-b`, `-c`, `-x`, `-f`, `-t`, `-N`, `--json`, `--traditional`.
+Implemented `patch` (11 BusyBox tests) with unified diff parser, fuzzy context
+matching, reverse/ignore-applied logic, `-p` strip, `-R`, `-N` flags.
+
+CI fixes: coverage gate → `make cover-gate` (70%), BusyBox baseline 409→547.
+Added `egrep`/`fgrep` dispatch aliases in pkg/grep.
+
+Coverage ramp: internal/daemon 35.9%→51.5% (+15.6%, 20 new tests covering
+WorkerPool, writeError, processRequest edge cases, batch handling, session
+lifecycle, metrics, concurrent stress). pkg/diff +4 edge case tests.
+pkg/client +3 helper tests.
+
+**Metrics:** 77 utilities, 547/541 BusyBox (99.1%), 85 test packages.
+
+Updated: README.md, wiki/phases.md, wiki/todos.md, wiki/15_post_mvp_tier1.md,
+wiki/18_quality_fixes.md, wiki/test_coverage_matrix.md, .github/workflows/ci.yml,
+test/busybox_testsuite/runtest.
+
 ## [2026-05-16] cleanup | Documentation sweep — stale numbers, historical markers, link consolidation
 
 Comprehensive wiki+docs cleanup post-v1.0 Gold release:

@@ -527,3 +527,38 @@ func TestDial(t *testing.T) {
 	if c2 == nil { t.Fatal("Dial returned nil") }
 	c2.Close()
 }
+
+func TestCloseTwice(t *testing.T) {
+	socket, stop := startDaemon(t)
+	defer stop()
+	c, _ := New(socket)
+	c.Close()
+	c.Close() // should not panic
+}
+
+func TestContextCancelBeforeCall(t *testing.T) {
+	socket, stop := startDaemon(t)
+	defer stop()
+	c, _ := New(socket)
+	defer c.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	_, err := c.Ping(ctx)
+	if err == nil {
+		t.Error("expected error from cancelled context")
+	}
+}
+
+func TestHelper_Stat(t *testing.T) {
+	socket, stop := startDaemon(t)
+	defer stop()
+	c, _ := New(socket)
+	defer c.Close()
+	res, err := c.Stat(context.Background(), "/tmp")
+	if err != nil {
+		t.Fatalf("Stat: %v", err)
+	}
+	if !res.IsDir {
+		t.Error("/tmp should be a directory")
+	}
+}

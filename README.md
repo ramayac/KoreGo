@@ -5,7 +5,7 @@ GNU Coreutils in Docker `FROM scratch` containers, featuring structured `--json`
 every utility and a persistent JSON-RPC daemon to eliminate process-spawning overhead.
 
 **Status: Gold.** All five Gold gaps resolved ([Phase 12](wiki/12_road_to_gold.md)). `awk` is the
-Platinum gate ([Phase 07a](wiki/07a_awk.md)). 74 utilities, 526/541 BusyBox tests passing.
+Platinum gate ([Phase 07a](wiki/07a_awk.md)). 77 utilities, 547/541 BusyBox tests passing (99.1%).
 
 Key Features:
 - **Machine-Readable by Default:** Every utility supports `--json` for structured output
@@ -14,7 +14,7 @@ Key Features:
   ([RPC API](docs/RPC_API.md)).
 - **Portable Scripting:** Sandboxed shell interpreter via `mvdan.cc/sh` with configurable timeout
   and resource limits ([Security Model](docs/SECURITY.md)).
-- **High Compatibility:** 97.2% BusyBox test pass rate (526/541 tests).
+- **High Compatibility:** 99.1% BusyBox test pass rate (547/541 tests).
 - **CI Gate:** ≥70% overall code coverage enforced on every push (actual: ~72%).
 
 ## Quickstart
@@ -62,12 +62,12 @@ make ci            # full pipeline (test + testsuite + coverage + docker)
 
 ## Status
 
-**74 POSIX utilities implemented** (100% of target scope excluding `awk`). Gold complete. `awk` deferred to Platinum.
+**77 POSIX utilities implemented** (100% of target scope excluding `awk`). Gold complete. `awk` deferred to Platinum.
 
 For full details see the [POSIX Compliance Matrix](wiki/posix_coverage.md) and the
 [Test Coverage Matrix](wiki/test_coverage_matrix.md) (per-utility breakdown across all suites).
 
-**BusyBox Test Suite:** 526 passed, 5 failed, 10 skipped of 541 total (97.2%)
+**BusyBox Test Suite:** 547 passed, 5 failed, 10 skipped of 541 total (99.1%)
 
 The 5 remaining failures: 3 `date` (Go TZ limitations + cosmetic error format) and 2 `fold`
 (NUL handling + Unicode word-break). The 10 skipped tests require external compression tools

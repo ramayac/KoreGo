@@ -1,11 +1,14 @@
 # GoPOSIX — Project Roadmap & State
 
-> **Version:** 5.1 | **Date:** 2026-05-16 | **Tier:** GOLD | **Branch:** `feat/post-mvp`
+> **Version:** 5.2 | **Date:** 2026-05-17 | **Tier:** GOLD | **Branch:** `main`
 >
-> **Status:** 74 utilities | 526 BusyBox passes | ~72% coverage | 59/74 JSON-RPC
+> **Status:** 77 utilities | 547 BusyBox passes | ~72% coverage | 59/77 JSON-RPC
 >
+> ✅ Phase 15 COMPLETED — dd + od (2 I/O utilities, 10 BusyBox tests)
 > ✅ Phase 16 COMPLETED — 9 Tier 2 utilities (unexpand, comm, paste, fold, sum, nl, expand, cmp, strings)
 > ✅ Phase 17 COMPLETED — 12 Tier 3 utility stubs (split, join, tty, link, unlink, mkfifo, nice, nohup, logger, logname, who, cksum)
+> ✅ Phase 18.1-18.4 COMPLETED — CI fixes, patch (11 BusyBox tests), egrep/fgrep aliases
+> ⚠️ Phase 18.5-18.7 — Coverage ramp in progress (daemon 35.9→51.5%, +15.6%)
 
 ---
 
@@ -15,10 +18,10 @@ All build phases (00–10) and post-MVP cleanups (11–14c) are **COMPLETED**. T
 
 | Metric | Value |
 |--------|-------|
-| BusyBox pass rate | 477 passed / 3 failed / 10 skipped (99.4%) |
-| Overall test coverage | 70.5% |
-| Utilities implemented | 67 (55 original + 12 Phase 17) |
-| JSON-RPC daemon coverage | 67/67 utilities (100%) |
+| BusyBox pass rate | 547 passed / 5 failed / 10 skipped (99.1%) |
+| Overall test coverage | 70.4% |
+| Utilities implemented | 77 |
+| JSON-RPC daemon coverage | 59/77 utilities (77%) |
 | Supply chain security | SBOM + Cosign + SLSA L3 + Trivy |
 | Shell security model | Documented + tested (GOPOSIX_SHELL_TIMEOUT, SecurePath, 128MB limits) |
 
@@ -45,6 +48,7 @@ goposix binary (single static ELF, <12MB)
 | **3 — Text** | `head`, `tail`, `wc`, `sort`, `uniq`, `tr`, `cut`, `tee`, `grep`, `sed` | 04 ✅ |
 | **4 — System** | `ps`, `kill`, `sleep`, `date`, `id`, `groups`, `chmod`, `chown`, `chgrp`, `df`, `du`, `find`, `xargs` | 06 ✅ |
 | **5 — Advanced** | `tar`, `gzip`, `sha256sum`, `md5sum`, `diff`, `patch`, `test`/`[`, `printf`, `expr` | 07 ✅ |
+| **Post-MVP** | `dd`, `od`, `patch` (`egrep`, `fgrep` aliases) | 15/18 ✅ |
 | **Platinum** | `awk` | 07a ⏳ |
 
 ### Technical Specs
@@ -89,10 +93,10 @@ goposix binary (single static ELF, <12MB)
 | [14a_json_gap_fill.md](14a_json_gap_fill.md) | JSON Gap Fill — 8 utilities now support `--json` | **COMPLETED** |
 | [14b_busybox_regression_fix.md](14b_busybox_regression_fix.md) | BusyBox Regression Fix — 79→3 failures | **COMPLETED** |
 | [14c_posix_json_gap.md](14c_posix_json_gap.md) | JSON-RPC Coverage Gap — 55/55 utilities tested via daemon | **COMPLETED** |
-| [15_post_mvp_tier1.md](15_post_mvp_tier1.md) | Phase 15 — Tier 1: `dd` + `od` (11 BusyBox tests) | **PLANNING** |
-| [16_post_mvp_tier2.md](16_post_mvp_tier2.md) | Phase 16 — Tier 2: 9 text/stream utilities (43 BusyBox tests) | **PLANNING** |
+| [15_post_mvp_tier1.md](15_post_mvp_tier1.md) | Phase 15 — Tier 1: `dd` + `od` (10 BusyBox tests) | **COMPLETED** |
+| [16_post_mvp_tier2.md](16_post_mvp_tier2.md) | Phase 16 — Tier 2: 9 text/stream utilities (43 BusyBox tests) | **COMPLETED** |
 | [17_post_mvp_tier3.md](17_post_mvp_tier3.md) | Phase 17 — Tier 3: 12 utilities without BusyBox coverage | **COMPLETED** |
-| [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases | **PLANNING** |
+| [18_quality_fixes.md](18_quality_fixes.md) | Phase 18 — Quality Fixes: CI, `patch`, coverage, aliases | **IN PROGRESS** |
 | [todos.md](todos.md) | Open TODOs, Remaining Failures & Session Insights | **LIVING DOC** |
 
 ---
@@ -101,10 +105,10 @@ goposix binary (single static ELF, <12MB)
 
 | # | Item | Doc |
 |---|------|-----|
-| **15** | **`dd` + `od`** — 2 I/O utilities with BusyBox tests | [15_post_mvp_tier1.md](15_post_mvp_tier1.md) |
-| **16** | **Text/stream utilities** — `unexpand`, `comm`, `paste`, `fold`, `sum`, `nl`, `expand`, `cmp`, `strings` | [16_post_mvp_tier2.md](16_post_mvp_tier2.md) |
-| **17** | **No-BusyBox utilities** — `split`, `join`, `tty`, `link`, `unlink`, `mkfifo`, `nice`, `nohup`, `logger`, `logname`, `who`, `cksum` ✅ | [17_post_mvp_tier3.md](17_post_mvp_tier3.md) |
-| **18** | **Quality fixes** — CI thresholds, `patch`, `egrep`/`fgrep`, coverage ramp | [18_quality_fixes.md](18_quality_fixes.md) |
+| **15** | **`dd` + `od`** — 2 I/O utilities, 10 BusyBox tests ✅ | [15_post_mvp_tier1.md](15_post_mvp_tier1.md) |
+| **16** | **Text/stream utilities** — 9 utilities, 43 BusyBox tests ✅ | [16_post_mvp_tier2.md](16_post_mvp_tier2.md) |
+| **17** | **No-BusyBox utilities** — 12 utilities ✅ | [17_post_mvp_tier3.md](17_post_mvp_tier3.md) |
+| **18** | **Quality fixes** — CI ✅, `patch` ✅, `egrep`/`fgrep` ✅, coverage ⚠️ | [18_quality_fixes.md](18_quality_fixes.md) |
 | — | `awk` implementation (Platinum gate) | [07a_awk.md](07a_awk.md) — deferred |
 | — | XML output (`--xml`) | [14_xml_output.md](14_xml_output.md) — deferred |
 | — | Ongoing maintenance | [todos.md](todos.md) — living doc |

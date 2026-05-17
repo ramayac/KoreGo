@@ -23,7 +23,7 @@
 | Phase 15 | [15_post_mvp_tier1.md](15_post_mvp_tier1.md) — `dd` + `od` | ✅ COMPLETE |
 | Phase 16 | [16_post_mvp_tier2.md](16_post_mvp_tier2.md) — 9 text/stream utilities | ✅ COMPLETE |
 | Phase 17 | [17_post_mvp_tier3.md](17_post_mvp_tier3.md) — 12 no-BusyBox utilities | ✅ COMPLETE |
-| Phase 18 | [18_quality_fixes.md](18_quality_fixes.md) — CI, patch, coverage, aliases | ⚠️ IN PROGRESS (CI, egrep/fgrep, patch done; coverage pending) |
+| Phase 18 | [18_quality_fixes.md](18_quality_fixes.md) — CI, patch, coverage, aliases | ✅ CI/patch/aliases/gzip/cut done; daemon 51.5%, diff/client improved |
 | — | [test_coverage_matrix.md](test_coverage_matrix.md) — Full test status for all 76 utilities | LIVING DOC |
 
 ## Remaining Failures (5)

@@ -297,3 +297,59 @@ func TestCLI_BadFlag(t *testing.T) {
 	code := run([]string{"--nonexistent"}, &out)
 	if code != 2 { t.Errorf("expected exit 2, got %d", code) }
 }
+
+func TestDiff_EmptyFileVsNonEmpty(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	os.WriteFile(a, []byte(""), 0644)
+	os.WriteFile(b, []byte("hello\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{a, b}, &out)
+	if code != 1 { t.Errorf("expected exit 1 (files differ), got %d", code) }
+	if out.Len() == 0 { t.Error("expected diff output") }
+}
+
+func TestDiff_TwoEmptyFiles(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	os.WriteFile(a, []byte(""), 0644)
+	os.WriteFile(b, []byte(""), 0644)
+	var out bytes.Buffer
+	code := run([]string{a, b}, &out)
+	if code != 0 { t.Errorf("expected exit 0 (identical), got %d", code) }
+}
+
+func TestDiff_IgnoreWhitespace(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	os.WriteFile(a, []byte("hello   world\n"), 0644)
+	os.WriteFile(b, []byte("hello world\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{"-b", a, b}, &out)
+	if code != 0 { t.Errorf("expected exit 0 with -b, got %d", code) }
+}
+
+func TestDiff_CrLfLineEndings(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	os.WriteFile(a, []byte("hello\r\nworld\n"), 0644)
+	os.WriteFile(b, []byte("hello\nworld\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{a, b}, &out)
+	if code != 1 { t.Errorf("expected exit 1 (differ), got %d", code) }
+}
+
+func TestDiff_BinaryWarning(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a")
+	b := filepath.Join(dir, "b")
+	os.WriteFile(a, []byte("text\n"), 0644)
+	os.WriteFile(b, []byte("text\x00binary\n"), 0644)
+	var out bytes.Buffer
+	code := run([]string{a, b}, &out)
+	if code != 1 { t.Errorf("expected exit 1 (differ), got %d", code) }
+}
