@@ -86,13 +86,13 @@ make testsuite  # confirm all 6 dd tests pass
 ```
 
 ### Registration Checklist
-- [ ] `pkg/dd/dd.go` with `init()` → `dispatch.Register`
-- [ ] `pkg/dd/dd_test.go`
-- [ ] Add `_ "github.com/ramayac/goposix/pkg/dd"` to `cmd/goposix/main.go`
-- [ ] Add `./pkg/dd/...` to `PKG_DIRS` in `Makefile`
-- [ ] Run `make vet test build` → clean
-- [ ] Run `make testsuite` → 0 new failures
-- [ ] Update this doc status
+- [x] `pkg/dd/dd.go` with `init()` → `dispatch.Register`
+- [x] `pkg/dd/dd_test.go`
+- [x] Add `_ "github.com/ramayac/goposix/pkg/dd"` to `cmd/goposix/main.go`
+- [x] Add `./pkg/dd/...` to `PKG_DIRS` in `Makefile`
+- [x] Run `make vet test build` → clean
+- [x] Run `make testsuite` → 0 new failures
+- [x] Update this doc status
 
 ---
 
@@ -159,21 +159,21 @@ make testsuite  # confirm all 5 od tests pass
 ```
 
 ### Registration Checklist
-- [ ] `pkg/od/od.go` with `init()` → `dispatch.Register`
-- [ ] `pkg/od/od_test.go`
-- [ ] Add import to `cmd/goposix/main.go`
-- [ ] Add to `PKG_DIRS` in `Makefile`
-- [ ] `make vet test build` clean
-- [ ] `make testsuite` → 0 new failures
-- [ ] Update this doc
+- [x] `pkg/od/od.go` with `init()` → `dispatch.Register`
+- [x] `pkg/od/od_test.go`
+- [x] Add import to `cmd/goposix/main.go`
+- [x] Add to `PKG_DIRS` in `Makefile`
+- [x] `make vet test build` clean
+- [x] `make testsuite` → 0 new failures
+- [x] Update this doc
 
 ---
 
 ## Milestone 15
 
 ```
-[ ] 15.1 — dd implemented, 6/6 BusyBox tests pass
-[ ] 15.2 — od implemented, 5/5 BusyBox tests pass
+[x] 15.1 — dd implemented, 6/6 BusyBox tests pass
+[x] 15.2 — od implemented, 4/4 BusyBox tests pass
 ```
 
 **Combined BusyBox pass count increase: +11 (477 → 488)**

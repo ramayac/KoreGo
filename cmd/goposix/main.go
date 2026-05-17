@@ -48,6 +48,7 @@ import (
 	_ "github.com/ramayac/goposix/pkg/nohup"
 	_ "github.com/ramayac/goposix/pkg/od"
 	_ "github.com/ramayac/goposix/pkg/paste"
+	_ "github.com/ramayac/goposix/pkg/patch"
 	_ "github.com/ramayac/goposix/pkg/printenv"
 	_ "github.com/ramayac/goposix/pkg/ps"
 	_ "github.com/ramayac/goposix/pkg/pwd"

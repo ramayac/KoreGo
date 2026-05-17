@@ -22,6 +22,7 @@ PKG_DIRS   := . \
               ./pkg/pwd/... \
               ./pkg/printenv/... \
               ./pkg/paste/... \
+              ./pkg/patch/... \
               ./pkg/nl/... \
               ./pkg/env/... \
               ./pkg/yes/... \

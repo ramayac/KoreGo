@@ -1,19 +1,19 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-17 | **BusyBox:** 536 pass / 5 fail / 10 skip | **Branch:** `main`
+> **Last updated:** 2026-05-17 | **BusyBox:** 547 pass / 5 fail / 10 skip | **Branch:** `main`
 
 ## Current State
 
 | Metric | Value |
 |--------|-------|
-| Registered utilities | 76 |
-| Unit test packages passing | 76/76 (100%) |
+| Registered utilities | 77 |
+| Unit test packages passing | 77/77 (100%) |
 | BusyBox tests total | 541 |
-| BusyBox passed | 536 |
+| BusyBox passed | 547 |
 | BusyBox failed | 5 |
 | BusyBox skipped | 10 |
 | **BusyBox pass rate** | **99.1%** |
-| JSON-RPC daemon coverage | 59/76 (78%) |
+| JSON-RPC daemon coverage | 59/77 (77%) |
 | Overall unit coverage | ~72% |
 
 ## Active Plans
@@ -23,8 +23,8 @@
 | Phase 15 | [15_post_mvp_tier1.md](15_post_mvp_tier1.md) — `dd` + `od` | ✅ COMPLETE |
 | Phase 16 | [16_post_mvp_tier2.md](16_post_mvp_tier2.md) — 9 text/stream utilities | ✅ COMPLETE |
 | Phase 17 | [17_post_mvp_tier3.md](17_post_mvp_tier3.md) — 12 no-BusyBox utilities | ✅ COMPLETE |
-| Phase 18 | [18_quality_fixes.md](18_quality_fixes.md) — CI, patch, coverage, aliases | ⚠️ IN PROGRESS (CI fixed, egrep/fgrep done, patch pending) |
-| — | [test_coverage_matrix.md](test_coverage_matrix.md) — Full test status for all 74 utilities | LIVING DOC |
+| Phase 18 | [18_quality_fixes.md](18_quality_fixes.md) — CI, patch, coverage, aliases | ⚠️ IN PROGRESS (CI, egrep/fgrep, patch done; coverage pending) |
+| — | [test_coverage_matrix.md](test_coverage_matrix.md) — Full test status for all 76 utilities | LIVING DOC |
 
 ## Remaining Failures (5)
 

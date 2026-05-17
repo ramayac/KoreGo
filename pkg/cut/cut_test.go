@@ -124,3 +124,32 @@ func TestCutWhitespaceFields(t *testing.T) {
 		t.Errorf("got %q", lines[1].Fields[0])
 	}
 }
+
+func TestCutMultiByteUnicode(t *testing.T) {
+	// Verify character-position cuts work with multi-byte chars
+	in := "café\n"
+	// Bytes 1-3: c,a,f = 3 bytes, the é (byte 4-5) is excluded
+	lines, err := Run(strings.NewReader(in), "", "", "1-3", "", false, false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lines[0].Fields[0] != "caf" {
+		t.Errorf("got %q, want %q", lines[0].Fields[0], "caf")
+	}
+}
+
+func TestCutEmptyFields(t *testing.T) {
+	// Fields with empty values between delimiters
+	in := "a::c\n"
+	lines, err := Run(strings.NewReader(in), "1-3", ":", "", "", false, false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(lines) != 1 {
+		t.Fatalf("expected 1 line, got %d", len(lines))
+	}
+	// Output: fields 1,2,3 joined with delimiter
+	if lines[0].Fields[0] != "a::c" {
+		t.Errorf("got %q, want %q", lines[0].Fields[0], "a::c")
+	}
+}

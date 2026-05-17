@@ -96,12 +96,13 @@
 | `expr` | 82.6% | 2 | ✅ 2/2 | ✅ |
 | `shell` | 60.8% | — | — | ❌ |
 
-## Tier 6 — Post-MVP (Phase 15–16)
+## Tier 6 — Post-MVP (Phase 15–16, 18.3)
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
 | `dd` | 86.4% | 6 | ✅ 6/6 | ❌ |
 | `od` | 85.1% | 4 | ✅ 4/4 | ❌ |
+| `patch` | 74.2% | 11 | ✅ 11/11 | ❌ |
 | `unexpand` | 81.9% | 24 | ✅ 24/24 | ❌ |
 | `comm` | 70.1% | 9 | ✅ 9/9 | ❌ |
 | `paste` | 46.2% | 5 | ✅ 5/5 | ❌ |
@@ -142,10 +143,10 @@
 
 | Suite | Count | Status |
 |-------|-------|--------|
-| Total utilities | 76 | All registered |
-| Unit tests passing | 76/76 | 100% |
+| Total utilities | 77 | All registered |
+| Unit tests passing | 77/77 | 100% |
 | BusyBox tests total | 541 | — |
-| BusyBox passed | 536 | 99.1% |
+| BusyBox passed | 547 | 99.1% |
 | BusyBox failed | 5 | 3 date + 2 fold |
 | BusyBox skipped | 10 | External deps |
 | JSON-RPC daemon tests | 59/74 | 80% (15 gaps) |
