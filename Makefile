@@ -79,6 +79,9 @@ PKG_DIRS   := . \
               ./pkg/gzip/... \
               ./pkg/diff/... \
               ./pkg/cksum/... \
+              ./pkg/cmp/... \
+              ./pkg/strings/... \
+              ./pkg/sum/... \
               ./pkg/link/... \
               ./pkg/logger/... \
               ./pkg/logname/... \
