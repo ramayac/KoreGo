@@ -4,7 +4,8 @@
 
 - [README.md](README.md) | Purpose, rules, and shell-first navigation.
 - [schema.md](schema.md) | Required structure and maintenance contract.
-- [phases.md](phases.md) | Project roadmap, current state, and phase index.
+- [phases.md](phases.md) | Project roadmap, current state, and phase index
+- [test_coverage_matrix.md](test_coverage_matrix.md) | Per-utility test status for all 74 utilities.
 - [repo-map.md](repo-map.md) | Current repo architecture and exclusions.
 - [log.md](log.md) | Append-only timeline of wiki maintenance.
 
