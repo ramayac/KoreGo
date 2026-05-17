@@ -38,9 +38,9 @@ export SKIP=
 
 # Helper for helpers. Oh my...
 
-# We use korego echo which supports -n and -e
+# We use goposix echo which supports -n and -e
 if [ x"$ECHO" = x"" ]; then
-	ECHO="korego echo"
+	ECHO="goposix echo"
 	export ECHO
 fi
 
