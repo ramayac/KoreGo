@@ -701,3 +701,33 @@ func TestGrepRecursiveOnSymlinkToDir(t *testing.T) {
 		t.Errorf("expected filename prefix in output, got: %q", out.String())
 	}
 }
+
+// TestEgrepAlias verifies that prepending -E enables extended regex syntax.
+func TestEgrepAlias(t *testing.T) {
+	var outBuf, errBuf bytes.Buffer
+	stdinR := strings.NewReader("hello\nworld\n")
+	// egrepRun prepends -E; simulate same by calling grepRun with -E.
+	code := grepRun([]string{"-E", "hel+o", "-"}, &outBuf, &errBuf, stdinR)
+	if code != 0 {
+		t.Fatalf("egrep-style exited with %d, want 0", code)
+	}
+	// + is a metachar in ERE; should match "hello"
+	if outBuf.String() != "hello\n" {
+		t.Errorf("expected 'hello\\n', got: %q", outBuf.String())
+	}
+}
+
+// TestFgrepAlias verifies that prepending -F enables fixed-string matching.
+func TestFgrepAlias(t *testing.T) {
+	var outBuf, errBuf bytes.Buffer
+	stdinR := strings.NewReader("hello.\ngoodbye.\nhelo\n")
+	// fgrepRun prepends -F; simulate same by calling grepRun with -F.
+	code := grepRun([]string{"-F", ".", "-"}, &outBuf, &errBuf, stdinR)
+	if code != 0 {
+		t.Fatalf("fgrep-style exited with %d, want 0", code)
+	}
+	// Literal dot match, not regex any-char
+	if !strings.Contains(outBuf.String(), "hello.") {
+		t.Errorf("expected literal dot match, got: %q", outBuf.String())
+	}
+}

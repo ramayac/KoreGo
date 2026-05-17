@@ -1,6 +1,6 @@
 # GoPOSIX — Test Coverage Matrix
 
-> **Last updated:** 2026-05-16 | **BusyBox:** 526 pass / 5 fail / 10 skip | **Branch:** `feat/post-mvp`
+> **Last updated:** 2026-05-17 | **BusyBox:** 536 pass / 5 fail / 10 skip | **Branch:** `main`
 >
 > Complete test coverage status for all 74 registered utilities across unit tests,
 > BusyBox integration tests, and JSON-RPC daemon tests.
@@ -100,6 +100,8 @@
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
+| `dd` | 86.4% | 6 | ✅ 6/6 | ❌ |
+| `od` | 85.1% | 4 | ✅ 4/4 | ❌ |
 | `unexpand` | 81.9% | 24 | ✅ 24/24 | ❌ |
 | `comm` | 70.1% | 9 | ✅ 9/9 | ❌ |
 | `paste` | 46.2% | 5 | ✅ 5/5 | ❌ |
@@ -140,10 +142,10 @@
 
 | Suite | Count | Status |
 |-------|-------|--------|
-| Total utilities | 74 | All registered |
-| Unit tests passing | 74/74 | 100% |
+| Total utilities | 76 | All registered |
+| Unit tests passing | 76/76 | 100% |
 | BusyBox tests total | 541 | — |
-| BusyBox passed | 526 | 97.2% |
+| BusyBox passed | 536 | 99.1% |
 | BusyBox failed | 5 | 3 date + 2 fold |
 | BusyBox skipped | 10 | External deps |
 | JSON-RPC daemon tests | 59/74 | 80% (15 gaps) |

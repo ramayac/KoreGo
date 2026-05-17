@@ -559,4 +559,16 @@ func scanWithContext(r io.Reader, re *regexp.Regexp, fixedPatterns []string, inv
 
 func init() {
 	dispatch.Register(dispatch.Command{Name: "grep", Usage: "Print lines matching a pattern", Run: run})
+	dispatch.Register(dispatch.Command{Name: "egrep", Usage: "Print lines matching an extended regex pattern", Run: egrepRun})
+	dispatch.Register(dispatch.Command{Name: "fgrep", Usage: "Print lines matching fixed strings", Run: fgrepRun})
+}
+
+// egrepRun prepends -E and delegates to the main grep CLI.
+func egrepRun(args []string, out io.Writer) int {
+	return run(append([]string{"-E"}, args...), out)
+}
+
+// fgrepRun prepends -F and delegates to the main grep CLI.
+func fgrepRun(args []string, out io.Writer) int {
+	return run(append([]string{"-F"}, args...), out)
 }

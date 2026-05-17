@@ -56,6 +56,7 @@ PKG_DIRS   := . \
               ./pkg/client/... \
               ./pkg/sleep/... \
               ./pkg/date/... \
+              ./pkg/dd/... \
               ./pkg/id/... \
               ./pkg/join/... \
               ./pkg/kill/... \
@@ -88,6 +89,7 @@ PKG_DIRS   := . \
               ./pkg/mkfifo/... \
               ./pkg/nice/... \
               ./pkg/nohup/... \
+              ./pkg/od/... \
               ./pkg/split/... \
               ./pkg/tty/... \
               ./pkg/unlink/... \

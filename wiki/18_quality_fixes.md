@@ -1,6 +1,6 @@
 # Phase 18 — Post-MVP Quality Fixes
 
-> **Status:** PLANNING | **Date:** 2026-05-16 | **Branch:** `feat/post-mvp`
+> **Status:** ⚠️ IN PROGRESS | **Date:** 2026-05-17 | **Branch:** `main`
 >
 > **Parent:** [todos.md](todos.md) + [13_coverage_and_hardening.md](13_coverage_and_hardening.md)
 >
