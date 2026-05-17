@@ -81,22 +81,24 @@ func parsePairSpec(spec string) (int, int, error) {
 }
 
 // formatOutput formats a joined record according to the -o spec.
-// If oSpec is empty, the default format is used.
-func formatOutput(l1, l2 line, delim, oSpec string) string {
+// keyIdx1 and keyIdx2 are the 0-based field indices used as join keys.
+func formatOutput(l1, l2 line, delim, oSpec string, keyIdx1, keyIdx2 int) string {
 	if oSpec == "" {
-		// Default: key + remaining fields from file1 + remaining fields from file2 (no key)
+		// Default: all fields from file1 + fields from file2 (excluding key field)
 		if l1.raw == "" {
 			return l2.raw
 		}
 		if l2.raw == "" {
 			return l1.raw
 		}
-		// Join fields excluding the key field from file2
 		var parts []string
 		parts = append(parts, l1.fields...)
-		// file2: skip field index 0 (the key)
-		if len(l2.fields) > 1 {
-			parts = append(parts, l2.fields[1:]...)
+		// file2: skip the key field
+		for idx, f := range l2.fields {
+			if idx == keyIdx2 {
+				continue
+			}
+			parts = append(parts, f)
 		}
 		return strings.Join(parts, delim)
 	}
@@ -140,6 +142,8 @@ func Run(r1, r2 io.Reader, field1, field2 int, delim string, a1, a2 bool, v1, v2
 
 	var result JoinResult
 	i, j := 0, 0
+	keyIdx1 := field1 - 1
+	keyIdx2 := field2 - 1
 
 	for i < len(lines1) && j < len(lines2) {
 		if lines1[i].key < lines2[j].key {
@@ -153,24 +157,26 @@ func Run(r1, r2 io.Reader, field1, field2 int, delim string, a1, a2 bool, v1, v2
 			}
 			j++
 		} else {
-			// Keys match — output joined record
-			// Handle multiple lines with the same key in both files
+			// Keys match
 			keyMatch := lines1[i].key
-			// Collect all lines from file1 with this key
 			startI := i
 			for i < len(lines1) && lines1[i].key == keyMatch {
 				i++
 			}
-			// Collect all lines from file2 with this key
 			startJ := j
 			for j < len(lines2) && lines2[j].key == keyMatch {
 				j++
 			}
 
+			// -v suppresses matched lines entirely
+			if v1 || v2 {
+				continue
+			}
+
 			// Cartesian product for matching keys
 			for mi := startI; mi < i; mi++ {
 				for mj := startJ; mj < j; mj++ {
-					output := formatOutput(lines1[mi], lines2[mj], delim, oSpec)
+					output := formatOutput(lines1[mi], lines2[mj], delim, oSpec, keyIdx1, keyIdx2)
 					result.Records = append(result.Records, map[string]string{"line": output})
 				}
 			}

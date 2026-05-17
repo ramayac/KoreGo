@@ -139,8 +139,8 @@ func pasteRun(args []string, out, errOut io.Writer, stdin io.Reader) int {
 
 	delimStr := flags.Get("d")
 	delimiters := parseDelimiters(delimStr)
-	if len(delimiters) == 0 {
-		delimiters = []byte{'\t'}
+	if len(delimiters) == 0 && delimStr == "" {
+		delimiters = []string{"\t"}
 	}
 
 	files := flags.Positional

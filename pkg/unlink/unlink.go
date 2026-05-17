@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"syscall"
 
 	"github.com/ramayac/goposix/internal/dispatch"
 	"github.com/ramayac/goposix/pkg/common"
@@ -21,9 +22,10 @@ var spec = common.FlagSpec{
 	},
 }
 
-// Run removes a single file or symlink. Returns an error for directories.
+// Run removes a single file or symlink using the POSIX unlink syscall.
+// Returns an error for directories (EISDIR).
 func Run(path string) error {
-	return os.Remove(path)
+	return syscall.Unlink(path)
 }
 
 func run(args []string, out io.Writer) int {
