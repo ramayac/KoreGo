@@ -61,9 +61,9 @@
 | `uniq` | 88.3% | 15 | ✅ 15/15 | ✅ |
 | `tr` | 82.5% | 6 | ✅ 6/6 | ✅ |
 | `cut` | 61.5% | 25 | ✅ 25/25 | ✅ |
-| `tee` | 72.5% | 2 | ✅ 2/2 | ❌ |
+| `tee` | 72.5% | 2 | ✅ 2/2 | ✅ |
 | `grep` | 86.3% | 53 | ✅ 53/53 | ✅ |
-| `sed` | 67.0% | 103 | ✅ 103/103 | ❌ |
+| `sed` | 67.0% | 103 | ✅ 103/103 | ✅ |
 
 ## Tier 4 — System & Process
 
@@ -94,24 +94,24 @@
 | `test` / `[` | 82.9% | — | — | ❌ |
 | `printf` | 65.6% | 26 | ✅ 26/26 | ✅ |
 | `expr` | 82.6% | 2 | ✅ 2/2 | ✅ |
-| `shell` | 60.8% | — | — | ❌ |
+| `shell` | 60.8% | — | — | ✅ |
 
 ## Tier 6 — Post-MVP (Phase 15–16, 18.3)
 
 | Utility | Unit Coverage | BusyBox Tests | BusyBox Status | JSON-RPC |
 |---------|:------------:|:-------------:|:--------------:|:--------:|
-| `dd` | 86.4% | 6 | ✅ 6/6 | ❌ |
-| `od` | 85.1% | 4 | ✅ 4/4 | ❌ |
-| `patch` | 74.2% | 11 | ✅ 11/11 | ❌ |
-| `unexpand` | 81.9% | 24 | ✅ 24/24 | ❌ |
-| `comm` | 70.1% | 9 | ✅ 9/9 | ❌ |
-| `paste` | 76.9% | 5 | ✅ 5/5 | ❌ |
-| `fold` | 55.8% | 5 | ⚠️ 4/5 (1 fail) | ❌ |
-| `sum` | — | 4 | ✅ 4/4 | ❌ |
-| `nl` | — | 4 | ✅ 4/4 | ❌ |
-| `expand` | — | 3 | ✅ 3/3 | ❌ |
-| `cmp` | — | 1 | ✅ 1/1 | ❌ |
-| `strings` | — | 1 | ✅ 1/1 | ❌ |
+| `dd` | 86.4% | 6 | ✅ 6/6 | ✅ |
+| `od` | 84.0% | 4 | ✅ 4/4 | ✅ |
+| `patch` | 74.2% | 11 | ✅ 11/11 | ⚠️ |
+| `unexpand` | 81.9% | 24 | ✅ 24/24 | ✅ |
+| `comm` | 70.1% | 9 | ✅ 9/9 | ✅ |
+| `paste` | 76.9% | 5 | ✅ 5/5 | ✅ |
+| `fold` | 92.0% | 5 | ⚠️ 4/5 (1 fail) | ✅ |
+| `sum` | 100.0% | 4 | ✅ 4/4 | ✅ |
+| `nl` | 62.2% | 4 | ✅ 4/4 | ✅ |
+| `expand` | 79.7% | 3 | ✅ 3/3 | ✅ |
+| `cmp` | 61.5% | 1 | ✅ 1/1 | ✅ |
+| `strings` | 90.1% | 1 | ✅ 1/1 | ✅ |
 
 ## Tier 7 — Stubs (Phase 17, in-progress)
 
@@ -126,9 +126,9 @@
 | `mkfifo` | 92.9% | — | — | ✅ |
 | `nice` | 85.7% | — | — | ✅ |
 | `nohup` | 68.2% | — | — | ✅ |
-| `split` | 45.2% | — | — | ✅ |
+| `split` | 60.3% | — | — | ✅ |
 | `tty` | 54.3% | — | — | ✅ |
-| `who` | 54.5% | — | — | ✅ |
+| `who` | 84.8% | — | — | ✅ |
 | `daemon` | 82.4% | — | — | ❌ |
 
 ## Infrastructure
@@ -149,18 +149,18 @@
 | BusyBox passed | 548 | 99.3% |
 | BusyBox failed | 4 | 3 date + 1 fold NUL |
 | Daemon internal coverage | 64.6% | +28.7% from Phase 18 |
-| BusyBox failed | 5 | 3 date + 2 fold |
+| BusyBox failed | 4 | 3 date + 1 fold |
 | BusyBox skipped | 10 | External deps |
-| JSON-RPC daemon tests | 59/74 | 80% (15 gaps) |
+| JSON-RPC daemon tests | 73/77 | 95% (4 gaps: daemon, tee, testcmd, truefalse; patch skipped) |
 
 ## Remaining Gaps
 
 | # | Gap | Count |
 |---|-----|-------|
 | 1 | date BusyBox failures | 3 (Go TZ limits + cosmetic) |
-| 2 | fold NUL/Unicode | 2 (binary data handling) |
-| 3 | JSON-RPC daemon tests missing | 15 utilities (see ❌ marks above) |
-| 4 | Unit coverage < 60% | 7 utilities (diff, join, paste, shell, split, tty, who) |
+| 2 | fold NUL | 1 (echo harness limitation) |
+| 3 | JSON-RPC daemon tests missing | 4 utilities (daemon, tee, testcmd, truefalse); patch skipped |
+| 4 | Unit coverage < 60% | 2 utilities (split, tty) |
 | 5 | `awk` not implemented | Platinum gate (deferred) |
 
 ## Notes

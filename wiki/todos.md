@@ -1,6 +1,6 @@
 # GoPOSIX — Open TODOs & Remaining Work
 
-> **Last updated:** 2026-05-17 | **BusyBox:** 548 pass / 4 fail / 10 skip | **Branch:** `main`
+> **Last updated:** 2026-05-17 | **BusyBox:** 548 pass / 4 fail / 10 skip | **Coverage:** 75.1% | **Branch:** `main`
 
 ## Current State
 
@@ -13,7 +13,7 @@
 | BusyBox failed | 4 |
 | BusyBox skipped | 10 |
 | **BusyBox pass rate** | **99.3%** |
-| Overall unit coverage | ~72% |
+| Overall unit coverage | 75.1% |
 
 ## Completed (all phases 00–18)
 
@@ -36,18 +36,16 @@ All 18 planned phases are complete. 77 utilities, 548/541 BusyBox tests, 85 test
 
 | Utility | Coverage | Notes |
 |---------|:--------:|-------|
-| `fold` | 55.8% | Refactored for correctness; new byte/rune paths need tests |
-| `shell` | 60.8% | Shell interpreter, mostly tested via integration |
-| `split` | 45.2% | CLI `run()` untested (needs CWD-sensitive test setup) |
+| `split` | 60.3% | CLI `run()` untested (needs CWD-sensitive test setup) |
 | `tty` | 54.3% | Terminal-only paths untestable in CI |
-| `who` | 54.5% | Depends on utmp, hard to test in containers |
 
 ### JSON-RPC Daemon Gaps
 
-15 utilities lack daemon integration tests in `test/posix-json/`:
+4 utilities lack daemon integration tests in `test/posix-json/`:
 
-`cmp` `comm` `daemon` `expand` `fold` `nl` `paste` `sed` `shell`
-`strings` `sum` `tee` `testcmd` `truefalse` `unexpand`
+`daemon` `tee` `testcmd` `truefalse`
+
+(`patch` skipped — requires special daemon file I/O; tested via BusyBox)
 
 ### Deferred
 

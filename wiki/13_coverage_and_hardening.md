@@ -1,6 +1,6 @@
 # Phase 13 — Coverage & Hardening (Audit → Action)
 
-> **Status:** MAINTAINED | **Date:** 2026-05-16 | **Overall coverage:** ~72% | **CI gate:** ≥70%
+> **Status:** MAINTAINED | **Date:** 2026-05-17 | **Overall coverage:** 75.1% | **CI gate:** ≥70%
 >
 > **This is the canonical coverage policy page.** See [test_coverage_matrix.md](test_coverage_matrix.md) for per-utility status.
 >
@@ -65,7 +65,7 @@ This is the single source of truth — any other document claiming a different t
 
 | Metric | Value |
 |--------|-------|
-| Overall coverage | **70.5%** |
+| Overall coverage | **75.1%** |
 | CI gate threshold | **70%** (hard fail) |
 | Packages below 5% | 0 |
 | Packages at ≥80% | 25+ |
@@ -73,7 +73,7 @@ This is the single source of truth — any other document claiming a different t
 ### Verification
 
 ```bash
-make cover-pct          # Prints overall coverage percentage
+make cover-pct          # 75.1% (current)
 make cover-pkg          # Per-package breakdown
 make cover-gate         # Hard-fails if <70%
 make ci                 # Full pipeline including cover-gate

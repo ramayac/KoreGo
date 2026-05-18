@@ -23,7 +23,6 @@ func TestSplitByLines(t *testing.T) {
 		t.Errorf("expected 3 files, got %d", len(result.Files))
 	}
 
-	// Check first file content
 	data, _ := os.ReadFile(prefix + "aa")
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
 	if len(lines) != 5 {
@@ -44,7 +43,6 @@ func TestSplitByBytes(t *testing.T) {
 		t.Errorf("expected 4 chunks, got %d", result.Chunks)
 	}
 
-	// Check content
 	data, _ := os.ReadFile(prefix + "aa")
 	if string(data) != "12345" {
 		t.Errorf("expected '12345', got %q", string(data))
@@ -60,7 +58,6 @@ func TestSplitNumericSuffix(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// Should have files x00, x01
 	if _, err := os.Stat(prefix + "00"); os.IsNotExist(err) {
 		t.Error("expected x00 to exist with numeric suffixes")
 	}
@@ -125,4 +122,113 @@ func TestGenerateSuffix(t *testing.T) {
 	}
 }
 
+// --- parseSize tests ---
 
+func TestParseSize(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"100", 100},
+		{"1k", 1024},
+		{"2k", 2048},
+		{"1kb", 1000},
+		{"1m", 1024 * 1024},
+		{"1mb", 1000 * 1000},
+		{"1g", 1024 * 1024 * 1024},
+		{"0", 0},
+	}
+	for _, tt := range tests {
+		got, err := parseSize(tt.input)
+		if err != nil {
+			t.Errorf("parseSize(%q) error: %v", tt.input, err)
+			continue
+		}
+		if got != tt.expected {
+			t.Errorf("parseSize(%q) = %d, want %d", tt.input, got, tt.expected)
+		}
+	}
+}
+
+func TestParseSize_Invalid(t *testing.T) {
+	_, err := parseSize("notanumber")
+	if err == nil {
+		t.Error("expected error for invalid input")
+	}
+}
+
+func TestParseSize_UpperK(t *testing.T) {
+	n, err := parseSize("2K")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 2048 {
+		t.Errorf("parseSize(2K) = %d, want 2048", n)
+	}
+}
+
+func TestParseSize_UpperM(t *testing.T) {
+	n, err := parseSize("1M")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 1024*1024 {
+		t.Errorf("parseSize(1M) = %d, want %d", n, 1024*1024)
+	}
+}
+
+func TestParseSize_UpperG(t *testing.T) {
+	n, err := parseSize("1G")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 1024*1024*1024 {
+		t.Errorf("parseSize(1G) = %d, want %d", n, 1024*1024*1024)
+	}
+}
+
+// --- Run edge cases ---
+
+func TestSplitExactChunkBoundary(t *testing.T) {
+	dir := t.TempDir()
+	prefix := filepath.Join(dir, "x")
+
+	// Exactly 10 lines, chunk size 5 → 2 chunks
+	input := strings.NewReader("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n")
+	result, err := Run(input, prefix, 5, 0, 2, false, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Chunks != 2 {
+		t.Errorf("expected 2 chunks, got %d", result.Chunks)
+	}
+}
+
+func TestSplitSingleLine(t *testing.T) {
+	dir := t.TempDir()
+	prefix := filepath.Join(dir, "x")
+
+	input := strings.NewReader("hello")
+	result, err := Run(input, prefix, 5, 0, 2, false, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Chunks != 1 {
+		t.Errorf("expected 1 chunk, got %d", result.Chunks)
+	}
+}
+
+func TestSplitDefaultLineCount(t *testing.T) {
+	dir := t.TempDir()
+	prefix := filepath.Join(dir, "x")
+
+	// Passing 0,0 should default to 1000 lines per chunk
+	input := strings.NewReader("a\nb\n")
+	result, err := Run(input, prefix, 0, 0, 2, false, "")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Chunks != 1 {
+		t.Errorf("expected 1 chunk with default 1000 lines, got %d", result.Chunks)
+	}
+}
