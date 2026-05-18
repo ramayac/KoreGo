@@ -53,14 +53,19 @@ if kill -0 "$DAEMON_PID" 2>/dev/null; then
   JSON_REQ='{"jsonrpc":"2.0","method":"goposix.echo","params":{"text":"hello"},"id":1}'
 
   for i in $(seq "$SAMPLES"); do
-    # Fire concurrent requests in background.
+    # Fire concurrent requests in background, track PIDs.
+    socat_pids=""
     for j in $(seq "$CONCURRENT"); do
       echo "$JSON_REQ" | socat -T2 - UNIX-CONNECT:"$SOCKET" >/dev/null 2>&1 &
+      socat_pids="$socat_pids $!"
     done
     sleep 0.3
     rss=$(ps -o rss= -p "$DAEMON_PID" 2>/dev/null | tr -d ' ' || echo "0")
     echo "mem_daemon_loaded_${CONCURRENT}_goposix,$i,0,0,0,$rss"
-    wait 2>/dev/null || true
+    # Wait only for the socat children, not the daemon.
+    for pid in $socat_pids; do
+      wait "$pid" 2>/dev/null || true
+    done
     sleep 1
   done
 
