@@ -29,7 +29,7 @@ All phases 00–11 are complete. These documents describe the as-built implement
 | [04_text_processing.md](04_text_processing.md) | Text Processing |
 | [05_daemon_core.md](05_daemon_core.md) | Daemon Core |
 | [06_system_utils.md](06_system_utils.md) | System Utils |
-| [07_agent_features.md](07_agent_features.md) | Agent Features |
+| [07_rpc_features.md](07_rpc_features.md) | RPC Features |
 | [08_hardening.md](08_hardening.md) | Hardening |
 | [09_release_docs.md](09_release_docs.md) | Release (maintained as living doc) |
 | [10_posix_framework.md](10_posix_framework.md) | POSIX Framework |
@@ -59,7 +59,8 @@ All phases 00–11 are complete. These documents describe the as-built implement
 
 - [07a_awk.md](07a_awk.md) | Awk Implementation Plan (canonical; Platinum gate)
 - [14_xml_output.md](14_xml_output.md) | XML Output Support design (not implemented)
-- [19_performance_benchmarking.md](19_performance_benchmarking.md) | Performance Benchmarking — GoPOSIX vs BusyBox (PLANNING)
+- [19_performance_benchmarking.md](19_performance_benchmarking.md) | Performance Benchmarking Plan — GoPOSIX vs BusyBox (IMPLEMENTING)
+- [performance.md](performance.md) | Performance Quick Reference — commands, scale, categories, results
 ## Design
 
 - [goposixos.md](goposixos.md) | GoPOSIXOS design — historical snapshot (moved to separate repo); all GoPOSIX-side prep work is complete
