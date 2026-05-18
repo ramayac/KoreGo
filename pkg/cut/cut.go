@@ -245,7 +245,7 @@ func run(args []string, out io.Writer) int {
 	} else {
 		for _, line := range allLines {
 			if len(line.Fields) > 0 {
-				fmt.Println(line.Fields[0])
+				fmt.Fprintln(out, line.Fields[0])
 			}
 		}
 	}

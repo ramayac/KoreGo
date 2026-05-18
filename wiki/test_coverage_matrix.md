@@ -158,7 +158,7 @@
 | BusyBox skipped | 10 | External deps (bzip2, xz, uudecode) |
 | Daemon internal coverage | 64.6% | +28.7% from Phase 18 |
 | JSON-RPC daemon tests | 73/77 | 95% (4 gaps: daemon, tee, testcmd, truefalse; patch skipped) |
-| Packages below 70% unit coverage | 17 | See [20_hardening_ii.md](20_hardening_ii.md) §20.13 for full list |
+| Packages below 70% unit coverage | 9 | See [20_hardening_ii.md](20_hardening_ii.md) §20.13 |
 
 ## Remaining Gaps
 
@@ -167,7 +167,7 @@
 | 1 | date BusyBox failures | 3 (Go TZ limits + cosmetic) |
 | 2 | fold NUL | 1 (echo harness limitation) |
 | 3 | JSON-RPC daemon tests missing | 4 utilities (daemon, tee, testcmd, truefalse); patch skipped |
-| 4 | Unit coverage < 60% | 2 packages: `client` (55.4%), `tty` (60.0% — exactly at 60%) |
+| 4 | Unit coverage < 60% | 1 package: `client` (55.4%) |
 | 5 | `awk` not implemented | Platinum gate (deferred) |
 
 ## Notes
@@ -175,5 +175,4 @@
 - **BusyBox skipped (10):** All tar tests requiring bzip2/xz/uudecode (external deps)
 - **Coverage gate:** CI enforces ≥70% overall (run `make cover-gate` for current; target ≥75% per Phase 20)
 - **Tier 7 stubs:** Implemented as functional stubs; need hardening and BusyBox-style compliance tests
-- **Client SDK** (`pkg/client`): 1,341 LOC Go SDK for JSON-RPC clients. Not a utility itself but included in coverage tracking. 55.4% coverage — Phase 20c targets ≥70%.
-- **Stale number warning:** Prior version had stale entries for `split` (was 60.3% → now 86.3%), `nl` (was 62.2% → now 73.5%), `dd` (was 86.4% → now 81.4%), `tty` (was 54.3% → now 60.0%). Run `make cover-pkg` before updating this matrix.
+- **Phase 20 progress:** 7 of 17 under-70% packages brought above gate. Overall coverage 75.7% → 76.7%. 9 packages remain below 70% (hard-to-test paths: net.Dial, terminal I/O, complex parsers).

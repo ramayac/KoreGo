@@ -81,7 +81,7 @@ Hard caps: 500K files, 10 GB text, 100K daemon requests, 1K RPC task loops.
 | `g` | `cat_g_memory` | `memory` | RSS: single, idle daemon, loaded daemon, BusyBox |
 | `h` | `cat_h_sizes` | `sizes` | Binary size, symlink count (no runtime) |
 | `i` | `cat_i_concurrent` | `concurrent` | Concurrent grep/du [GOROUTINE-TODO] |
-| `j` | `cat_j_rpc_loop` | `agent` | RPC task loop: ls→cat→grep→wc→find, N iterations |
+| `j` | `cat_j_rpc_loop` | `rpc` | RPC task loop: ls→cat→grep→wc→find, N iterations |
 
 ```bash
 # Any of these work:

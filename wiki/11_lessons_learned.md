@@ -86,7 +86,7 @@ Four of 46 golden fixtures failed on first validation:
 
 **Fix:** Changed the RPC example's session CWD to `/etc` and used relative paths (`hosts` instead of `/etc/hosts`).
 
-**Implication:** This is a deliberate security feature, not a bug. Session-based access restricts all file operations to the session's working directory. Absolute paths are only permitted when they resolve within the session root. The agent example now documents this behavior.
+**Implication:** This is a deliberate security feature, not a bug. Session-based access restricts all file operations to the session's working directory. Absolute paths are only permitted when they resolve within the session root. The RPC example now documents this behavior.
 
 ### 4. Shell interpreter arg-passing bug (pre-existing)
 
@@ -160,7 +160,7 @@ Each schema file includes both the envelope structure AND the utility-specific `
 
 ### Agent example uses raw `net.Dial` — not the client library
 
-The agent example intentionally uses raw socket communication to demonstrate the full JSON-RPC 2.0 protocol without hiding it behind the client library. This servers two purposes: (1) it's a reference for non-Go consumers who need to implement the protocol themselves, and (2) it validates the protocol layer independently of the client library.
+The RPC example intentionally uses raw socket communication to demonstrate the full JSON-RPC 2.0 protocol without hiding it behind the client library. This servers two purposes: (1) it's a reference for non-Go consumers who need to implement the protocol themselves, and (2) it validates the protocol layer independently of the client library.
 
 ### `schemaVersion` field is forward-looking
 
@@ -180,7 +180,7 @@ The `"schemaVersion": "1.0"` field in every JSON envelope allows consumers to de
 | Agent example lines | ~220 |
 | New docs pages | 3 (`JSON_SCHEMA.md`, `AGENT_INTEGRATION.md`, `RPC_API.md`) |
 | Wiki sections updated | `11_post_mvp_priorities.md` (all 11.1–11.3 tasks marked `[x]`) |
-| `make` targets added | `validate-schemas`, `example-agent`, `bench` |
+| `make` targets added | `validate-schemas`, `example-rpc`, `bench` |
 | CI steps added | `Validate JSON schemas` |
 
 ---

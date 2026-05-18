@@ -143,7 +143,7 @@ When a category has multiple N levels, each level scales independently.
 | E — grep -r | small file count | 1,000 | 100 | 5,000 | 25,000 |
 | F — daemon | request count | 10 / 50 / 100 / 1,000 | 1 / 5 / 10 / 100 | 50 / 250 / 500 / 5,000 | 250 / 1,250 / 2,500 / 25,000 |
 | G — mem | concurrent reqs | 100 | 10 | 500 | 2,500 |
-| J — agent | loop iterations | 10 | 1 | 50 | 250 |
+| J — rpc | loop iterations | 10 | 1 | 50 | 250 |
 
 > **Hard cap:** Individual workload parameters are clamped to prevent runaway runs.
 > Max file count: 500,000. Max text file: 10 GB. Max daemon requests: 100,000.

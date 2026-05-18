@@ -34,17 +34,17 @@ GoPOSIX MVP is complete: 49 utilities implemented, 97.9% BusyBox pass rate, daem
 
 ## 11.2 — End-to-End Agent Integration Example
 
-**Why it matters:** The agent use case is the whole pitch, but there is no demonstration of it. A working example is both the best documentation and the best test.
+**Why it matters:** The programmatic use case is the primary differentiation, but there is no demonstration of it. A working example is both the best documentation and the best test.
 
 ### Tasks
 
-- [x] Create `examples/agent/` directory with a self-contained example (`examples/agent/main.go`)
+- [x] Create `examples/rpc_client/` directory with a self-contained example (`examples/rpc_client/main.go`)
 - [x] Implement a Go RPC client that:
   - Starts the GoPOSIX daemon
   - Creates a session via `goposix.session.create`
   - Executes a multi-step task (ls, wc, shell.exec, cat)
   - Cleans up the session
-- [x] Provide the example in Go (`examples/agent/main.go`)
+- [x] Provide the example in Go (`examples/rpc_client/main.go`)
 - [x] Document the example in `docs/AGENT_INTEGRATION.md` with annotated walkthrough
 - [x] Add `make example-rpc` target that runs the Go version as a smoke test
 

@@ -94,7 +94,7 @@ docker buildx imagetools inspect ghcr.io/ramayac/goposix:latest --format '{{ jso
 ## 12.2 — Shell Security Model
 
 **Why it matters:** `goposix.shell.exec` is the highest-risk surface in the entire codebase.
-The daemon is designed for programmatic consumption — agents may pass partially
+The daemon is designed for programmatic consumption — programs may pass partially
 untrusted or model-generated shell scripts. Without a documented and tested security
 contract, operators cannot safely expose the daemon.
 
