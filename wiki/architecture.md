@@ -79,7 +79,7 @@ GoPOSIX/
 ├── test/                Integration tests
 │   └── busybox_testsuite/  Ported BusyBox test suite (552 tests)
 ├── testdata/            Shared test fixtures
-├── docs/                Architecture, SECURITY, RPC_API, JSON_SCHEMA, AGENT_INTEGRATION
+├── wiki/                Architecture, security, RPC API, JSON schema, deploy guides
 ├── wiki/                Phase plans, checklists, lessons learned
 └── examples/            Agent integration examples
 ```
@@ -134,7 +134,7 @@ Run `make testsuite` before every commit to prevent regressions.
 
 ## Related Documentation
 
-- [SECURITY.md](SECURITY.md) — Security model, shell sandbox, deployment posture
-- [RPC_API.md](RPC_API.md) — JSON-RPC client API reference (`pkg/client`)
-- [JSON_SCHEMA.md](JSON_SCHEMA.md) — `--json` output envelope and per-utility schemas
-- [RPC_QUICKSTART.md](RPC_QUICKSTART.md) — How to use GoPOSIX programmatically via JSON-RPC
+- [security.md](security.md) — Security model, shell sandbox, deployment posture
+- [rpc_api.md](rpc_api.md) — JSON-RPC client API reference (`pkg/client`)
+- [json_schema.md](json_schema.md) — `--json` output envelope and per-utility schemas
+- [rpc_quickstart.md](rpc_quickstart.md) — How to use GoPOSIX programmatically via JSON-RPC

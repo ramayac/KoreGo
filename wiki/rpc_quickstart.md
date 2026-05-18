@@ -171,4 +171,4 @@ go run ./examples/rpc_client/main.go
 
 ## Go Client SDK
 
-For production use, import `pkg/client/` for connection pooling, retry, and typed helper methods. See `docs/RPC_API.md`.
+For production use, import `pkg/client/` for connection pooling, retry, and typed helper methods. See `wiki/rpc_api.md`.

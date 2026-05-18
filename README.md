@@ -19,9 +19,9 @@ Key Features:
 - **Machine-Readable by Default:** Every utility supports `--json` for structured output
   ([JSON Schema](docs/JSON_SCHEMA.md)). `--xml` is in progress ([Phase 14](wiki/14_xml_output.md)).
 - **Low-Overhead Execution:** A persistent JSON-RPC 2.0 daemon with session management
-  ([RPC API](docs/RPC_API.md)).
+  ([RPC API](wiki/rpc_api.md)).
 - **Portable Scripting:** Sandboxed shell interpreter via `mvdan.cc/sh` with configurable timeout
-  and resource limits ([Security Model](docs/SECURITY.md)).
+  and resource limits ([Security Model](wiki/security.md)).
 - **High Compatibility:** 99.3% BusyBox test pass rate (548 of 552 tested).
 - **CI Gate:** ≥70% overall code coverage enforced on every push (actual: 75.7%).
 
@@ -58,11 +58,11 @@ make ci            # full pipeline (test + testsuite + coverage + docker)
 | `GOPOSIX_SHELL_TIMEOUT` | `30s` | Shell execution timeout (Go duration format, e.g. `60s`, `5m`) |
 
 ## Documentation
-- [Architecture](docs/ARCHITECTURE.md)
-- [JSON Schema](docs/JSON_SCHEMA.md)
-- [RPC API](docs/RPC_API.md)
-- [JSON-RPC Quickstart](docs/RPC_QUICKSTART.md)
-- [Security Model](docs/SECURITY.md)
+- [Architecture](wiki/architecture.md)
+- [JSON Schema](wiki/json_schema.md)
+- [RPC API](wiki/rpc_api.md)
+- [JSON-RPC Quickstart](wiki/rpc_quickstart.md)
+- [Security Model](wiki/security.md)
 - [POSIX Coverage Matrix](wiki/posix_coverage.md)
 - [Test Coverage Matrix](wiki/test_coverage_matrix.md)
 - [POSIX FAQ](wiki/posix_faq.md)

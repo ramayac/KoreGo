@@ -69,7 +69,7 @@ introduce new failures.
 ## Security
 
 Destructive utilities (`rm`, etc.) must include root filesystem protection.
-See [docs/SECURITY.md](docs/SECURITY.md) for the full security model.
+See [wiki/security.md](wiki/security.md) for the full security model.
 
 ## Questions?
 
